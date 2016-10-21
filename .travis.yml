@@ -1,0 +1,22 @@
+language: python
+python:
+  - "2.7"
+
+env:
+  - PLATFORMIO_PROJECT_DIR=examples/arduino-blink
+
+install:
+  - pip install -U https://github.com/platformio/platformio/archive/develop.zip
+  - platformio platform install file://.
+
+script:
+  - platformio run -d $PLATFORMIO_PROJECT_DIR
+
+notifications:
+  email: false
+
+  slack:
+    rooms:
+      secure: zKv2HzE18J8f+mHUeoNylXSvh6IBlfaaf2H96cicwGB3p53jOXBXO/99N7MVe6UnkJludmVeTGim4timqZdCOLglUPxIo8lSFSp5+4dO+WCpZB7z9P+vw4oy+qV+5Kp1EhDQnOybg/7DdYiJiCVz1psDZH+oYRqnW/+lU6s48svItrUpy6s36OeZJsYP9jjoWnSyzAemvO3kurC3Gib475tJfKIMVd5l9Lmj3yuALonDj6z6DXHyM8lExxRbaAe22CvHzuTXs3N0S/d34Gdi7+f/+NOcKrdBgNbzMnchtwLgnX8uqGAp+3D96JmTNFxdBc1uY82WdDY/ij2X/f6GFzIWgXRI7medHxvWqUFdRC1Z6bK1t36QsPgot2A3nT4oJnlJ/NqpwsjnSN60emDmkbDUf0p1JzErhHHQTVrasTWOX7yXVteXXIIP1HYR1A+5VMjO+6r20J9AM+QYm/b+9Rmy6t2uMdmimiRTy2fQxH/eExWSmJqrzdvgWHPc8gPxj9Ib8mryVegFlkajswv/rh2L8I5FZwNTot0+qwYFyst+hNm0PBVBmcyLhSW4v2/sVBwq38ir4NyXtnps46S7VNKh7b8kdO2o4f8oRkv+PWSnnK6N6tej20CAZeBjTh2puIl2HVL47/rCQA7DZMiJP+iGet6HG6pWKktilvfhSLs=
+    on_failure: always
+    on_success: change
