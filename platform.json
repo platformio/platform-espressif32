@@ -33,7 +33,7 @@
   "packages": {
     "toolchain-xtensa32": {
       "type": "toolchain",
-      "version": "~1.40802.0"
+      "version": "~1.40805.0"
     },
     "framework-arduinoespressif32": {
       "type": "framework",
@@ -44,6 +44,10 @@
       "type": "framework",
       "optional": true,
       "version": "~1.90.0"
+    },
+    "tool-esptool": {
+      "type": "uploader",
+      "version": "~1.409.0"
     }
   }
 }

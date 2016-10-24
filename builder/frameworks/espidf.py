@@ -13,11 +13,93 @@
 # limitations under the License.
 
 """
-ESP IDF
+Espressif IDF
 
-Espressif IoT Development Framework. Official development framework for ESP32.
+Espressif IoT Development Framework for ESP32 MCU
 
 https://github.com/espressif/esp-idf
 """
 
-# TODO
+from os import listdir
+from os.path import isdir, join
+
+from SCons.Script import DefaultEnvironment
+
+env = DefaultEnvironment()
+platform = env.PioPlatform()
+
+FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
+FRAMEWORK_VERSION = platform.get_package_version(
+    "framework-espidf")
+assert isdir(FRAMEWORK_DIR)
+
+
+env.Prepend(
+    CPPPATH=[
+        join(FRAMEWORK_DIR, "config"),
+        join(FRAMEWORK_DIR, "components", "nghttp", "include"),
+        join(FRAMEWORK_DIR, "components", "nghttp", "port", "include"),
+        join(FRAMEWORK_DIR, "components", "bt", "include"),
+        join(FRAMEWORK_DIR, "components", "driver", "include"),
+        join(FRAMEWORK_DIR, "components", "esp32", "include"),
+        join(FRAMEWORK_DIR, "components", "freertos", "include"),
+        join(FRAMEWORK_DIR, "components", "freertos", "include", "freertos"),
+        join(FRAMEWORK_DIR, "components", "log", "include"),
+        join(FRAMEWORK_DIR, "components", "newlib", "include"),
+        join(FRAMEWORK_DIR, "components", "nvs_flash", "include"),
+        join(FRAMEWORK_DIR, "components", "spi_flash", "include"),
+        join(FRAMEWORK_DIR, "components", "tcpip_adapter", "include"),
+        join(FRAMEWORK_DIR, "components", "lwip", "include", "lwip"),
+        join(FRAMEWORK_DIR, "components", "lwip", "include", "lwip", "port"),
+        join(FRAMEWORK_DIR, "components", "lwip", "include", "lwip", "posix"),
+        join(FRAMEWORK_DIR, "components", "expat", "include", "expat"),
+        join(FRAMEWORK_DIR, "components", "expat", "port", "include"),
+        join(FRAMEWORK_DIR, "components", "json", "include"),
+        join(FRAMEWORK_DIR, "components", "json", "port", "include"),
+        join(FRAMEWORK_DIR, "components", "mbedtls", "include"),
+        join(FRAMEWORK_DIR, "components", "mbedtls", "port", "include")
+    ],
+
+    LIBPATH=[
+        join(FRAMEWORK_DIR, "components", "esp32"),
+        join(FRAMEWORK_DIR, "components", "esp32", "lib"),
+        join(FRAMEWORK_DIR, "components", "bt", "lib"),
+        join(FRAMEWORK_DIR, "components", "newlib", "lib"),
+        join(FRAMEWORK_DIR, "components", "esp32", "ld")
+    ],
+
+    LIBS=[
+        "hal", "crypto", "core", "net80211", "phy", "rtc", "pp", "wpa",
+        "smartconfig", "btdm_app", "m", "c", "gcc"
+    ]
+)
+
+env.Append(
+    LIBSOURCE_DIRS=[
+        join(FRAMEWORK_DIR, "libraries")
+    ],
+
+    LINKFLAGS=[
+        "-T", "esp32.common.ld",
+        "-T", "esp32.rom.ld",
+        "-T", "esp32.peripherals.ld"
+    ],
+)
+
+#
+# Target: Build Core Library
+#
+
+libs = []
+
+for d in listdir(join(FRAMEWORK_DIR, "components")):
+    if d == "bootloader":
+        continue
+    if isdir(join(FRAMEWORK_DIR, "components", d)):
+        libs.append(env.BuildLibrary(
+            join("$BUILD_DIR", "IDFComponents_%s" % d),
+            join(FRAMEWORK_DIR, "components", d),
+            src_filter="+<*> -<test>"
+        ))
+
+env.Prepend(LIBS=libs)
