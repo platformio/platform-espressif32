@@ -228,13 +228,13 @@ target_elf = env.BuildProgram()
 if "PIOFRAMEWORK" in env:
     target_firm = env.ElfToBin(join("$BUILD_DIR", "firmware"), target_elf)
 
-if env.subst("$PIOFRAMEWORK") == "espidf":
+if "espidf" in env.subst("$PIOFRAMEWORK"):
     bootloader_bin = env.ElfToBin(
         join("$BUILD_DIR", "bootloader"), build_espidf_bootloader())
     target_buildprog = env.Alias(
         "buildprog", [target_firm, bootloader_bin], "$PTABLE_CMD")
 else:
-    target_buildprog = env.Alias("buildprog", target_firm)
+    target_buildprog = env.Alias("buildprog", target_firm, target_firm)
 
 
 #
