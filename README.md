@@ -1,6 +1,6 @@
 # Espressif 32: development platform for [PlatformIO](http://platformio.org)
 [![Build Status](https://travis-ci.org/platformio/platform-espressif32.svg?branch=develop)](https://travis-ci.org/platformio/platform-espressif32)
-[![Build status](https://ci.appveyor.com/api/projects/status/aob49qatio84iygj/branch/develop?svg=true)](https://ci.appveyor.com/project/ivankravets/platform-espressif32/branch/develop)
+[![Build status](https://ci.appveyor.com/api/projects/status/nl087sumhneumse3/branch/develop?svg=true)](https://ci.appveyor.com/project/ivankravets/platform-espressif32/branch/develop)
 
 Espressif Systems is a privately held fabless semiconductor company. They provide wireless communications and Wi-Fi chips which are widely used in mobile devices and the Internet of Things applications.
 

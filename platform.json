@@ -38,16 +38,16 @@
     "framework-arduinoespressif32": {
       "type": "framework",
       "optional": true,
-      "version": "~0.0.0"
+      "version": "~1.0.0"
     },
     "framework-espidf": {
       "type": "framework",
       "optional": true,
       "version": "~1.90.0"
     },
-    "tool-esptool": {
+    "tool-esptoolpy": {
       "type": "uploader",
-      "version": "~1.409.0"
+      "version": "~1.0.0"
     }
   }
 }

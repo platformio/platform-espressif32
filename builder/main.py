@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-import re
 from os.path import join
 
 from SCons.Script import (AlwaysBuild, Builder, Default, DefaultEnvironment)
@@ -78,7 +76,8 @@ env.Replace(
     AS="xtensa-esp32-elf-as",
     CC="xtensa-esp32-elf-gcc",
     CXX="xtensa-esp32-elf-g++",
-    OBJCOPY=join(platform.get_package_dir("tool-esptool"), "esptool.py"),
+    OBJCOPY=join(
+        platform.get_package_dir("tool-esptoolpy") or "", "esptool.py"),
     RANLIB="xtensa-esp32-elf-ranlib",
     SIZETOOL="xtensa-esp32-elf-size",
 
@@ -136,7 +135,8 @@ env.Replace(
     # Upload
     #
 
-    UPLOADER=join(platform.get_package_dir("tool-esptool"), "esptool.py"),
+    UPLOADER=join(
+        platform.get_package_dir("tool-esptoolpy") or "", "esptool.py"),
 
     UPLOADERFLAGS=[
         "--chip", "esp32",
