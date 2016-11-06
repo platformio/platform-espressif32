@@ -154,7 +154,6 @@ env.Replace(
 )
 
 if env.subst("$PIOFRAMEWORK") == "arduino":
-    framework_dir = platform.get_package_dir("framework-arduinoespressif32")
     env.Append(
         UPLOADERFLAGS=[
             "0x1000", join("$FRAMEWORK_ARDUINOESP32_DIR", "tools",
@@ -165,7 +164,6 @@ if env.subst("$PIOFRAMEWORK") == "arduino":
         ]
     )
 if env.subst("$PIOFRAMEWORK") == "espidf":
-    framework_dir = platform.get_package_dir("framework-espidf")
     env.Append(
         UPLOADERFLAGS=[
             "0x1000", join("$BUILD_DIR", "bootloader.bin"),
@@ -229,10 +227,10 @@ if "PIOFRAMEWORK" in env:
     target_firm = env.ElfToBin(join("$BUILD_DIR", "firmware"), target_elf)
 
 if "espidf" in env.subst("$PIOFRAMEWORK"):
-    bootloader_bin = env.ElfToBin(
+    target_buildboot = env.ElfToBin(
         join("$BUILD_DIR", "bootloader"), build_espidf_bootloader())
     target_buildprog = env.Alias(
-        "buildprog", [target_firm, bootloader_bin], "$PTABLE_CMD")
+        "buildprog", [target_firm, target_buildboot], "$PTABLE_CMD")
 else:
     target_buildprog = env.Alias("buildprog", target_firm, target_firm)
 

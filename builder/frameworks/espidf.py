@@ -25,6 +25,8 @@ from os.path import isdir, join
 
 from SCons.Script import DefaultEnvironment
 
+from platformio.util import exec_command
+
 env = DefaultEnvironment()
 platform = env.PioPlatform()
 
@@ -33,6 +35,18 @@ FRAMEWORK_VERSION = platform.get_package_version(
     "framework-espidf")
 assert isdir(FRAMEWORK_DIR)
 
+
+def generate_ld_script():
+    exec_command([
+        join(platform.get_package_dir("toolchain-xtensa32")
+             or "", "bin", env.subst("$CC")),
+        "-I", join(env.subst("$ESPIDF_DIR"), "config"),
+        "-C", "-P", "-x", "c", "-E",
+        join(env.subst("$ESPIDF_DIR"), "components",
+             "esp32", "ld", "esp32.ld"),
+        "-o", join(env.subst("$ESPIDF_DIR"), "components",
+                   "esp32", "ld", "esp32_out.ld")
+    ])
 
 env.Prepend(
     CPPPATH=[
@@ -85,6 +99,12 @@ env.Append(
         "-T", "esp32.peripherals.ld"
     ],
 )
+
+#
+# Generate a specific linker script
+#
+
+generate_ld_script()
 
 #
 # Target: Build Core Library
