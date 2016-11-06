@@ -52,6 +52,7 @@ env.Prepend(
         join(FRAMEWORK_DIR, "tools", "sdk", "include", "nvs_flash"),
         join(FRAMEWORK_DIR, "tools", "sdk", "include", "spi_flash"),
         join(FRAMEWORK_DIR, "tools", "sdk", "include", "tcpip_adapter"),
+        join(FRAMEWORK_DIR, "tools", "sdk", "include", "vfs"),
         join(FRAMEWORK_DIR, "tools", "sdk", "include", "expat"),
         join(FRAMEWORK_DIR, "tools", "sdk", "include", "json"),
         join(FRAMEWORK_DIR, "tools", "sdk", "include", "mbedtls"),
@@ -66,7 +67,7 @@ env.Prepend(
         "hal", "core", "net80211", "phy", "rtc", "pp", "wpa",
         "smartconfig", "btdm_app", "bt", "driver", "esp32", "crypto", "expat",
         "freertos", "json", "log", "lwip", "mbedtls", "nghttp", "nvs_flash",
-        "spi_flash", "tcpip_adapter", "gcc", "m", "c"
+        "spi_flash", "tcpip_adapter", "newlib", "vfs", "gcc", "m", "c"
     ]
 )
 
