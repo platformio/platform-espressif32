@@ -20,10 +20,19 @@ How to build PlatformIO based project
 .. code-block:: bash
 
     # Change directory to example
-    > cd platform-espressif8266/examples/espidf-http-request
+    > cd platform-espressif32/examples/espidf-http-request
 
-    # Process example project
+    # Build project
     > platformio run
 
     # Upload firmware
     > platformio run --target upload
+
+    # Build specific environment
+    > platformio run -e quantum
+
+    # Upload firmware for the specific environment
+    > platformio run -e quantum --target upload
+
+    # Clean build files
+    > platformio run --target clean

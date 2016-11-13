@@ -20,7 +20,7 @@ How to build PlatformIO based project
 .. code-block:: bash
 
     # Change directory to example
-    > cd platform-espressif32/examples/arduino-wifiscan
+    > cd platform-espressif32/examples/espidf-hello-world
 
     # Build project
     > platformio run
@@ -29,10 +29,10 @@ How to build PlatformIO based project
     > platformio run --target upload
 
     # Build specific environment
-    > platformio run -e quantum
+    > platformio run -e esp32dev
 
     # Upload firmware for the specific environment
-    > platformio run -e quantum --target upload
+    > platformio run -e esp32dev --target upload
 
     # Clean build files
     > platformio run --target clean

@@ -29,10 +29,10 @@ How to build PlatformIO based project
     > platformio run --target upload
 
     # Build specific environment
-    > platformio run -e nodemcuv2
+    > platformio run -e esp32dev
 
     # Upload firmware for the specific environment
-    > platformio run -e nodemcuv2 --target upload
+    > platformio run -e esp32dev --target upload
 
     # Clean build files
     > platformio run --target clean
