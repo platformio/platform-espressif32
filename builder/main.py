@@ -88,7 +88,8 @@ env.Replace(
     CFLAGS=["-std=gnu99"],
 
     CCFLAGS=[
-        "-Os",  # optimize for size
+        "-Og",
+        "-g3",
         "-nostdlib",
         "-Wpointer-arith",
         "-Wno-error=unused-function",
@@ -102,7 +103,8 @@ env.Replace(
     CXXFLAGS=[
         "-fno-rtti",
         "-fno-exceptions",
-        "-std=gnu++11"
+        "-std=gnu++11",
+        "-fstrict-volatile-bitfields"
     ],
 
     CPPDEFINES=[
@@ -114,11 +116,9 @@ env.Replace(
     ],
 
     LINKFLAGS=[
-        "-Os",
         "-nostdlib",
         "-Wl,-static",
         "-u", "call_user_start_cpu0",
-        "-Wl,-static",
         "-Wl,--undefined=uxTopUsedPriority",
         "-Wl,--gc-sections"
     ],
@@ -167,21 +167,9 @@ if env.subst("$PIOFRAMEWORK") == "espidf":
     env.Append(
         UPLOADERFLAGS=[
             "0x1000", join("$BUILD_DIR", "bootloader.bin"),
-            "0x4000", join("$BUILD_DIR", "partitions_singleapp.bin"),
+            "0x4000", join("$BUILD_DIR", "partitions_table.bin"),
             "0x10000"
-        ],
-
-        PTABLE_SCRIPT=join("$ESPIDF_DIR", "components",
-                           "partition_table", "gen_esp32part.py"),
-
-        PTABLE_FLAGS=[
-            "-q", join("$ESPIDF_DIR", "components",
-                       "partition_table", "partitions_singleapp.csv"),
-            join(env.subst("$BUILD_DIR"), "partitions_singleapp.bin")
-
-        ],
-
-        PTABLE_CMD='"$PYTHONEXE" "$PTABLE_SCRIPT" $PTABLE_FLAGS'
+        ]
     )
 
 
@@ -227,12 +215,11 @@ if "PIOFRAMEWORK" in env:
     target_firm = env.ElfToBin(join("$BUILD_DIR", "firmware"), target_elf)
 
 if "espidf" in env.subst("$PIOFRAMEWORK"):
-    target_buildboot = env.ElfToBin(
+    target_boot = env.ElfToBin(
         join("$BUILD_DIR", "bootloader"), build_espidf_bootloader())
-    target_buildprog = env.Alias(
-        "buildprog", [target_firm, target_buildboot], "$PTABLE_CMD")
-else:
-    target_buildprog = env.Alias("buildprog", target_firm, target_firm)
+    env.Depends(target_firm, target_boot)
+
+target_buildprog = env.Alias("buildprog", target_firm, target_firm)
 
 
 #

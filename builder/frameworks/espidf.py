@@ -20,7 +20,8 @@ Espressif IoT Development Framework for ESP32 MCU
 https://github.com/espressif/esp-idf
 """
 
-from os import listdir
+import sys
+from os import listdir, makedirs
 from os.path import isdir, join
 
 from SCons.Script import DefaultEnvironment
@@ -37,20 +38,45 @@ assert isdir(FRAMEWORK_DIR)
 
 
 def generate_ld_script():
-    exec_command([
+    if not isdir(env.subst("$BUILD_DIR")):
+        makedirs(env.subst("$BUILD_DIR"))
+    result = exec_command([
         join(platform.get_package_dir("toolchain-xtensa32")
              or "", "bin", env.subst("$CC")),
-        "-I", join(env.subst("$ESPIDF_DIR"), "config"),
+        "-I", env.subst("$PROJECTSRC_DIR"),
         "-C", "-P", "-x", "c", "-E",
         join(env.subst("$ESPIDF_DIR"), "components",
              "esp32", "ld", "esp32.ld"),
-        "-o", join(env.subst("$ESPIDF_DIR"), "components",
-                   "esp32", "ld", "esp32_out.ld")
+        "-o", join(env.subst("$BUILD_DIR"), "esp32_out.ld")
     ])
+
+    if result['returncode'] != 0:
+        sys.stderr.write(
+            "Cannot create linker script! %s" % result['err'])
+        env.Exit(1)
+
+
+def generate_ptable():
+    if not isdir(env.subst("$BUILD_DIR")):
+        makedirs(env.subst("$BUILD_DIR"))
+
+    result = exec_command([
+        env.subst("$PYTHONEXE"),
+        join(env.subst("$ESPIDF_DIR"), "components",
+             "partition_table", "gen_esp32part.py"),
+        "-q", join(env.subst("$ESPIDF_DIR"), "components",
+                   "partition_table", "partitions_singleapp.csv"),
+        join(env.subst("$BUILD_DIR"), "partitions_table.bin"),
+    ])
+
+    if result['returncode'] != 0:
+        sys.stderr.write(
+            "Cannot create partition table! %s" % result['err'])
+        env.Exit(1)
 
 env.Prepend(
     CPPPATH=[
-        join(FRAMEWORK_DIR, "config"),
+        join("$PROJECTSRC_DIR"),
         join(FRAMEWORK_DIR, "components", "nghttp", "include"),
         join(FRAMEWORK_DIR, "components", "nghttp", "port", "include"),
         join(FRAMEWORK_DIR, "components", "bt", "include"),
@@ -76,10 +102,11 @@ env.Prepend(
 
     LIBPATH=[
         join(FRAMEWORK_DIR, "components", "esp32"),
+        join(FRAMEWORK_DIR, "components", "esp32", "ld"),
         join(FRAMEWORK_DIR, "components", "esp32", "lib"),
         join(FRAMEWORK_DIR, "components", "bt", "lib"),
         join(FRAMEWORK_DIR, "components", "newlib", "lib"),
-        join(FRAMEWORK_DIR, "components", "esp32", "ld")
+        "$BUILD_DIR"
     ],
 
     LIBS=[
@@ -105,6 +132,7 @@ env.Append(
 #
 
 generate_ld_script()
+generate_ptable()
 
 #
 # Target: Build Core Library
@@ -112,12 +140,15 @@ generate_ld_script()
 
 libs = []
 
+ignore_dirs = (
+    "bootloader", "esptool_py", "idf_test", "newlib", "partition_table")
+
 for d in listdir(join(FRAMEWORK_DIR, "components")):
-    if d == "bootloader":
+    if d in ignore_dirs:
         continue
     if isdir(join(FRAMEWORK_DIR, "components", d)):
         libs.append(env.BuildLibrary(
-            join("$BUILD_DIR", "IDFComponents_%s" % d),
+            join("$BUILD_DIR", "%s" % d),
             join(FRAMEWORK_DIR, "components", d),
             src_filter="+<*> -<test>"
         ))
