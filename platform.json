@@ -1,0 +1,53 @@
+{
+  "name": "espressif32",
+  "title": "Espressif 32",
+  "description": "Espressif Systems is a privately held fabless semiconductor company. They provide wireless communications and Wi-Fi chips which are widely used in mobile devices and the Internet of Things applications.",
+  "url": "https://espressif.com/",
+  "homepage": "http://platformio.org/platforms/espressif32",
+  "license": "Apache-2.0",
+  "engines": {
+    "platformio": "^3.0.0",
+    "scons": ">=2.3.0,<2.6.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/platformio/platform-espressif32.git"
+  },
+  "version": "0.1.0",
+  "packageRepositories": [
+    "https://dl.bintray.com/platformio/dl-packages/manifest.json",
+    "https://sourceforge.net/projects/platformio-storage/files/packages/manifest.json/download",
+    "http://dl.platformio.org/packages/manifest.json",
+    "https://raw.githubusercontent.com/eerimoq/simba/master/make/platformio/manifest.json"
+  ],
+  "frameworks": {
+    "arduino": {
+      "package": "framework-arduinoespressif32",
+      "script": "builder/frameworks/arduino.py"
+    },
+    "espidf": {
+      "package": "framework-espidf",
+      "script": "builder/frameworks/espidf.py"
+    }
+  },
+  "packages": {
+    "toolchain-xtensa32": {
+      "type": "toolchain",
+      "version": "~1.40805.0"
+    },
+    "framework-arduinoespressif32": {
+      "type": "framework",
+      "optional": true,
+      "version": "~1.0.0"
+    },
+    "framework-espidf": {
+      "type": "framework",
+      "optional": true,
+      "version": "~1.90.0"
+    },
+    "tool-esptoolpy": {
+      "type": "uploader",
+      "version": "~1.0.0"
+    }
+  }
+}

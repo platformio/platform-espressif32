@@ -1,0 +1,27 @@
+{
+  "build": {
+    "core": "esp32",
+    "extra_flags": "-DESP32_DEV -DARDUINO_LoLin32",
+    "f_cpu": "160000000L",
+    "f_flash": "80000000L",
+    "flash_mode": "dio",
+    "ldscript": "esp32_out.ld",
+    "mcu": "esp32",
+    "variant": "lolin32"
+  },
+  "frameworks": [
+    "arduino",
+    "espidf"
+  ],
+  "name": "WEMOS LoLin32",
+  "upload": {
+    "maximum_ram_size": 294912,
+    "maximum_size": 1044464,
+    "require_upload_port": true,
+    "resetmethod": "nodemcu",
+    "speed": 115200,
+    "wait_for_upload_port": true
+  },
+  "url": "https://wemos.cc",
+  "vendor": "WEMOS"
+}

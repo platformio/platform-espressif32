@@ -1,0 +1,27 @@
+{
+  "build": {
+    "core": "esp32",
+    "extra_flags": "-DESP32_DEV -DARDUINO_QUANTUM",
+    "f_cpu": "160000000L",
+    "f_flash": "80000000L",
+    "flash_mode": "qio",
+    "ldscript": "esp32_out.ld",
+    "mcu": "esp32",
+    "variant": "quantum"
+  },
+  "frameworks": [
+    "arduino",
+    "espidf"
+  ],
+  "name": "Noduino Quantum",
+  "upload": {
+    "maximum_ram_size": 294912,
+    "maximum_size": 1044464,
+    "require_upload_port": true,
+    "resetmethod": "nodemcu",
+    "speed": 115200,
+    "wait_for_upload_port": true
+  },
+  "url": "http://wiki.jackslab.org/Noduino",
+  "vendor": "Noduino"
+}
