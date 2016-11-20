@@ -37,42 +37,47 @@ FRAMEWORK_VERSION = platform.get_package_version(
 assert isdir(FRAMEWORK_DIR)
 
 
-def generate_ld_script():
-    if not isdir(env.subst("$BUILD_DIR")):
-        makedirs(env.subst("$BUILD_DIR"))
-    result = exec_command([
-        join(platform.get_package_dir("toolchain-xtensa32")
-             or "", "bin", env.subst("$CC")),
-        "-I", env.subst("$PROJECTSRC_DIR"),
-        "-C", "-P", "-x", "c", "-E",
-        join(env.subst("$ESPIDF_DIR"), "components",
-             "esp32", "ld", "esp32.ld"),
-        "-o", join(env.subst("$BUILD_DIR"), "esp32_out.ld")
-    ])
+def build_espidf_bootloader():
+    envsafe = env.Clone()
+    framework_dir = env.subst("$ESPIDF_DIR")
+    envsafe.Replace(
+        CPPDEFINES=["ESP_PLATFORM", "BOOTLOADER_BUILD=1"],
 
-    if result['returncode'] != 0:
-        sys.stderr.write(
-            "Cannot create linker script! %s" % result['err'])
-        env.Exit(1)
+        LIBPATH=[
+            join(framework_dir, "components", "esp32", "ld"),
+            join(framework_dir, "components", "bootloader", "src", "main")
+        ],
 
+        LINKFLAGS=[
+            "-Os",
+            "-nostdlib",
+            "-Wl,-static",
+            "-u", "call_user_start_cpu0",
+            "-Wl,-static",
+            "-Wl,--gc-sections",
+            "-T", "esp32.bootloader.ld",
+            "-T", "esp32.rom.ld"
+        ]
+    ),
 
-def generate_ptable():
-    if not isdir(env.subst("$BUILD_DIR")):
-        makedirs(env.subst("$BUILD_DIR"))
+    envsafe.Append(CCFLAGS=["-fstrict-volatile-bitfields"])
 
-    result = exec_command([
-        env.subst("$PYTHONEXE"),
-        join(env.subst("$ESPIDF_DIR"), "components",
-             "partition_table", "gen_esp32part.py"),
-        "-q", join(env.subst("$ESPIDF_DIR"), "components",
-                   "partition_table", "partitions_singleapp.csv"),
-        join(env.subst("$BUILD_DIR"), "partitions_table.bin"),
-    ])
+    envsafe.Replace(
+        LIBS=[
+            envsafe.BuildLibrary(
+                join("$BUILD_DIR", "bootloaderLog"),
+                join(framework_dir, "components", "log")
+            ), "gcc"
+        ]
+    )
 
-    if result['returncode'] != 0:
-        sys.stderr.write(
-            "Cannot create partition table! %s" % result['err'])
-        env.Exit(1)
+    return envsafe.Program(
+        join("$BUILD_DIR", "bootloader.elf"),
+        envsafe.CollectBuildFiles(
+            join("$BUILD_DIR", "bootloader"),
+            join(framework_dir, "components", "bootloader", "src", "main")
+        )
+    )
 
 env.Prepend(
     CPPPATH=[
@@ -128,11 +133,38 @@ env.Append(
 )
 
 #
-# Generate a specific linker script
+# Generate partition table
 #
 
-generate_ld_script()
-generate_ptable()
+partition_table = env.Command(
+    join(env.subst("$BUILD_DIR"), "partitions_table.bin"),
+    join("$ESPIDF_DIR", "components",
+         "partition_table", "partitions_singleapp.csv"),
+    '"$PYTHONEXE" %s -q $SOURCE $TARGET' % join(
+        "$ESPIDF_DIR", "components", "partition_table", "gen_esp32part.py")
+)
+
+env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", partition_table)
+
+
+#
+# Generate linker script
+#
+
+linker_script = env.Command(
+    join("$BUILD_DIR", "esp32_out.ld"),
+    join("$ESPIDF_DIR", "components", "esp32", "ld", "esp32.ld"),
+    "$CC -I$PROJECTSRC_DIR -C -P -x  c -E $SOURCE -o $TARGET"
+)
+
+env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", linker_script)
+
+#
+# Compile bootloader
+#
+
+env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", env.ElfToBin(
+    join("$BUILD_DIR", "bootloader"), build_espidf_bootloader()))
 
 #
 # Target: Build Core Library
