@@ -158,15 +158,6 @@ env.Append(
 # Target: Build executable and linkable firmware or SPIFFS image
 #
 
-
-def __tmp_hook_before_pio_3_2():
-    env.ProcessFlags(env.get("BUILD_FLAGS"))
-    # append specified LD_SCRIPT
-    if ("LDSCRIPT_PATH" in env and
-            not any(["-Wl,-T" in f for f in env['LINKFLAGS']])):
-        env.Append(LINKFLAGS=['-Wl,-T"$LDSCRIPT_PATH"'])
-
-
 target_elf = env.BuildProgram()
 if "PIOFRAMEWORK" in env:
     target_firm = env.ElfToBin(join("$BUILD_DIR", "firmware"), target_elf)
