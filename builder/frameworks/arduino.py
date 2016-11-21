@@ -30,13 +30,11 @@ env = DefaultEnvironment()
 platform = env.PioPlatform()
 
 FRAMEWORK_DIR = platform.get_package_dir("framework-arduinoespressif32")
-FRAMEWORK_VERSION = platform.get_package_version(
-    "framework-arduinoespressif32")
 assert isdir(FRAMEWORK_DIR)
 
 env.Prepend(
     CPPDEFINES=[
-        "ARDUINO=%s" % FRAMEWORK_VERSION.split(".")[1],
+        "ARDUINO=10600",
         "ARDUINO_ARCH_ESP32"
     ],
 

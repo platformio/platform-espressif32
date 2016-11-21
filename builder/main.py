@@ -23,49 +23,6 @@ def _get_board_f_flash(env):
     return str(int(int(frequency) / 1000000)) + "m"
 
 
-def build_espidf_bootloader():
-    envsafe = env.Clone()
-    framework_dir = env.subst("$ESPIDF_DIR")
-    envsafe.Replace(
-        CPPDEFINES=["ESP_PLATFORM", "BOOTLOADER_BUILD=1"],
-
-        LIBPATH=[
-            join(framework_dir, "components", "esp32", "ld"),
-            join(framework_dir, "components", "bootloader", "src", "main")
-        ],
-
-        LINKFLAGS=[
-            "-Os",
-            "-nostdlib",
-            "-Wl,-static",
-            "-u", "call_user_start_cpu0",
-            "-Wl,-static",
-            "-Wl,--gc-sections",
-            "-T", "esp32.bootloader.ld",
-            "-T", "esp32.rom.ld"
-        ]
-    ),
-
-    envsafe.Append(CCFLAGS=["-fstrict-volatile-bitfields"])
-
-    envsafe.Replace(
-        LIBS=[
-            envsafe.BuildLibrary(
-                join("$BUILD_DIR", "bootloaderLog"),
-                join(framework_dir, "components", "log")
-            ), "gcc"
-        ]
-    )
-
-    return envsafe.Program(
-        join("$BUILD_DIR", "bootloader.elf"),
-        envsafe.CollectBuildFiles(
-            join("$BUILD_DIR", "bootloader"),
-            join(framework_dir, "components", "bootloader", "src", "main")
-        )
-    )
-
-
 env = DefaultEnvironment()
 platform = env.PioPlatform()
 
@@ -213,11 +170,6 @@ def __tmp_hook_before_pio_3_2():
 target_elf = env.BuildProgram()
 if "PIOFRAMEWORK" in env:
     target_firm = env.ElfToBin(join("$BUILD_DIR", "firmware"), target_elf)
-
-if "espidf" in env.subst("$PIOFRAMEWORK"):
-    target_boot = env.ElfToBin(
-        join("$BUILD_DIR", "bootloader"), build_espidf_bootloader())
-    env.Depends(target_firm, target_boot)
 
 target_buildprog = env.Alias("buildprog", target_firm, target_firm)
 
