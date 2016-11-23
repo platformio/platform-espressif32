@@ -113,10 +113,10 @@ env.Replace(
 if env.subst("$PIOFRAMEWORK") == "arduino":
     env.Append(
         UPLOADERFLAGS=[
-            "0x1000", join("$FRAMEWORK_ARDUINOESP32_DIR", "tools",
-                           "sdk", "bin", "bootloader.bin"),
-            "0x4000", join("$FRAMEWORK_ARDUINOESP32_DIR", "tools",
-                           "sdk", "bin", "partitions_singleapp.bin"),
+            "0x1000", '"%s"' % join("$FRAMEWORK_ARDUINOESP32_DIR", "tools",
+                                    "sdk", "bin", "bootloader.bin"),
+            "0x4000", '"%s"' % join("$FRAMEWORK_ARDUINOESP32_DIR", "tools",
+                                    "sdk", "bin", "partitions_singleapp.bin"),
             "0x10000"
         ]
     )
@@ -157,15 +157,6 @@ env.Append(
 #
 # Target: Build executable and linkable firmware or SPIFFS image
 #
-
-
-def __tmp_hook_before_pio_3_2():
-    env.ProcessFlags(env.get("BUILD_FLAGS"))
-    # append specified LD_SCRIPT
-    if ("LDSCRIPT_PATH" in env and
-            not any(["-Wl,-T" in f for f in env['LINKFLAGS']])):
-        env.Append(LINKFLAGS=['-Wl,-T"$LDSCRIPT_PATH"'])
-
 
 target_elf = env.BuildProgram()
 if "PIOFRAMEWORK" in env:
