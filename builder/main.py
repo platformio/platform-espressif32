@@ -113,10 +113,10 @@ env.Replace(
 if env.subst("$PIOFRAMEWORK") == "arduino":
     env.Append(
         UPLOADERFLAGS=[
-            "0x1000", join("$FRAMEWORK_ARDUINOESP32_DIR", "tools",
-                           "sdk", "bin", "bootloader.bin"),
-            "0x4000", join("$FRAMEWORK_ARDUINOESP32_DIR", "tools",
-                           "sdk", "bin", "partitions_singleapp.bin"),
+            "0x1000", '"%s"' % join("$FRAMEWORK_ARDUINOESP32_DIR", "tools",
+                                    "sdk", "bin", "bootloader.bin"),
+            "0x4000", '"%s"' % join("$FRAMEWORK_ARDUINOESP32_DIR", "tools",
+                                    "sdk", "bin", "partitions_singleapp.bin"),
             "0x10000"
         ]
     )

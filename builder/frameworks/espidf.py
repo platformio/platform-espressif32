@@ -140,7 +140,7 @@ partition_table = env.Command(
     join(env.subst("$BUILD_DIR"), "partitions_table.bin"),
     join("$ESPIDF_DIR", "components",
          "partition_table", "partitions_singleapp.csv"),
-    '"$PYTHONEXE" %s -q $SOURCE $TARGET' % join(
+    '"$PYTHONEXE" "%s" -q $SOURCE $TARGET' % join(
         "$ESPIDF_DIR", "components", "partition_table", "gen_esp32part.py")
 )
 
