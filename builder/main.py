@@ -67,9 +67,9 @@ env.Replace(
     CPPDEFINES=[
         "ESP32",
         "ESP_PLATFORM",
-        "F_CPU=$BOARD_F_CPU",
+        ("F_CPU", "$BOARD_F_CPU"),
         "HAVE_CONFIG_H",
-        "MBEDTLS_CONFIG_FILE=\\\"mbedtls/esp_config.h\\\""
+        ("MBEDTLS_CONFIG_FILE", '\\"mbedtls/esp_config.h\\"')
     ],
 
     LINKFLAGS=[

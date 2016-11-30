@@ -20,13 +20,11 @@ Espressif IoT Development Framework for ESP32 MCU
 https://github.com/espressif/esp-idf
 """
 
-import sys
-from os import listdir, makedirs
+from os import listdir
 from os.path import isdir, join
 
 from SCons.Script import DefaultEnvironment
 
-from platformio.util import exec_command
 
 env = DefaultEnvironment()
 platform = env.PioPlatform()
@@ -41,7 +39,7 @@ def build_espidf_bootloader():
     envsafe = env.Clone()
     framework_dir = env.subst("$ESPIDF_DIR")
     envsafe.Replace(
-        CPPDEFINES=["ESP_PLATFORM", "BOOTLOADER_BUILD=1"],
+        CPPDEFINES=["ESP_PLATFORM", ("BOOTLOADER_BUILD", 1)],
 
         LIBPATH=[
             join(framework_dir, "components", "esp32", "ld"),
