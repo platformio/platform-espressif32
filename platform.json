@@ -6,14 +6,13 @@
   "homepage": "http://platformio.org/platforms/espressif32",
   "license": "Apache-2.0",
   "engines": {
-    "platformio": "^3.0.0",
-    "scons": ">=2.3.0,<2.6.0"
+    "platformio": "^3.0.0"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/platformio/platform-espressif32.git"
   },
-  "version": "0.1.2",
+  "version": "0.2.0",
   "packageRepositories": [
     "https://dl.bintray.com/platformio/dl-packages/manifest.json",
     "https://sourceforge.net/projects/platformio-storage/files/packages/manifest.json/download",

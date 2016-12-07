@@ -34,7 +34,7 @@ assert isdir(FRAMEWORK_DIR)
 
 env.Prepend(
     CPPDEFINES=[
-        "ARDUINO=10600",
+        ("ARDUINO", 10610),
         "ARDUINO_ARCH_ESP32"
     ],
 
