@@ -6,6 +6,7 @@ env:
   - PLATFORMIO_PROJECT_DIR=examples/arduino-blink
   - PLATFORMIO_PROJECT_DIR=examples/arduino-wifiscan
   - PLATFORMIO_PROJECT_DIR=examples/espidf-http-request
+  - PLATFORMIO_PROJECT_DIR=examples/simba-blink
 
 install:
   - pip install -U https://github.com/platformio/platformio/archive/develop.zip
