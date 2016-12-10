@@ -27,6 +27,10 @@
     "espidf": {
       "package": "framework-espidf",
       "script": "builder/frameworks/espidf.py"
+    },
+    "simba": {
+      "package": "framework-simba",
+      "script": "builder/frameworks/simba.py"
     }
   },
   "packages": {
@@ -43,6 +47,11 @@
       "type": "framework",
       "optional": true,
       "version": "~1.90.0"
+    },
+    "framework-simba": {
+      "type": "framework",
+      "optional": true,
+      "version": ">=12.2.0"
     },
     "tool-esptoolpy": {
       "type": "uploader",

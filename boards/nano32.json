@@ -11,7 +11,8 @@
   },
   "frameworks": [
     "arduino",
-    "espidf"
+    "espidf",
+    "simba"
   ],
   "name": "MakerAsia Nano32",
   "upload": {
