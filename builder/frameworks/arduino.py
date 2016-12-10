@@ -43,6 +43,7 @@ env.Prepend(
         join(FRAMEWORK_DIR, "tools", "sdk", "include", "bt"),
         join(FRAMEWORK_DIR, "tools", "sdk", "include", "driver"),
         join(FRAMEWORK_DIR, "tools", "sdk", "include", "esp32"),
+        join(FRAMEWORK_DIR, "tools", "sdk", "include", "ethernet"),
         join(FRAMEWORK_DIR, "tools", "sdk", "include", "freertos"),
         join(FRAMEWORK_DIR, "tools", "sdk", "include", "log"),
         join(FRAMEWORK_DIR, "tools", "sdk", "include", "lwip"),
@@ -62,10 +63,12 @@ env.Prepend(
         join(FRAMEWORK_DIR, "tools", "sdk", "ld"),
     ],
     LIBS=[
-        "hal", "core", "net80211", "phy", "rtc", "pp", "wpa",
-        "smartconfig", "btdm_app", "bt", "driver", "esp32", "crypto", "expat",
-        "freertos", "json", "log", "lwip", "mbedtls", "nghttp", "nvs_flash",
-        "spi_flash", "tcpip_adapter", "newlib", "vfs", "gcc", "m", "c"
+        "app_update", "bt", "btdm_app", "c", "coexist", "core", "driver",
+        "esp32", "ethernet", "expat", "freertos", "g", "hal", "json", "log",
+        "lwip", "m", "mbedtls", "net80211", "newlib", "nghttp", "nvs_flash",
+        "openssl", "phy", "pp", "rtc", "smartconfig", "spi_flash",
+        "tcpip_adapter", "ulp", "vfs", "wpa", "wpa2", "wpa_supplicant", "wps",
+        "xtensa-debug-module"
     ]
 )
 
