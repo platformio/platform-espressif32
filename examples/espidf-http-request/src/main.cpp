@@ -80,12 +80,10 @@ static void initialise_wifi(void)
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
     ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
-    wifi_config_t wifi_config = {
-        .sta = {
-            .ssid = EXAMPLE_WIFI_SSID,
-            .password = EXAMPLE_WIFI_PASS,
-        },
-    };
+    wifi_config_t wifi_config;
+    memset((void *)&wifi_config, 0, sizeof(wifi_config_t));
+    memcpy(wifi_config.sta.ssid, EXAMPLE_WIFI_SSID,sizeof(EXAMPLE_WIFI_SSID));
+    memcpy(wifi_config.sta.password, EXAMPLE_WIFI_PASS, sizeof(EXAMPLE_WIFI_PASS));
     ESP_LOGI(TAG, "Setting WiFi configuration SSID %s...", wifi_config.sta.ssid);
     ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
     ESP_ERROR_CHECK( esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
@@ -94,10 +92,11 @@ static void initialise_wifi(void)
 
 static void http_get_task(void *pvParameters)
 {
-    const struct addrinfo hints = {
-        .ai_family = AF_INET,
-        .ai_socktype = SOCK_STREAM,
-    };
+    struct addrinfo hints;
+    memset((void *)&hints, 0, sizeof(struct addrinfo));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+
     struct addrinfo *res;
     struct in_addr *addr;
     int s, r;
@@ -172,7 +171,7 @@ static void http_get_task(void *pvParameters)
     }
 }
 
-void app_main()
+extern "C" void app_main()
 {
     nvs_flash_init();
     system_init();
