@@ -45,7 +45,7 @@ env.Replace(
     CFLAGS=["-std=gnu99"],
 
     CCFLAGS=[
-        "-Og",
+        "%s" % "-Os" if env.subst("$PIOFRAMEWORK") == "arduino" else "-Og",
         "-g3",
         "-nostdlib",
         "-Wpointer-arith",
@@ -102,7 +102,8 @@ env.Replace(
         "--baud", "$UPLOAD_SPEED",
         "write_flash", "-z",
         "--flash_mode", "$BOARD_FLASH_MODE",
-        "--flash_freq", "${__get_board_f_flash(__env__)}"
+        "--flash_freq", "${__get_board_f_flash(__env__)}",
+        "--flash_size", env.BoardConfig().get("upload.flash_size", "4MB")
     ],
 
     UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS $SOURCE',
@@ -116,7 +117,7 @@ if env.subst("$PIOFRAMEWORK") == "arduino":
         UPLOADERFLAGS=[
             "0x1000", '"%s"' % join("$FRAMEWORK_ARDUINOESP32_DIR", "tools",
                                     "sdk", "bin", "bootloader.bin"),
-            "0x4000", '"%s"' % join("$FRAMEWORK_ARDUINOESP32_DIR", "tools",
+            "0x8000", '"%s"' % join("$FRAMEWORK_ARDUINOESP32_DIR", "tools",
                                     "sdk", "bin", "partitions_singleapp.bin"),
             "0x10000"
         ]
@@ -158,6 +159,8 @@ env.Append(
                 "elf2image",
                 "--flash_mode", "$BOARD_FLASH_MODE",
                 "--flash_freq", "${__get_board_f_flash(__env__)}",
+                "--flash_size",
+                env.BoardConfig().get("upload.flash_size", "4MB"),
                 "-o", "$TARGET", "$SOURCES"
             ]), "Building $TARGET"),
             suffix=".bin"
