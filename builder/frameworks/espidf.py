@@ -77,6 +77,7 @@ def build_espidf_bootloader():
         )
     )
 
+
 env.Prepend(
     CPPPATH=[
         join("$PROJECTSRC_DIR"),
@@ -128,6 +129,12 @@ env.Append(
         "-T", "esp32.rom.ld",
         "-T", "esp32.peripherals.ld"
     ],
+
+    UPLOADERFLAGS=[
+        "0x1000", join("$BUILD_DIR", "bootloader.bin"),
+        "0x4000", join("$BUILD_DIR", "partitions_table.bin"),
+        "0x10000"
+    ]
 )
 
 #

@@ -99,6 +99,14 @@ env.Append(
         "-T", "esp32.common.ld",
         "-T", "esp32.rom.ld",
         "-T", "esp32.peripherals.ld"
+    ],
+
+    UPLOADERFLAGS=[
+        "0x1000", '"%s"' % join(FRAMEWORK_DIR, "tools",
+                                "sdk", "bin", "bootloader.bin"),
+        "0x8000", '"%s"' % join(FRAMEWORK_DIR, "tools",
+                                "sdk", "bin", "partitions_singleapp.bin"),
+        "0x10000"
     ]
 )
 

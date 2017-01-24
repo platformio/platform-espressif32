@@ -81,15 +81,6 @@ env.Replace(
     ],
 
     #
-    # Packages
-    #
-
-    FRAMEWORK_ARDUINOESP32_DIR=platform.get_package_dir(
-        "framework-arduinoespressif32"),
-    ESPIDF_DIR=platform.get_package_dir("framework-espidf"),
-    FRAMEWORK_SIMBA_DIR=platform.get_package_dir("framework-simba"),
-
-    #
     # Upload
     #
 
@@ -112,36 +103,8 @@ env.Replace(
     PROGSUFFIX=".elf"
 )
 
-if env.subst("$PIOFRAMEWORK") == "arduino":
-    env.Append(
-        UPLOADERFLAGS=[
-            "0x1000", '"%s"' % join("$FRAMEWORK_ARDUINOESP32_DIR", "tools",
-                                    "sdk", "bin", "bootloader.bin"),
-            "0x8000", '"%s"' % join("$FRAMEWORK_ARDUINOESP32_DIR", "tools",
-                                    "sdk", "bin", "partitions_singleapp.bin"),
-            "0x10000"
-        ]
-    )
-if env.subst("$PIOFRAMEWORK") == "espidf":
-    env.Append(
-        UPLOADERFLAGS=[
-            "0x1000", join("$BUILD_DIR", "bootloader.bin"),
-            "0x4000", join("$BUILD_DIR", "partitions_table.bin"),
-            "0x10000"
-        ]
-    )
-if env.subst("$PIOFRAMEWORK") == "simba":
-    env.Append(
-        UPLOADERFLAGS=[
-            "0x1000", join("$FRAMEWORK_SIMBA_DIR", "3pp", "esp32",
-                           "bin", "bootloader.bin"),
-            "0x4000", join("$FRAMEWORK_SIMBA_DIR", "3pp", "esp32",
-                           "bin", "partitions_singleapp.bin"),
-            "0x10000"
-        ]
-    )
 
-
+# Clone actual CCFLAGS to ASFLAGS
 env.Append(
     ASFLAGS=env.get("CCFLAGS", [])[:]
 )
