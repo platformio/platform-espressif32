@@ -6,13 +6,13 @@
   "homepage": "http://platformio.org/platforms/espressif32",
   "license": "Apache-2.0",
   "engines": {
-    "platformio": "^3.0.0"
+    "platformio": ">=3.3.0-a7"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/platformio/platform-espressif32.git"
   },
-  "version": "0.4.0",
+  "version": "0.5.0-a1",
   "packageRepositories": [
     "https://dl.bintray.com/platformio/dl-packages/manifest.json",
     "https://sourceforge.net/projects/platformio-storage/files/packages/manifest.json/download",
@@ -46,7 +46,7 @@
     "framework-arduinoespressif32": {
       "type": "framework",
       "optional": true,
-      "version": "~1.1.0"
+      "version": "https://github.com/ivankravets/arduino-esp32.git"
     },
     "framework-espidf": {
       "type": "framework",

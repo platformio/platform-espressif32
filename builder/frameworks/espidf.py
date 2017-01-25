@@ -30,20 +30,19 @@ env = DefaultEnvironment()
 platform = env.PioPlatform()
 
 FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
+assert FRAMEWORK_DIR and isdir(FRAMEWORK_DIR)
 FRAMEWORK_VERSION = platform.get_package_version(
     "framework-espidf")
-assert isdir(FRAMEWORK_DIR)
 
 
 def build_espidf_bootloader():
     envsafe = env.Clone()
-    framework_dir = env.subst("$ESPIDF_DIR")
     envsafe.Replace(
         CPPDEFINES=["ESP_PLATFORM", ("BOOTLOADER_BUILD", 1)],
 
         LIBPATH=[
-            join(framework_dir, "components", "esp32", "ld"),
-            join(framework_dir, "components", "bootloader", "src", "main")
+            join(FRAMEWORK_DIR, "components", "esp32", "ld"),
+            join(FRAMEWORK_DIR, "components", "bootloader", "src", "main")
         ],
 
         LINKFLAGS=[
@@ -64,7 +63,7 @@ def build_espidf_bootloader():
         LIBS=[
             envsafe.BuildLibrary(
                 join("$BUILD_DIR", "bootloaderLog"),
-                join(framework_dir, "components", "log")
+                join(FRAMEWORK_DIR, "components", "log")
             ), "gcc"
         ]
     )
@@ -73,7 +72,7 @@ def build_espidf_bootloader():
         join("$BUILD_DIR", "bootloader.elf"),
         envsafe.CollectBuildFiles(
             join("$BUILD_DIR", "bootloader"),
-            join(framework_dir, "components", "bootloader", "src", "main")
+            join(FRAMEWORK_DIR, "components", "bootloader", "src", "main")
         )
     )
 
@@ -142,11 +141,11 @@ env.Append(
 #
 
 partition_table = env.Command(
-    join(env.subst("$BUILD_DIR"), "partitions_table.bin"),
-    join("$ESPIDF_DIR", "components",
+    join("$BUILD_DIR", "partitions_table.bin"),
+    join(FRAMEWORK_DIR, "components",
          "partition_table", "partitions_singleapp.csv"),
     '"$PYTHONEXE" "%s" -q $SOURCE $TARGET' % join(
-        "$ESPIDF_DIR", "components", "partition_table", "gen_esp32part.py")
+        FRAMEWORK_DIR, "components", "partition_table", "gen_esp32part.py")
 )
 
 env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", partition_table)
@@ -158,7 +157,7 @@ env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", partition_table)
 
 linker_script = env.Command(
     join("$BUILD_DIR", "esp32_out.ld"),
-    join("$ESPIDF_DIR", "components", "esp32", "ld", "esp32.ld"),
+    join(FRAMEWORK_DIR, "components", "esp32", "ld", "esp32.ld"),
     "$CC -I$PROJECTSRC_DIR -C -P -x  c -E $SOURCE -o $TARGET"
 )
 
