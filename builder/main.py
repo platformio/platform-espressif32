@@ -54,14 +54,14 @@ env.Replace(
         "-Wno-error=unused-variable",
         "-mlongcalls",
         "-ffunction-sections",
-        "-fdata-sections"
+        "-fdata-sections",
+        "-fstrict-volatile-bitfields"
     ],
 
     CXXFLAGS=[
         "-fno-rtti",
         "-fno-exceptions",
-        "-std=gnu++11",
-        "-fstrict-volatile-bitfields"
+        "-std=gnu++11"
     ],
 
     CPPDEFINES=[
