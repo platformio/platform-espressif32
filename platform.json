@@ -1,6 +1,6 @@
 {
-  "name": "espressif32",
-  "title": "Espressif 32",
+  "name": "espressif32_stage",
+  "title": "Espressif 32 (Stage)",
   "description": "Espressif Systems is a privately held fabless semiconductor company. They provide wireless communications and Wi-Fi chips which are widely used in mobile devices and the Internet of Things applications.",
   "url": "https://espressif.com/",
   "homepage": "http://platformio.org/platforms/espressif32",
