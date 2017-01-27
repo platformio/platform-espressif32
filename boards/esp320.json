@@ -15,6 +15,7 @@
   ],
   "name": "Electronic SweetPeas ESP320",
   "upload": {
+    "flash_size": "4MB",
     "maximum_ram_size": 294912,
     "maximum_size": 1044464,
     "require_upload_port": true,

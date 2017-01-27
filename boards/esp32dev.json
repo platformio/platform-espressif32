@@ -15,7 +15,8 @@
   ],
   "name": "Espressif ESP32 Dev Module",
   "upload": {
-    "maximum_ram_size": 114688,
+    "flash_size": "4MB",
+    "maximum_ram_size": 294912,
     "maximum_size": 1044464,
     "require_upload_port": true,
     "resetmethod": "nodemcu",

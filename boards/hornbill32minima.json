@@ -1,21 +1,21 @@
 {
   "build": {
     "core": "esp32",
-    "extra_flags": "-DESP32_DEV -DARDUINO_QUANTUM",
+    "extra_flags": "-DESP32_DEV -DHORNBILL_ESP32_MINIMA",
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
-    "flash_mode": "qio",
+    "flash_mode": "dio",
     "ldscript": "esp32_out.ld",
     "mcu": "esp32",
-    "variant": "quantum"
+    "variant": "hornbill32minima"
   },
   "frameworks": [
     "arduino",
     "espidf"
   ],
-  "name": "Noduino Quantum",
+  "name": "Hornbill ESP32 Minima",
   "upload": {
-    "flash_size": "16MB",
+    "flash_size": "4MB",
     "maximum_ram_size": 294912,
     "maximum_size": 1044464,
     "require_upload_port": true,
@@ -23,6 +23,6 @@
     "speed": 115200,
     "wait_for_upload_port": true
   },
-  "url": "http://wiki.jackslab.org/Noduino",
-  "vendor": "Noduino"
+  "url": "https://hackaday.io/project/18997-hornbill",
+  "vendor": "Hornbill"
 }
