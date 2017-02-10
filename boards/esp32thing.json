@@ -7,7 +7,7 @@
     "flash_mode": "dio",
     "ldscript": "esp32_out.ld",
     "mcu": "esp32",
-    "variant": "esp32"
+    "variant": "esp32thing"
   },
   "frameworks": [
     "arduino",
