@@ -98,6 +98,7 @@ env.Replace(
     ],
 
     UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS $SOURCE',
+    SIZEPRINTCMD='$SIZETOOL -B -d $SOURCES',
 
     PROGNAME="firmware",
     PROGSUFFIX=".elf"
