@@ -42,13 +42,21 @@ env.Replace(
 
     ASFLAGS=["-x", "assembler-with-cpp"],
 
-    CFLAGS=["-std=gnu99"],
+    CFLAGS=[
+        "-std=gnu99",
+        "-Wno-old-style-declaration"
+    ],
 
     CCFLAGS=[
         "%s" % "-Os" if env.subst("$PIOFRAMEWORK") == "arduino" else "-Og",
         "-g3",
         "-nostdlib",
-        "-Wpointer-arith",
+        "-Wall",
+        "-Werror=all",
+        "-Wno-error=deprecated-declarations",
+        "-Wextra",
+        "-Wno-unused-parameter",
+        "-Wno-sign-compare",
         "-Wno-error=unused-function",
         "-Wno-error=unused-but-set-variable",
         "-Wno-error=unused-variable",
@@ -69,13 +77,17 @@ env.Replace(
         "ESP_PLATFORM",
         ("F_CPU", "$BOARD_F_CPU"),
         "HAVE_CONFIG_H",
-        ("MBEDTLS_CONFIG_FILE", '\\"mbedtls/esp_config.h\\"')
+        ("MBEDTLS_CONFIG_FILE", '\\"mbedtls/esp_config.h\\"'),
+        "WITH_POSIX",
+        ("IDF_VER", '\\"%s\\"' %
+         platform.get_package_version("framework-espidf"))
     ],
 
     LINKFLAGS=[
         "-nostdlib",
         "-Wl,-static",
         "-u", "call_user_start_cpu0",
+        "-u", "__cxa_guard_dummy",
         "-Wl,--undefined=uxTopUsedPriority",
         "-Wl,--gc-sections"
     ],
