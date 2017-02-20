@@ -98,15 +98,8 @@ def build_component(path):
 
 def build_espidf_bootloader():
     envsafe = env.Clone()
+    envsafe.Append(CPPDEFINES=[("BOOTLOADER_BUILD", 1)])
     envsafe.Replace(
-        CPPDEFINES=[
-            "ESP_PLATFORM",
-            "WITH_POSIX",
-            ("BOOTLOADER_BUILD", 1),
-            ("IDF_VER", '\\"%s\\"' %
-             platform.get_package_version("framework-espidf"))
-        ],
-
         LIBPATH=[
             join(FRAMEWORK_DIR, "components", "esp32", "ld"),
             join(FRAMEWORK_DIR, "components", "esp32", "lib"),
@@ -237,12 +230,31 @@ for root, dirs, _ in walk(join(
             env.Append(CPPPATH=[join(root, d)])
 
 
-env.Append(
-    LIBSOURCE_DIRS=[
-        join(FRAMEWORK_DIR, "libraries")
+env.Prepend(
+    CFLAGS=["-Wno-old-style-declaration"],
+
+    CPPDEFINES=[
+        "WITH_POSIX",
+        ("IDF_VER", '\\"%s\\"' %
+         platform.get_package_version("framework-espidf"))
     ],
 
+    CCFLAGS=[
+        "-Wall",
+        "-Werror=all",
+        "-Wno-error=deprecated-declarations",
+        "-Wextra",
+        "-Wno-unused-parameter",
+        "-Wno-sign-compare",
+        "-Wno-error=unused-function"
+    ],
+
+    LIBSOURCE_DIRS=[join(FRAMEWORK_DIR, "libraries")]
+)
+
+env.Append(
     LINKFLAGS=[
+        "-u", "__cxa_guard_dummy",
         "-T", "esp32.common.ld",
         "-T", "esp32.rom.ld",
         "-T", "esp32.peripherals.ld"
@@ -265,10 +277,10 @@ partition_table = env.Command(
          "partitions_singleapp.csv"),
     env.VerboseAction('"$PYTHONEXE" "%s" -q $SOURCE $TARGET' % join(
         FRAMEWORK_DIR, "components", "partition_table", "gen_esp32part.py"),
-                      "Generating partitions $TARGET"))
+        "Generating partitions $TARGET"))
+
 
 env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", partition_table)
-
 
 #
 # Generate linker script

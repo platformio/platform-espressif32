@@ -42,22 +42,13 @@ env.Replace(
 
     ASFLAGS=["-x", "assembler-with-cpp"],
 
-    CFLAGS=[
-        "-std=gnu99",
-        "-Wno-old-style-declaration"
-    ],
+    CFLAGS=["-std=gnu99"],
 
     CCFLAGS=[
         "%s" % "-Os" if env.subst("$PIOFRAMEWORK") == "arduino" else "-Og",
         "-g3",
         "-nostdlib",
-        "-Wall",
-        "-Werror=all",
-        "-Wno-error=deprecated-declarations",
-        "-Wextra",
-        "-Wno-unused-parameter",
-        "-Wno-sign-compare",
-        "-Wno-error=unused-function",
+        "-Wpointer-arith",
         "-Wno-error=unused-but-set-variable",
         "-Wno-error=unused-variable",
         "-mlongcalls",
@@ -77,17 +68,13 @@ env.Replace(
         "ESP_PLATFORM",
         ("F_CPU", "$BOARD_F_CPU"),
         "HAVE_CONFIG_H",
-        ("MBEDTLS_CONFIG_FILE", '\\"mbedtls/esp_config.h\\"'),
-        "WITH_POSIX",
-        ("IDF_VER", '\\"%s\\"' %
-         platform.get_package_version("framework-espidf"))
+        ("MBEDTLS_CONFIG_FILE", '\\"mbedtls/esp_config.h\\"')
     ],
 
     LINKFLAGS=[
         "-nostdlib",
         "-Wl,-static",
         "-u", "call_user_start_cpu0",
-        "-u", "__cxa_guard_dummy",
         "-Wl,--undefined=uxTopUsedPriority",
         "-Wl,--gc-sections"
     ],
@@ -173,7 +160,6 @@ target_upload = env.Alias(
     [env.VerboseAction(env.AutodetectUploadPort, "Looking for upload port..."),
      env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")])
 env.AlwaysBuild(target_upload)
-
 
 #
 # Default targets
