@@ -261,11 +261,11 @@ env.Append(
 
 partition_table = env.Command(
     join("$BUILD_DIR", "partitions_table.bin"),
-    join(FRAMEWORK_DIR, "components",
-         "partition_table", "partitions_singleapp.csv"),
-    '"$PYTHONEXE" "%s" -q $SOURCE $TARGET' % join(
-        FRAMEWORK_DIR, "components", "partition_table", "gen_esp32part.py")
-)
+    join(FRAMEWORK_DIR, "components", "partition_table",
+         "partitions_singleapp.csv"),
+    env.VerboseAction('"$PYTHONEXE" "%s" -q $SOURCE $TARGET' % join(
+        FRAMEWORK_DIR, "components", "partition_table", "gen_esp32part.py"),
+                      "Generating partitions $TARGET"))
 
 env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", partition_table)
 
@@ -277,8 +277,9 @@ env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", partition_table)
 linker_script = env.Command(
     join("$BUILD_DIR", "esp32_out.ld"),
     join(FRAMEWORK_DIR, "components", "esp32", "ld", "esp32.ld"),
-    "$CC -I$PROJECTSRC_DIR -C -P -x  c -E $SOURCE -o $TARGET"
-)
+    env.VerboseAction(
+        "$CC -I$PROJECTSRC_DIR -C -P -x  c -E $SOURCE -o $TARGET",
+        "Generating LD script $TARGET"))
 
 env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", linker_script)
 
