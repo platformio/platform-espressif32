@@ -49,7 +49,6 @@ env.Replace(
         "-g3",
         "-nostdlib",
         "-Wpointer-arith",
-        "-Wno-error=unused-function",
         "-Wno-error=unused-but-set-variable",
         "-Wno-error=unused-variable",
         "-mlongcalls",
@@ -161,7 +160,6 @@ target_upload = env.Alias(
     [env.VerboseAction(env.AutodetectUploadPort, "Looking for upload port..."),
      env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")])
 env.AlwaysBuild(target_upload)
-
 
 #
 # Default targets
