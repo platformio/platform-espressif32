@@ -9,7 +9,7 @@ Espressif Systems is a privately held fabless semiconductor company. They provid
 
 # Usage
 
-1. [Install PlatformIO Core](http://docs.platformio.org/en/latest/core.html)
+1. [Install PlatformIO Core](http://docs.platformio.org/page/core.html)
 2. Install Espressif 32 development platform:
 ```bash
 # install the latest stable version
