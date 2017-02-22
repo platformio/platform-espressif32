@@ -13,7 +13,7 @@ How to build PlatformIO based project
 =====================================
 
 1. `Install PlatformIO <http://docs.platformio.org/en/stable/installation.html>`_
-2. Download `development platform with examples <https://github.com/platformio/platform-espressif8266/archive/develop.zip>`_
+2. Download `development platform with examples <https://github.com/platformio/platform-espressif32/archive/develop.zip>`_
 3. Extract ZIP archive
 4. Run these commands:
 
