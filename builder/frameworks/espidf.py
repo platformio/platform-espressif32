@@ -143,7 +143,7 @@ def build_espidf_bootloader():
                 join(FRAMEWORK_DIR, "components", "micro-ecc"),
                 src_filter="+<*> -<micro-ecc/test>"
             ),
-            "rtc", "gcc", "stdc++"
+            "rtc_clk", "gcc", "stdc++"
         ]
     )
 
@@ -218,7 +218,7 @@ env.Prepend(
     ],
 
     LIBS=[
-        "btdm_app", "hal", "coexist", "core", "net80211", "phy", "rtc", "pp",
+        "btdm_app", "hal", "coexist", "core", "net80211", "phy", "rtc", "rtc_clk", "pp",
         "wpa", "wpa2", "wps", "smartconfig", "m", "c", "gcc", "stdc++"
     ]
 )
