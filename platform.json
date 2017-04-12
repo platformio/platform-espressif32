@@ -12,7 +12,7 @@
     "type": "git",
     "url": "https://github.com/platformio/platform-espressif32.git"
   },
-  "version": "0.6.0",
+  "version": "0.7.0",
   "packageRepositories": [
     "https://dl.bintray.com/platformio/dl-packages/manifest.json",
     "https://sourceforge.net/projects/platformio-storage/files/packages/manifest.json/download",
@@ -51,7 +51,7 @@
     "framework-espidf": {
       "type": "framework",
       "optional": true,
-      "version": "~1.200.0"
+      "version": "~2.200.0"
     },
     "framework-simba": {
       "type": "framework",

@@ -89,11 +89,13 @@ env.Replace(
     UPLOADERFLAGS=[
         "--chip", "esp32",
         "--port", '"$UPLOAD_PORT"',
+        "--before", "default_reset",
+        "--after", "hard_reset",
         "--baud", "$UPLOAD_SPEED",
         "write_flash", "-z",
         "--flash_mode", "$BOARD_FLASH_MODE",
         "--flash_freq", "${__get_board_f_flash(__env__)}",
-        "--flash_size", env.BoardConfig().get("upload.flash_size", "4MB")
+        "--flash_size", "detect"
     ],
 
     UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS $SOURCE',
