@@ -66,6 +66,11 @@
     "tool-esptoolpy": {
       "type": "uploader",
       "version": "~1.20000.0"
+    },
+    "tool-espotapy": {
+      "type": "uploader",
+      "optional": true,
+      "version": "~1.0.0"
     }
   }
 }
