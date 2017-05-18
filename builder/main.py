@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
 from os.path import join
 
 from SCons.Script import (AlwaysBuild, Builder, Default, DefaultEnvironment)
@@ -85,6 +86,8 @@ env.Replace(
 
     UPLOADER=join(
         platform.get_package_dir("tool-esptoolpy") or "", "esptool.py"),
+    UPLOADEROTA=join(platform.get_package_dir("tool-espotapy") or "",
+                     "espota.py"),
 
     UPLOADERFLAGS=[
         "--chip", "esp32",
@@ -97,8 +100,17 @@ env.Replace(
         "--flash_freq", "${__get_board_f_flash(__env__)}",
         "--flash_size", "detect"
     ],
+    UPLOADEROTAFLAGS=[
+        "--debug",
+        "--progress",
+        "-i", "$UPLOAD_PORT",
+        "-p", "3232",
+        "$UPLOAD_FLAGS"
+    ],
 
     UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS $SOURCE',
+    UPLOADOTACMD='"$PYTHONEXE" "$UPLOADEROTA" $UPLOADEROTAFLAGS -f $SOURCE',
+
     SIZEPRINTCMD='$SIZETOOL -B -d $SOURCES',
 
     PROGNAME="firmware",
@@ -132,6 +144,16 @@ env.Append(
         )
     )
 )
+
+if env.subst("$PIOFRAMEWORK") == "arduino":
+    # Handle uploading via OTA
+    ota_port = None
+    if env.get("UPLOAD_PORT"):
+        ota_port = re.match(
+            r"\"?((([0-9]{1,3}\.){3}[0-9]{1,3})|.+\.local)\"?$",
+            env.get("UPLOAD_PORT"))
+    if ota_port:
+        env.Replace(UPLOADCMD="$UPLOADOTACMD")
 
 #
 # Target: Build executable and linkable firmware or SPIFFS image
