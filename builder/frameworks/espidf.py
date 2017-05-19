@@ -20,9 +20,12 @@ Espressif IoT Development Framework for ESP32 MCU
 https://github.com/espressif/esp-idf
 """
 
+from glob import glob
 from os import listdir, walk
 from os.path import basename, isdir, isfile, join
 
+from shutil import copy
+import sys
 from SCons.Script import DefaultEnvironment
 
 
@@ -266,6 +269,28 @@ env.Append(
         "0x10000"
     ]
 )
+
+
+#
+# Handle missing sdkconfig.h
+#
+
+if not isfile(join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h")):
+    search_path = join(
+        env.subst("$PIOHOME_DIR"), "platforms",
+        env.subst("$PIOPLATFORM"), "examples", "*", "src", "sdkconfig.h"
+    )
+
+    files = glob(search_path)
+    if not files:
+        sys.stderr.write(
+            "Error: \"sdkconfig.h\" file is required for esp-idf framework!\n")
+        env.Exit(1)
+
+    print("Warning! Cannot find \"sdk_config.h\" file. "
+          "Default \"sdk_config.h\" will be added to your project!")
+    copy(files[0], join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h"))
+
 
 #
 # Generate partition table
