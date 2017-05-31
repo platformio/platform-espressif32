@@ -172,7 +172,7 @@ static void http_get_task(void *pvParameters)
     }
 }
 
-void app_main()
+extern "C" void app_main()
 {
     nvs_flash_init();
     initialise_wifi();

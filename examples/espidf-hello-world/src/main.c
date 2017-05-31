@@ -24,7 +24,7 @@ void hello_task(void *pvParameter)
     system_restart();
 }
 
-void app_main()
+extern "C" void app_main()
 {
     nvs_flash_init();
     system_init();
