@@ -21,12 +21,11 @@ void hello_task(void *pvParameter)
     }
     printf("Restarting now.\n");
     fflush(stdout);
-    system_restart();
+    esp_restart();
 }
 
 void app_main()
 {
     nvs_flash_init();
-    system_init();
     xTaskCreate(&hello_task, "hello_task", 2048, NULL, 5, NULL);
 }
