@@ -9,7 +9,13 @@
     "mcu": "esp32",
     "variant": "widora-air"
   },
-  "frameworks": [
+  "connectivity": [
+    "wifi",
+    "bluetooth",
+    "ethernet",
+    "can"
+  ],
+  "frameworks":  [
     "arduino",
     "espidf"
   ],

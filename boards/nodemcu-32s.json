@@ -9,7 +9,13 @@
     "mcu": "esp32",
     "variant": "nodemcu-32s"
   },
-  "frameworks": [
+  "connectivity": [
+    "wifi",
+    "bluetooth",
+    "ethernet",
+    "can"
+  ],
+  "frameworks":  [
     "arduino",
     "espidf"
   ],

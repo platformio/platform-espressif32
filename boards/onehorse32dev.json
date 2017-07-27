@@ -9,7 +9,13 @@
     "mcu": "esp32",
     "variant": "onehorse32dev"
   },
-  "frameworks": [
+  "connectivity": [
+    "wifi",
+    "bluetooth",
+    "ethernet",
+    "can"
+  ],
+  "frameworks":  [
     "arduino",
     "espidf"
   ],
