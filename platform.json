@@ -15,7 +15,6 @@
   "version": "0.7.5",
   "packageRepositories": [
     "https://dl.bintray.com/platformio/dl-packages/manifest.json",
-    "https://sourceforge.net/projects/platformio-storage/files/packages/manifest.json/download",
     "http://dl.platformio.org/packages/manifest.json",
     "https://raw.githubusercontent.com/eerimoq/simba/master/make/platformio/manifest.json",
     "https://raw.githubusercontent.com/eerimoq/pumbaa/master/make/platformio/manifest.json"
