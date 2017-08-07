@@ -9,13 +9,19 @@
     "mcu": "esp32",
     "variant": "espea32"
   },
-  "frameworks": [
+  "connectivity": [
+    "wifi",
+    "bluetooth",
+    "ethernet",
+    "can"
+  ],
+  "frameworks":  [
     "arduino",
     "espidf"
   ],
   "name": "April Brother ESPea32",
   "upload": {
-    "flash_size": "4MB", 
+    "flash_size": "4MB",
     "maximum_ram_size": 294912,
     "maximum_size": 1310720,
     "require_upload_port": true,

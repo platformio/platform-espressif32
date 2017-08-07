@@ -9,7 +9,13 @@
     "mcu": "esp32",
     "variant": "nano32"
   },
-  "frameworks": [
+  "connectivity": [
+    "wifi",
+    "bluetooth",
+    "ethernet",
+    "can"
+  ],
+  "frameworks":  [
     "arduino",
     "espidf",
     "simba",
