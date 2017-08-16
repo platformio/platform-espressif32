@@ -13,10 +13,14 @@
 // limitations under the License.
 
 #include <stdio.h>
+#include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "bt.h"
-#include <string.h>
+#include "esp_log.h"
+#include "nvs_flash.h"
+
+static const char *tag = "BLE_ADV";
 
 #define HCI_H4_CMD_PREAMBLE_SIZE           (4)
 
@@ -214,11 +218,25 @@ void bleAdvtTask(void *pvParameters)
 
 void app_main()
 {
-    esp_bt_controller_init();
+    /* Initialize NVS — it is used to store PHY calibration data */
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK( ret );
+    esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
+    
+    if (esp_bt_controller_init(&bt_cfg) != ESP_OK) {
+        ESP_LOGI(tag, "Bluetooth controller initialize failed");
+        return;
+    }
 
     if (esp_bt_controller_enable(ESP_BT_MODE_BTDM) != ESP_OK) {
+        ESP_LOGI(tag, "Bluetooth controller enable failed");
         return;
     }
 
     xTaskCreatePinnedToCore(&bleAdvtTask, "bleAdvtTask", 2048, NULL, 5, NULL, 0);
 }
+

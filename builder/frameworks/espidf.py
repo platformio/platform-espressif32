@@ -71,7 +71,7 @@ def parse_mk(path):
 
 def build_component(path):
     envsafe = env.Clone()
-    src_filter = "+<*> -<test> -<tests>"
+    src_filter = "+<*> -<test*>"
     if isfile(join(path, "component.mk")):
         params = parse_mk(join(path, "component.mk"))
         if params.get("COMPONENT_PRIV_INCLUDEDIRS"):
@@ -116,6 +116,7 @@ def build_espidf_bootloader():
             "-Wl,--gc-sections",
             "-T", "esp32.bootloader.ld",
             "-T", "esp32.rom.ld",
+            "-T", "esp32.peripherals.ld",
             "-T", "esp32.bootloader.rom.ld"
         ]
     ),
@@ -130,7 +131,8 @@ def build_espidf_bootloader():
         LIBS=[
             envsafe.BuildLibrary(
                 join("$BUILD_DIR", "bootloaderSupport"),
-                join(FRAMEWORK_DIR, "components", "bootloader_support")
+                join(FRAMEWORK_DIR, "components", "bootloader_support"),
+                src_filter="+<*> -<test>"
             ),
             envsafe.BuildLibrary(
                 join("$BUILD_DIR", "bootloaderLog"),
@@ -146,7 +148,12 @@ def build_espidf_bootloader():
                 join(FRAMEWORK_DIR, "components", "micro-ecc"),
                 src_filter="+<*> -<micro-ecc/test>"
             ),
-            "rtc_clk", "gcc", "stdc++"
+            envsafe.BuildLibrary(
+                join("$BUILD_DIR", "bootloaderSoc"),
+                join(FRAMEWORK_DIR, "components", "soc"),
+                src_filter="+<*> -<test> -<esp32/test>"
+            ),
+            "gcc", "stdc++"
         ]
     )
 
@@ -162,8 +169,12 @@ def build_espidf_bootloader():
 env.Prepend(
     CPPPATH=[
         join("$PROJECTSRC_DIR"),
-        join(FRAMEWORK_DIR, "components", "xtensa-debug-module", "include"),
+        join(FRAMEWORK_DIR, "components", "aws_iot", "include"),
+        join(FRAMEWORK_DIR, "components", "aws_iot",
+             "aws-iot-device-sdk-embedded-C", "include"),
+        join(FRAMEWORK_DIR, "components", "app_trace", "include"),
         join(FRAMEWORK_DIR, "components", "app_update", "include"),
+        join(FRAMEWORK_DIR, "components", "xtensa-debug-module", "include"),
         join(FRAMEWORK_DIR, "components", "bootloader_support", "include"),
         join(FRAMEWORK_DIR, "components",
              "bootloader_support", "include_priv"),
@@ -182,8 +193,15 @@ env.Prepend(
         join(FRAMEWORK_DIR, "components", "expat", "port", "include"),
         join(FRAMEWORK_DIR, "components", "fatfs", "src"),
         join(FRAMEWORK_DIR, "components", "freertos", "include"),
+        join(FRAMEWORK_DIR, "components", "jsmn", "include"),
         join(FRAMEWORK_DIR, "components", "json", "include"),
         join(FRAMEWORK_DIR, "components", "json", "port", "include"),
+        join(FRAMEWORK_DIR, "components", "libsodium", "libsodium", "src",
+             "libsodium", "include"),
+        join(FRAMEWORK_DIR, "components", "libsodium", "port_include",
+             "sodium"),
+        join(FRAMEWORK_DIR, "components", "libsodium", "libsodium", "src",
+             "libsodium", "include", "sodium"),
         join(FRAMEWORK_DIR, "components", "log", "include"),
         join(FRAMEWORK_DIR, "components", "lwip", "include", "lwip"),
         join(FRAMEWORK_DIR, "components", "lwip", "include", "lwip", "port"),
@@ -205,8 +223,12 @@ env.Prepend(
         join(FRAMEWORK_DIR, "components", "sdmmc", "include"),
         join(FRAMEWORK_DIR, "components", "spi_flash", "include"),
         join(FRAMEWORK_DIR, "components", "tcpip_adapter", "include"),
+        join(FRAMEWORK_DIR, "components", "soc", "esp32", "include"),
+        join(FRAMEWORK_DIR, "components", "soc", "include"),
+        join(FRAMEWORK_DIR, "components", "heap", "include"),
         join(FRAMEWORK_DIR, "components", "ulp", "include"),
         join(FRAMEWORK_DIR, "components", "vfs", "include"),
+        join(FRAMEWORK_DIR, "components", "wear_levelling", "include"),
         join(FRAMEWORK_DIR, "components", "wpa_supplicant", "include"),
         join(FRAMEWORK_DIR, "components", "wpa_supplicant", "port", "include")
     ],
@@ -221,7 +243,7 @@ env.Prepend(
     ],
 
     LIBS=[
-        "btdm_app", "hal", "coexist", "core", "net80211", "phy", "rtc", "rtc_clk", "pp",
+        "btdm_app", "hal", "coexist", "core", "net80211", "phy", "rtc", "pp",
         "wpa", "wpa2", "wps", "smartconfig", "m", "c", "gcc", "stdc++"
     ]
 )
@@ -340,7 +362,9 @@ ignore_dirs = (
     "idf_test",
     "partition_table",
     "nghttp",
-    "spi_flash"
+    "soc",
+    "spi_flash",
+    "libsodium"
 )
 
 for d in listdir(join(FRAMEWORK_DIR, "components")):
@@ -351,10 +375,40 @@ for d in listdir(join(FRAMEWORK_DIR, "components")):
         libs.append(build_component(component_dir))
 
 
+# component.mk contains configuration for bootloader
 libs.append(env.BuildLibrary(
     join("$BUILD_DIR", "spi_flash"),
     join(FRAMEWORK_DIR, "components", "spi_flash"),
-    src_filter="+<*> -<test>"
+    src_filter="+<*> -<test*>"
 ))
+
+libs.append(env.BuildLibrary(
+    join("$BUILD_DIR", "app_trace"),
+    join(FRAMEWORK_DIR, "components", "app_trace"),
+    src_filter="+<*> -<test> -<sys_view>"
+))
+
+libs.append(env.BuildLibrary(
+    join("$BUILD_DIR", "soc"),
+    join(FRAMEWORK_DIR, "components", "soc"),
+    src_filter="+<*> -<test> -<esp32/test>"
+))
+
+envsafe = env.Clone()
+envsafe.Append(
+    CPPDEFINES=[
+        "CONFIGURED", "NATIVE_LITTLE_ENDIAN", "HAVE_WEAK_SYMBOLS",
+        "__STDC_LIMIT_MACROS", "__STDC_CONSTANT_MACROS"
+    ],
+    CCFLAGS=["-Wno-type-limits", "-Wno-unknown-pragmas"]
+)
+
+libs.append(
+    envsafe.BuildLibrary(
+        join("$BUILD_DIR", "libsodium"),
+        join(FRAMEWORK_DIR, "components", "libsodium", "libsodium", "src",
+             "libsodium")
+    )
+)
 
 env.Prepend(LIBS=libs)
