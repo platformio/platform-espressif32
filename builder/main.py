@@ -34,6 +34,7 @@ env.Replace(
     AS="xtensa-esp32-elf-as",
     CC="xtensa-esp32-elf-gcc",
     CXX="xtensa-esp32-elf-g++",
+    GDB="xtensa-esp32-elf-gdb",
     OBJCOPY=join(
         platform.get_package_dir("tool-esptoolpy") or "", "esptool.py"),
     RANLIB="xtensa-esp32-elf-ranlib",
