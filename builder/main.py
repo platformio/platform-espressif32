@@ -40,7 +40,7 @@ env.Replace(
     RANLIB="xtensa-esp32-elf-ranlib",
     SIZETOOL="xtensa-esp32-elf-size",
 
-    ARFLAGS=["rcs"],
+    ARFLAGS=["rc"],
 
     ASFLAGS=["-x", "assembler-with-cpp"],
 
