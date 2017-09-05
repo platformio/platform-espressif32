@@ -337,7 +337,7 @@ linker_script = env.Command(
     join("$BUILD_DIR", "esp32_out.ld"),
     join(FRAMEWORK_DIR, "components", "esp32", "ld", "esp32.ld"),
     env.VerboseAction(
-        "$CC -I$PROJECTSRC_DIR -C -P -x  c -E $SOURCE -o $TARGET",
+        '$CC -I"$PROJECTSRC_DIR" -C -P -x  c -E $SOURCE -o $TARGET',
         "Generating LD script $TARGET"))
 
 env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", linker_script)
