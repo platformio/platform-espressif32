@@ -19,7 +19,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "M5Stack-Core-ESP32",
+  "name": "M5Stack Core ESP32",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 294912,
