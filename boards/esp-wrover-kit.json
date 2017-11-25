@@ -1,7 +1,7 @@
 {
   "build": {
     "core": "esp32",
-    "extra_flags": "-DESP32_DEV -DARDUINO_ESP32_DEV",
+    "extra_flags": "-DARDUINO_ESP32_DEV",
     "f_cpu": "240000000L",
     "hwids": [
       [
@@ -31,7 +31,6 @@
     "maximum_ram_size": 294912,
     "maximum_size": 1310720,
     "require_upload_port": true,
-    "resetmethod": "nodemcu",
     "speed": 115200,
     "wait_for_upload_port": true
   },
