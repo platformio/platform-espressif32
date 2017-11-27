@@ -46,6 +46,7 @@ def parse_mk(path):
         for line in fp.readlines():
             line = line.strip()
             if not line or line.startswith("#"):
+                multi = False
                 continue
             # remove inline comments
             if " # " in line:
@@ -198,8 +199,6 @@ env.Prepend(
         join(FRAMEWORK_DIR, "components", "json", "port", "include"),
         join(FRAMEWORK_DIR, "components", "libsodium", "libsodium", "src",
              "libsodium", "include"),
-        join(FRAMEWORK_DIR, "components", "libsodium", "port_include",
-             "sodium"),
         join(FRAMEWORK_DIR, "components", "libsodium", "libsodium", "src",
              "libsodium", "include", "sodium"),
         join(FRAMEWORK_DIR, "components", "log", "include"),
@@ -252,7 +251,7 @@ for root, dirs, _ in walk(join(
         FRAMEWORK_DIR, "components", "bt", "bluedroid")):
     for d in dirs:
         if (d == "include"):
-            env.Append(CPPPATH=[join(root, d)])
+            env.Prepend(CPPPATH=[join(root, d)])
 
 
 env.Prepend(
@@ -395,12 +394,16 @@ libs.append(env.BuildLibrary(
 ))
 
 envsafe = env.Clone()
-envsafe.Append(
+envsafe.Prepend(
     CPPDEFINES=[
         "CONFIGURED", "NATIVE_LITTLE_ENDIAN", "HAVE_WEAK_SYMBOLS",
         "__STDC_LIMIT_MACROS", "__STDC_CONSTANT_MACROS"
     ],
-    CCFLAGS=["-Wno-type-limits", "-Wno-unknown-pragmas"]
+    CCFLAGS=["-Wno-type-limits", "-Wno-unknown-pragmas"],
+    CPPPATH=[
+        join(FRAMEWORK_DIR, "components", "libsodium", "port_include",
+             "sodium")
+    ]
 )
 
 libs.append(

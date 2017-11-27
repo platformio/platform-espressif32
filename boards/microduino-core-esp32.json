@@ -1,13 +1,13 @@
 {
   "build": {
     "core": "esp32",
-    "extra_flags": "-DARDUINO_ESP32_DEV",
+    "extra_flags": "-DARDUINO_CoreESP32",
     "f_cpu": "240000000L",
     "f_flash": "40000000L",
     "flash_mode": "dio",
     "ldscript": "esp32_out.ld",
     "mcu": "esp32",
-    "variant": "esp32"
+    "variant": "Microduino-esp32"
   },
   "connectivity": [
     "wifi",
@@ -19,15 +19,15 @@
     "arduino",
     "espidf"
   ],
-  "name": "Espressif ESP32 Dev Module",
+  "name": "Microduino Core ESP32",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 294912,
     "maximum_size": 1310720,
     "require_upload_port": true,
-    "speed": 115200,
+    "speed": 2000000,
     "wait_for_upload_port": true
   },
-  "url": "https://en.wikipedia.org/wiki/ESP32",
-  "vendor": "Espressif"
+  "url": "https://microduinoinc.com",
+  "vendor": "Microduino"
 }
