@@ -15,7 +15,8 @@
 import re
 from os.path import join
 
-from SCons.Script import (AlwaysBuild, Builder, Default, DefaultEnvironment)
+from SCons.Script import (COMMAND_LINE_TARGETS, AlwaysBuild, Builder, Default,
+                          DefaultEnvironment)
 
 
 def _get_board_f_flash(env):
@@ -114,7 +115,6 @@ env.Replace(
 
     SIZEPRINTCMD='$SIZETOOL -B -d $SOURCES',
 
-    PROGNAME="firmware",
     PROGSUFFIX=".elf"
 )
 
@@ -123,6 +123,10 @@ env.Replace(
 env.Append(
     ASFLAGS=env.get("CCFLAGS", [])[:]
 )
+
+# Allow user to override via pre:script
+if env.get("PROGNAME", "program") == "program":
+    env.Replace(PROGNAME="firmware")
 
 #
 # Framework and SDK specific configuration
@@ -161,9 +165,12 @@ if env.subst("$PIOFRAMEWORK") == "arduino":
 #
 
 target_elf = env.BuildProgram()
-if "PIOFRAMEWORK" in env:
-    target_firm = env.ElfToBin(join("$BUILD_DIR", "firmware"), target_elf)
+if "nobuild" in COMMAND_LINE_TARGETS:
+    target_firm = join("$BUILD_DIR", "${PROGNAME}.bin")
+else:
+    target_firm = env.ElfToBin(target_elf)
 
+AlwaysBuild(env.Alias("nobuild", target_firm))
 target_buildprog = env.Alias("buildprog", target_firm, target_firm)
 
 
