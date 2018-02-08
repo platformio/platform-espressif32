@@ -34,8 +34,6 @@ platform = env.PioPlatform()
 
 FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
 assert FRAMEWORK_DIR and isdir(FRAMEWORK_DIR)
-FRAMEWORK_VERSION = platform.get_package_version(
-    "framework-espidf")
 
 
 def parse_mk(path):
