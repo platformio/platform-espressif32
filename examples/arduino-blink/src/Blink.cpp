@@ -6,7 +6,10 @@
 
 #include <Arduino.h>
 
-#define LED_BUILTIN 13
+#ifndef LED_BUILTIN
+  // Set LED_BUILTIN if it is not defined by Arduino framework
+  #define LED_BUILTIN 13
+#endif
 
 void setup()
 {
