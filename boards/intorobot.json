@@ -15,7 +15,7 @@
     "ethernet",
     "can"
   ],
-  "frameworks":  [
+  "frameworks": [
     "arduino",
     "espidf"
   ],

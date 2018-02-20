@@ -5,9 +5,9 @@
     "f_cpu": "240000000L",
     "f_flash": "40000000L",
     "flash_mode": "dio",
-    "partitions": "minimal",
     "ldscript": "esp32_out.ld",
     "mcu": "esp32",
+    "partitions": "minimal",
     "variant": "nina_w10"
   },
   "connectivity": [
@@ -16,7 +16,7 @@
     "ethernet",
     "can"
   ],
-  "frameworks":  [
+  "frameworks": [
     "arduino",
     "espidf"
   ],
