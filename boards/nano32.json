@@ -15,7 +15,7 @@
     "ethernet",
     "can"
   ],
-  "frameworks": [
+  "frameworks":  [
     "arduino",
     "espidf",
     "simba",
@@ -28,7 +28,11 @@
     "maximum_size": 1310720,
     "require_upload_port": true,
     "speed": 115200,
-    "wait_for_upload_port": true
+    "wait_for_upload_port": true,
+    "protocol": "esptool",
+    "protocols": [
+      "esptool"
+    ]
   },
   "url": "http://iot-bits.com/nano32-esp32-development-board",
   "vendor": "MakerAsia"

@@ -15,7 +15,10 @@
     "ethernet",
     "can"
   ],
-  "frameworks": [
+  "debug": {
+    "openocd_board": "esp-wroom-32.cfg"
+  },
+  "frameworks":  [
     "arduino",
     "espidf"
   ],
@@ -26,7 +29,13 @@
     "maximum_size": 1310720,
     "require_upload_port": true,
     "speed": 115200,
-    "wait_for_upload_port": true
+    "wait_for_upload_port": true,
+    "protocol": "esptool",
+    "protocols": [
+      "esptool",
+      "olimex-arm-usb-tiny-h",
+      "olimex-arm-usb-ocd-h"
+    ]
   },
   "url": "http://forum.mhetlive.com",
   "vendor": "MH-ET Live"
