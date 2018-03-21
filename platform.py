@@ -58,7 +58,17 @@ class Espressif32Platform(PlatformBase):
                     "package": "tool-openocd-esp32",
                     "executable": "bin/openocd",
                     "arguments": server_args
-                }
+                },
+                "init_cmds": [
+                    "target extended-remote $DEBUG_PORT",
+                    'file "$PROG_PATH"',
+                    "$LOAD_CMD",
+                    "mon reset halt",
+                    "$INIT_BREAK",
+                    "x $a1=0"
+                ],
+                "load_cmd": 'mon program_esp32 "$PROG_DIR/firmware.bin" 0x10000',
+                "init_break": "thb app_main"
             }
 
         board.manifest['debug'] = debug
