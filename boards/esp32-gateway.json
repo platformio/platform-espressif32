@@ -1,7 +1,7 @@
 {
   "build": {
     "core": "esp32",
-    "extra_flags": "-DARDUINO_ESP32-GATEWAY",
+    "extra_flags": "-DARDUINO_ESP32_GATEWAY",
     "f_cpu": "240000000L",
     "f_flash": "40000000L",
     "flash_mode": "dio",
