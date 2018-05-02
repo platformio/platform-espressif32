@@ -59,16 +59,23 @@ class Espressif32Platform(PlatformBase):
                     "executable": "bin/openocd",
                     "arguments": server_args
                 },
+                "init_break": "thb app_main",
                 "init_cmds": [
+                    "define pio_reset_halt_target",
+                    "   mon reset halt",
+                    "   x $a1=0",
+                    "end",
+                    "define pio_reset_target",
+                    "   mon reset",
+                    "end",
                     "target extended-remote $DEBUG_PORT",
-                    'file "$PROG_PATH"',
-                    "$LOAD_CMD",
-                    "mon reset halt",
                     "$INIT_BREAK",
-                    "x $a1=0"
+                    "mon reset halt",
+                    "$LOAD_CMD",
+                    "pio_reset_halt_target",
+                    "continue"
                 ],
-                "load_cmd": 'mon program_esp32 "$PROG_DIR/firmware.bin" 0x10000',
-                "init_break": "thb app_main"
+                "load_cmd": 'mon program_esp32 "$PROG_DIR/firmware.bin" 0x10000 verify'
             }
 
         board.manifest['debug'] = debug
