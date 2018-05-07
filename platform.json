@@ -75,6 +75,11 @@
       "type": "debugger",
       "optional": true,
       "version": "~1.1000.0"
+    },
+    "tool-mkspiffs": {
+      "type": "uploader",
+      "optional": true,
+      "version": "~2.230.0"
     }
   }
 }
