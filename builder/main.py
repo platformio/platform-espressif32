@@ -13,7 +13,8 @@
 # limitations under the License.
 
 import re
-from os.path import join
+import sys
+from os.path import isfile, join
 
 from SCons.Script import (COMMAND_LINE_TARGETS, AlwaysBuild, Builder, Default,
                           DefaultEnvironment)
@@ -113,6 +114,11 @@ env.Replace(
     UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS $SOURCE',
     UPLOADOTACMD='"$PYTHONEXE" "$UPLOADEROTA" $UPLOADEROTAFLAGS -f $SOURCE',
 
+    #
+    # Misc
+    #
+
+    MKSPIFFSTOOL="mkspiffs_${PIOPLATFORM}_${PIOFRAMEWORK}",
     SIZEPRINTCMD='$SIZETOOL -B -d $SOURCES',
 
     PROGSUFFIX=".elf"
@@ -122,6 +128,52 @@ env.Replace(
 # Clone actual CCFLAGS to ASFLAGS
 env.Append(
     ASFLAGS=env.get("CCFLAGS", [])[:]
+)
+
+#
+# SPIFFS
+#
+
+def fetch_spiffs_size(env):
+    path_to_patition_table = env.get("PARTITION_TABLE_CSV", "")
+    if not isfile(path_to_patition_table):
+        sys.stderr.write("Could not find the file %s with paritions table." % path_to_patition_table)
+        env.Exit(1)
+
+    with open(path_to_patition_table) as fp:
+        for l in fp.readlines():
+            if l.startswith("spiffs"):
+                spiffs_config = [s.strip() for s in l.split(",")]
+                env["SPIFFS_START"] = spiffs_config[3]
+                env["SPIFFS_SIZE"] = spiffs_config[4]
+                env["SPIFFS_PAGE"] = "0x100"
+                env["SPIFFS_BLOCK"] = "0x1000"
+                return
+
+    sys.stderr.write("Could not find the spiffs section in the paritions file %s" % path_to_patition_table)
+    env.Exit(1)
+
+def __fetch_spiffs_size(target, source, env):
+    fetch_spiffs_size(env)
+    return (target, source)
+
+
+env.Append(
+    BUILDERS=dict(
+        DataToBin=Builder(
+            action=env.VerboseAction(" ".join([
+                '"$MKSPIFFSTOOL"',
+                "-c", "$SOURCES",
+                "-p", "${int(SPIFFS_PAGE, 16)}",
+                "-b", "${int(SPIFFS_BLOCK, 16)}",
+                "-s", "${int(SPIFFS_SIZE, 16)}",
+                "$TARGET"
+            ]), "Building SPIFFS image from '$SOURCES' directory to $TARGET"),
+            emitter=__fetch_spiffs_size,
+            source_factory=env.Dir,
+            suffix=".bin"
+        )
+    )
 )
 
 # Allow user to override via pre:script
@@ -142,7 +194,7 @@ env.Append(
                 "--flash_mode", "$BOARD_FLASH_MODE",
                 "--flash_freq", "${__get_board_f_flash(__env__)}",
                 "--flash_size",
-                env.BoardConfig().get("upload.flash_size", "4MB"),
+                env.BoardConfig().get("upload.flash_size", "detect"),
                 "-o", "$TARGET", "$SOURCES"
             ]), "Building $TARGET"),
             suffix=".bin"
@@ -164,15 +216,46 @@ if env.subst("$PIOFRAMEWORK") == "arduino":
 # Target: Build executable and linkable firmware or SPIFFS image
 #
 
+
 target_elf = env.BuildProgram()
 if "nobuild" in COMMAND_LINE_TARGETS:
-    target_firm = join("$BUILD_DIR", "${PROGNAME}.bin")
+    if set(["uploadfs", "uploadfsota"]) & set(COMMAND_LINE_TARGETS):
+        fetch_spiffs_size(env)
+        target_firm = join("$BUILD_DIR", "spiffs.bin")
+    else:
+        target_firm = join("$BUILD_DIR", "${PROGNAME}.bin")
 else:
-    target_firm = env.ElfToBin(join("$BUILD_DIR", "${PROGNAME}"), target_elf)
+    if set(["buildfs", "uploadfs", "uploadfsota"]) & set(COMMAND_LINE_TARGETS):
+        target_firm = env.DataToBin(
+            join("$BUILD_DIR", "spiffs"), "$PROJECTDATA_DIR")
+        AlwaysBuild(target_firm)
+        AlwaysBuild(env.Alias("buildfs", target_firm))
+    else:
+        target_firm = env.ElfToBin(join("$BUILD_DIR", "${PROGNAME}"), target_elf)
 
 AlwaysBuild(env.Alias("nobuild", target_firm))
 target_buildprog = env.Alias("buildprog", target_firm, target_firm)
 
+#
+# Replace default upload flags
+#
+
+if "uploadfs" in COMMAND_LINE_TARGETS:
+    env.Replace(
+        UPLOADERFLAGS=[
+            "--chip", "esp32",
+            "--port", '"$UPLOAD_PORT"',
+            "--baud", "$UPLOAD_SPEED",
+            "--before", "default_reset",
+            "--after", "hard_reset",
+            "write_flash", "-z",
+            "--flash_mode", "$BOARD_FLASH_MODE",
+            "--flash_size", "detect",
+            "${int(SPIFFS_START, 16)}"
+        ]
+    )
+
+    env.Append(UPLOADEROTAFLAGS=["-s"])
 
 #
 # Target: Print binary size
@@ -188,7 +271,7 @@ AlwaysBuild(target_size)
 #
 
 target_upload = env.Alias(
-    "upload", target_firm,
+    ["upload", "uploadfs"], target_firm,
     [env.VerboseAction(env.AutodetectUploadPort, "Looking for upload port..."),
      env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")])
 env.AlwaysBuild(target_upload)

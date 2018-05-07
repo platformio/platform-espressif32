@@ -322,10 +322,17 @@ if not isfile(join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h")):
 # Generate partition table
 #
 
+# Export path to the partitions table
+env.Append(
+    PARTITION_TABLE_CSV=join(
+        FRAMEWORK_DIR, "components", "partition_table",
+        "%s.csv" % env.BoardConfig().get("build.partitions", "partitions_singleapp")
+    )
+)
+
 partition_table = env.Command(
     join("$BUILD_DIR", "partitions_table.bin"),
-    join(FRAMEWORK_DIR, "components", "partition_table",
-         "partitions_singleapp.csv"),
+    "$PARTITION_TABLE_CSV",
     env.VerboseAction('"$PYTHONEXE" "%s" -q $SOURCE $TARGET' % join(
         FRAMEWORK_DIR, "components", "partition_table", "gen_esp32part.py"),
         "Generating partitions $TARGET"))
