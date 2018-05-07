@@ -323,7 +323,7 @@ if not isfile(join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h")):
 #
 
 # Export path to the partitions table
-env.Append(
+env.Replace(
     PARTITION_TABLE_CSV=join(
         FRAMEWORK_DIR, "components", "partition_table",
         "%s.csv" % env.BoardConfig().get("build.partitions", "partitions_singleapp")
