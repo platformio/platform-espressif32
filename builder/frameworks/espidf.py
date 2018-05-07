@@ -322,13 +322,23 @@ if not isfile(join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h")):
 # Generate partition table
 #
 
-partition_table = env.Command(
-    join("$BUILD_DIR", "partitions_table.bin"),
-    join(FRAMEWORK_DIR, "components", "partition_table",
-         "partitions_singleapp.csv"),
-    env.VerboseAction('"$PYTHONEXE" "%s" -q $SOURCE $TARGET' % join(
-        FRAMEWORK_DIR, "components", "partition_table", "gen_esp32part.py"),
-        "Generating partitions $TARGET"))
+if isfile(join(env.subst("$PROJECTSRC_DIR"), "partitions_table.csv")):
+    partition_table = env.Command(
+        join("$BUILD_DIR", "partitions_table.bin"),
+        join(env.subst("$PROJECTSRC_DIR"), "partitions_table.csv"),
+        env.VerboseAction('"$PYTHONEXE" "%s" -q $SOURCE $TARGET' % join(
+            FRAMEWORK_DIR, "components", "partition_table", "gen_esp32part.py"),
+            "Generating partitions $TARGET"))
+else:
+    partition_table = env.Command(
+        join("$BUILD_DIR", "partitions_table.bin"),
+        join(FRAMEWORK_DIR, "components", "partition_table",
+            "partitions_singleapp.csv"),
+        env.VerboseAction('"$PYTHONEXE" "%s" -q $SOURCE $TARGET' % join(
+            FRAMEWORK_DIR, "components", "partition_table", "gen_esp32part.py"),
+            "Generating partitions $TARGET"))
+
+
 
 
 env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", partition_table)
