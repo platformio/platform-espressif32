@@ -97,6 +97,20 @@ def build_component(path):
         src_filter=src_filter
     )
 
+def find_valid_config_file():
+    search_path = join(
+        env.subst("$PIOHOME_DIR"), "platforms",
+        env.subst("$PIOPLATFORM"), "examples", "*", "src", "sdkconfig.h"
+    )
+
+    files = glob(search_path)
+    if not files:
+        sys.stderr.write(
+            "Error: Could not find default \"sdkconfig.h\" file\n")
+        env.Exit(1)
+
+    return files[0]
+    
 
 def build_espidf_bootloader():
     envsafe = env.Clone()
@@ -302,20 +316,27 @@ env.Append(
 #
 
 if not isfile(join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h")):
-    search_path = join(
-        env.subst("$PIOHOME_DIR"), "platforms",
-        env.subst("$PIOPLATFORM"), "examples", "*", "src", "sdkconfig.h"
-    )
-
-    files = glob(search_path)
-    if not files:
-        sys.stderr.write(
-            "Error: \"sdkconfig.h\" file is required for esp-idf framework!\n")
-        env.Exit(1)
-
-    print("Warning! Cannot find \"sdk_config.h\" file. "
-          "Default \"sdk_config.h\" will be added to your project!")
-    copy(files[0], join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h"))
+    print("Warning! Cannot find \"sdkconfig.h\" file. "
+          "Default \"sdkconfig.h\" will be added to your project!")
+    copy(find_valid_config_file(), join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h"))
+else:
+    is_new = False
+    with open(join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h")) as fp:
+        for l in fp.readlines():
+            if "CONFIG_ADC_CAL_LUT_ENABLE" in l:
+                is_new = True 
+                break
+    
+    if not is_new:
+        print("Warning! Detected an outdated \"sdkconfig.h\" file. "
+          "The old \"sdkconfig.h\" will be replaced by the new one.")
+        
+        new_config = find_valid_config_file()
+        copy(
+            join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h"),
+            join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h.bak")
+        )
+        copy(new_config, join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h"))
 
 
 #
