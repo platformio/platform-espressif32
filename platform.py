@@ -72,8 +72,7 @@ class Espressif32Platform(PlatformBase):
                     "$INIT_BREAK",
                     "mon reset halt",
                     "$LOAD_CMD",
-                    "pio_reset_halt_target",
-                    "continue"
+                    "pio_reset_halt_target"
                 ],
                 "load_cmd": 'mon program_esp32 "$PROG_DIR/firmware.bin" 0x10000 verify'
             }
