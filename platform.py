@@ -42,14 +42,20 @@ class Espressif32Platform(PlatformBase):
         if "tools" not in debug:
             debug['tools'] = {}
 
+        available_tools = (
+            "olimex-arm-usb-ocd-h", "olimex-arm-usb-tiny-h", "minimodule"
+        )
+
         # Only FTDI based debug probes
-        for link in ("olimex-arm-usb-tiny-h", "olimex-arm-usb-ocd-h"):
+        for link in available_tools:
             if link not in upload_protocols or link in debug['tools']:
                 continue
 
+            ftdi_interface = "mbftdi" if link == "minimodule" else link
+
             server_args = [
                 "-s", "$PACKAGE_DIR/share/openocd/scripts",
-                "-f", "share/openocd/scripts/interface/ftdi/%s.cfg" % link,
+                "-f", "share/openocd/scripts/interface/ftdi/%s.cfg" % ftdi_interface,
                 "-f", "share/openocd/scripts/board/%s" % debug.get("openocd_board")
             ]
 
