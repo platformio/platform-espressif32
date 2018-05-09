@@ -80,8 +80,8 @@ class Espressif32Platform(PlatformBase):
                     "$LOAD_CMD",
                     "pio_reset_halt_target"
                 ],
-                "load_cmd": 'preload'
-                # "load_cmd": 'mon program_esp32 "$PROG_DIR/firmware.bin" 0x10000 verify'
+                # "load_cmd": 'preload'
+                "load_cmd": 'mon program_esp32 "$PROG_DIR/firmware.bin" 0x10000 verify'
             }
 
         board.manifest['debug'] = debug
