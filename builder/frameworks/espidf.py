@@ -110,7 +110,7 @@ def find_valid_config_file():
         env.Exit(1)
 
     return files[0]
-    
+
 
 def build_espidf_bootloader():
     envsafe = env.Clone()
@@ -303,7 +303,7 @@ env.Append(
         "-T", "esp32.rom.spiram_incompatible_fns.ld"
     ],
 
-    UPLOADERFLAGS=[
+    EXTRA_ESPTOOL_UPLOADFLAGS=[
         "0x1000", join("$BUILD_DIR", "bootloader.bin"),
         "0x8000", join("$BUILD_DIR", "partitions_table.bin"),
         "0x10000"
@@ -324,13 +324,13 @@ else:
     with open(join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h")) as fp:
         for l in fp.readlines():
             if "CONFIG_ADC_CAL_LUT_ENABLE" in l:
-                is_new = True 
+                is_new = True
                 break
-    
+
     if not is_new:
         print("Warning! Detected an outdated \"sdkconfig.h\" file. "
-          "The old \"sdkconfig.h\" will be replaced by the new one.")
-        
+              "The old \"sdkconfig.h\" will be replaced by the new one.")
+
         new_config = find_valid_config_file()
         copy(
             join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h"),

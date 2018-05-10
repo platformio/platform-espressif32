@@ -18,8 +18,10 @@ from platformio.managers.platform import PlatformBase
 class Espressif32Platform(PlatformBase):
 
     def configure_default_packages(self, variables, targets):
-        if "arduino" in variables.get("pioframework"):
-            self.packages['toolchain-xtensa32']['version'] = "~2.50200.0"
+        if "buildfs" in targets:
+            self.packages['tool-mkspiffs']['optional'] = False
+        if variables.get("upload_protocol"):
+            self.packages['tool-openocd-esp32']['optional'] = False
         return PlatformBase.configure_default_packages(
             self, variables, targets)
 
