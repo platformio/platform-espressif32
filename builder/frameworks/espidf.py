@@ -304,10 +304,9 @@ env.Append(
         "-T", "esp32.rom.spiram_incompatible_fns.ld"
     ],
 
-    EXTRA_ESPTOOL_UPLOADFLAGS=[
-        "0x1000", join("$BUILD_DIR", "bootloader.bin"),
-        "0x8000", join("$BUILD_DIR", "partitions_table.bin"),
-        "0x10000"
+    FLASH_EXTRA_IMAGES=[
+        ("0x1000", join("$BUILD_DIR", "bootloader.bin")),
+        ("0x8000", join("$BUILD_DIR", "partitions_table.bin"))
     ]
 )
 
