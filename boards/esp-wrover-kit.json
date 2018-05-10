@@ -35,7 +35,6 @@
     "maximum_size": 1310720,
     "require_upload_port": true,
     "speed": 115200,
-    "wait_for_upload_port": true,
     "protocol": "esptool",
     "protocols": [
       "esptool",
