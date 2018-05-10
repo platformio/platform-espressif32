@@ -97,6 +97,7 @@ def build_component(path):
         src_filter=src_filter
     )
 
+
 def find_valid_config_file():
     search_path = join(
         env.subst("$PIOHOME_DIR"), "platforms",

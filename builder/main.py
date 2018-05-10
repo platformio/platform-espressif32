@@ -26,11 +26,51 @@ def _get_board_f_flash(env):
     return str(int(int(frequency) / 1000000)) + "m"
 
 
+def _get_board_flash_mode(env):
+    mode = env.subst("$BOARD_FLASH_MODE")
+    if mode == "qio":
+        return "dio"
+    elif mode == "qout":
+        return "dout"
+    return mode
+
+#
+# SPIFFS helpers
+#
+
+def fetch_spiffs_size(env):
+    path_to_patition_table = env.get("PARTITION_TABLE_CSV")
+    if not isfile(path_to_patition_table):
+        sys.stderr.write("Could not find the file %s with paritions table." %
+                         path_to_patition_table)
+        env.Exit(1)
+
+    with open(path_to_patition_table) as fp:
+        for l in fp.readlines():
+            if l.startswith("spiffs"):
+                spiffs_config = [s.strip() for s in l.split(",")]
+                env["SPIFFS_START"] = spiffs_config[3]
+                env["SPIFFS_SIZE"] = spiffs_config[4]
+                env["SPIFFS_PAGE"] = "0x100"
+                env["SPIFFS_BLOCK"] = "0x1000"
+                return
+
+    sys.stderr.write("Could not find the spiffs section in the paritions "
+                     "file %s" % path_to_patition_table)
+    env.Exit(1)
+
+
+def __fetch_spiffs_size(target, source, env):
+    fetch_spiffs_size(env)
+    return (target, source)
+
+
 env = DefaultEnvironment()
 platform = env.PioPlatform()
 
 env.Replace(
     __get_board_f_flash=_get_board_f_flash,
+    __get_board_flash_mode=_get_board_flash_mode,
 
     AR="xtensa-esp32-elf-ar",
     AS="xtensa-esp32-elf-as",
@@ -83,40 +123,6 @@ env.Replace(
         "-Wl,--gc-sections"
     ],
 
-    #
-    # Upload
-    #
-
-    UPLOADER=join(
-        platform.get_package_dir("tool-esptoolpy") or "", "esptool.py"),
-    UPLOADEROTA=join(platform.get_package_dir("tool-espotapy") or "",
-                     "espota.py"),
-
-    UPLOADERFLAGS=[
-        "--chip", "esp32",
-        "--port", '"$UPLOAD_PORT"',
-        "--baud", "$UPLOAD_SPEED",
-        "--before", "default_reset",
-        "--after", "hard_reset",
-        "write_flash", "-z",
-        "--flash_mode", "$BOARD_FLASH_MODE",
-        "--flash_freq", "${__get_board_f_flash(__env__)}",
-        "--flash_size", "detect"
-    ],
-    UPLOADEROTAFLAGS=[
-        "--debug",
-        "--progress",
-        "-i", "$UPLOAD_PORT",
-        "-p", "3232",
-        "$UPLOAD_FLAGS"
-    ],
-
-    UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS $SOURCE',
-    UPLOADOTACMD='"$PYTHONEXE" "$UPLOADEROTA" $UPLOADEROTAFLAGS -f $SOURCE',
-
-    #
-    # Misc
-    #
 
     MKSPIFFSTOOL="mkspiffs_${PIOPLATFORM}_${PIOFRAMEWORK}",
     SIZEPRINTCMD='$SIZETOOL -B -d $SOURCES',
@@ -124,42 +130,29 @@ env.Replace(
     PROGSUFFIX=".elf"
 )
 
-
-# Clone actual CCFLAGS to ASFLAGS
-env.Append(
-    ASFLAGS=env.get("CCFLAGS", [])[:]
-)
-
-#
-# SPIFFS
-#
-
-def fetch_spiffs_size(env):
-    path_to_patition_table = env.get("PARTITION_TABLE_CSV", "")
-    if not isfile(path_to_patition_table):
-        sys.stderr.write("Could not find the file %s with paritions table." % path_to_patition_table)
-        env.Exit(1)
-
-    with open(path_to_patition_table) as fp:
-        for l in fp.readlines():
-            if l.startswith("spiffs"):
-                spiffs_config = [s.strip() for s in l.split(",")]
-                env["SPIFFS_START"] = spiffs_config[3]
-                env["SPIFFS_SIZE"] = spiffs_config[4]
-                env["SPIFFS_PAGE"] = "0x100"
-                env["SPIFFS_BLOCK"] = "0x1000"
-                return
-
-    sys.stderr.write("Could not find the spiffs section in the paritions file %s" % path_to_patition_table)
-    env.Exit(1)
-
-def __fetch_spiffs_size(target, source, env):
-    fetch_spiffs_size(env)
-    return (target, source)
-
+# Allow user to override via pre:script
+if env.get("PROGNAME", "program") == "program":
+    env.Replace(PROGNAME="firmware")
 
 env.Append(
+    # Clone actual CCFLAGS to ASFLAGS
+    ASFLAGS=env.get("CCFLAGS", [])[:],
+
     BUILDERS=dict(
+        ElfToBin=Builder(
+            action=env.VerboseAction(" ".join([
+                '"$PYTHONEXE" "$OBJCOPY"',
+                "--chip", "esp32",
+                "elf2image",
+                "--flash_mode", "$BOARD_FLASH_MODE",
+                "--flash_freq", "${__get_board_f_flash(__env__)}",
+                "--flash_size",
+                env.BoardConfig().get("upload.flash_size", "detect"),
+                "-o", "$TARGET", "$SOURCES"
+            ]), "Building $TARGET"),
+            suffix=".bin"
+        ),
+
         DataToBin=Builder(
             action=env.VerboseAction(" ".join([
                 '"$MKSPIFFSTOOL"',
@@ -176,46 +169,10 @@ env.Append(
     )
 )
 
-# Allow user to override via pre:script
-if env.get("PROGNAME", "program") == "program":
-    env.Replace(PROGNAME="firmware")
-
-#
-# Framework and SDK specific configuration
-#
-
-env.Append(
-    BUILDERS=dict(
-        ElfToBin=Builder(
-            action=env.VerboseAction(" ".join([
-                '"$PYTHONEXE" "$OBJCOPY"',
-                "--chip", "esp32",
-                "elf2image",
-                "--flash_mode", "$BOARD_FLASH_MODE",
-                "--flash_freq", "${__get_board_f_flash(__env__)}",
-                "--flash_size",
-                env.BoardConfig().get("upload.flash_size", "detect"),
-                "-o", "$TARGET", "$SOURCES"
-            ]), "Building $TARGET"),
-            suffix=".bin"
-        )
-    )
-)
-
-if env.subst("$PIOFRAMEWORK") == "arduino":
-    # Handle uploading via OTA
-    ota_port = None
-    if env.get("UPLOAD_PORT"):
-        ota_port = re.match(
-            r"\"?((([0-9]{1,3}\.){3}[0-9]{1,3})|.+\.local)\"?$",
-            env.get("UPLOAD_PORT"))
-    if ota_port:
-        env.Replace(UPLOADCMD="$UPLOADOTACMD")
 
 #
 # Target: Build executable and linkable firmware or SPIFFS image
 #
-
 
 target_elf = env.BuildProgram()
 if "nobuild" in COMMAND_LINE_TARGETS:
@@ -231,31 +188,11 @@ else:
         AlwaysBuild(target_firm)
         AlwaysBuild(env.Alias("buildfs", target_firm))
     else:
-        target_firm = env.ElfToBin(join("$BUILD_DIR", "${PROGNAME}"), target_elf)
+        target_firm = env.ElfToBin(
+            join("$BUILD_DIR", "${PROGNAME}"), target_elf)
 
 AlwaysBuild(env.Alias("nobuild", target_firm))
 target_buildprog = env.Alias("buildprog", target_firm, target_firm)
-
-#
-# Replace default upload flags
-#
-
-if "uploadfs" in COMMAND_LINE_TARGETS:
-    env.Replace(
-        UPLOADERFLAGS=[
-            "--chip", "esp32",
-            "--port", '"$UPLOAD_PORT"',
-            "--baud", "$UPLOAD_SPEED",
-            "--before", "default_reset",
-            "--after", "hard_reset",
-            "write_flash", "-z",
-            "--flash_mode", "$BOARD_FLASH_MODE",
-            "--flash_size", "detect",
-            "${int(SPIFFS_START, 16)}"
-        ]
-    )
-
-    env.Append(UPLOADEROTAFLAGS=["-s"])
 
 #
 # Target: Print binary size
@@ -270,11 +207,98 @@ AlwaysBuild(target_size)
 # Target: Upload firmware or SPIFFS image
 #
 
-target_upload = env.Alias(
-    ["upload", "uploadfs"], target_firm,
-    [env.VerboseAction(env.AutodetectUploadPort, "Looking for upload port..."),
-     env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")])
-env.AlwaysBuild(target_upload)
+upload_protocol = env.subst("$UPLOAD_PROTOCOL")
+debug_tools = env.BoardConfig().get("debug.tools", {})
+upload_actions = []
+
+if upload_protocol == "esptool":
+    env.Replace(
+        UPLOADER=join(
+            platform.get_package_dir("tool-esptoolpy") or "", "esptool.py"),
+        UPLOADEROTA=join(platform.get_package_dir("tool-espotapy") or "",
+                         "espota.py"),
+        UPLOADERFLAGS=[
+            "--chip", "esp32",
+            "--port", '"$UPLOAD_PORT"',
+            "--baud", "$UPLOAD_SPEED",
+            "--before", "default_reset",
+            "--after", "hard_reset",
+            "write_flash", "-z",
+            "--flash_mode", "${__get_board_flash_mode(__env__)}",
+            "--flash_freq", "${__get_board_f_flash(__env__)}",
+            "--flash_size", "detect"
+        ],
+        UPLOADEROTAFLAGS=[
+            "--debug",
+            "--progress",
+            "-i", "$UPLOAD_PORT",
+            "-p", "3232",
+            "$UPLOAD_FLAGS"
+        ],
+
+        UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS $EXTRA_ESPTOOL_UPLOADFLAGS $SOURCE',
+        UPLOADOTACMD='"$PYTHONEXE" "$UPLOADEROTA" $UPLOADEROTAFLAGS -f $SOURCE',
+    )
+
+    if env.subst("$PIOFRAMEWORK") == "arduino":
+        # Handle uploading via OTA
+        ota_port = None
+        if env.get("UPLOAD_PORT"):
+            ota_port = re.match(
+                r"\"?((([0-9]{1,3}\.){3}[0-9]{1,3})|.+\.local)\"?$",
+                env.get("UPLOAD_PORT"))
+        if ota_port:
+            env.Replace(UPLOADCMD="$UPLOADOTACMD")
+
+    if "uploadfs" in COMMAND_LINE_TARGETS:
+        env.Replace(
+            UPLOADERFLAGS=[
+                "--chip", "esp32",
+                "--port", '"$UPLOAD_PORT"',
+                "--baud", "$UPLOAD_SPEED",
+                "--before", "default_reset",
+                "--after", "hard_reset",
+                "write_flash", "-z",
+                "--flash_mode", "$BOARD_FLASH_MODE",
+                "--flash_size", "detect",
+                "${int(SPIFFS_START, 16)}"
+            ]
+        )
+        env.Append(UPLOADEROTAFLAGS=["-s"])
+
+    upload_actions = [
+        env.VerboseAction(
+            env.AutodetectUploadPort, "Looking for upload port..."),
+        env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")
+    ]
+
+elif upload_protocol in debug_tools:
+    openocd_dir = platform.get_package_dir("tool-openocd-esp32") or ""
+    uploader_flags = ["-s", openocd_dir]
+    uploader_flags.extend(debug_tools.get(upload_protocol).get(
+        "server").get("arguments", []))
+    uploader_flags.extend([
+        "-c",
+        "program_esp32 {{$SOURCE}} 0x10000 verify reset; shutdown;"
+    ])
+    for i, item in enumerate(uploader_flags):
+        if "$PACKAGE_DIR" in item:
+            uploader_flags[i] = item.replace("$PACKAGE_DIR",openocd_dir)
+
+    env.Replace(
+        UPLOADER="openocd",
+        UPLOADERFLAGS=uploader_flags,
+        UPLOADCMD="$UPLOADER $UPLOADERFLAGS")
+    upload_actions = [env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")]
+
+# custom upload tool
+elif "UPLOADCMD" in env:
+    upload_actions = [env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")]
+
+else:
+    sys.stderr.write("Warning! Unknown upload protocol %s\n" % upload_protocol)
+
+AlwaysBuild(env.Alias(["upload", "uploadfs"], target_firm, upload_actions))
 
 #
 # Default targets
