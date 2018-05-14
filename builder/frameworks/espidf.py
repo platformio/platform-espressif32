@@ -100,16 +100,12 @@ def build_component(path):
 
 def find_valid_config_file():
     search_path = join(
-        env.subst("$PIOHOME_DIR"), "platforms",
-        env.subst("$PIOPLATFORM"), "examples", "*", "src", "sdkconfig.h"
-    )
-
+        platform.get_dir(), "examples", "*", "src", "sdkconfig.h")
     files = glob(search_path)
     if not files:
         sys.stderr.write(
             "Error: Could not find default \"sdkconfig.h\" file\n")
         env.Exit(1)
-
     return files[0]
 
 
