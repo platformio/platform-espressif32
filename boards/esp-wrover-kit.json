@@ -22,7 +22,9 @@
     "can"
   ],
   "debug": {
-    "openocd_board": "esp32-wrover.cfg"
+    "openocd_board": "esp32-wrover.cfg",
+    "onboard_tools": ["ft2232h"],
+    "default_tools": ["ft2232h"]
   },
   "frameworks": [
     "arduino",
@@ -38,6 +40,7 @@
     "protocol": "esptool",
     "protocols": [
       "esptool",
+      "ft2232h",
       "olimex-arm-usb-tiny-h",
       "olimex-arm-usb-ocd-h",
       "minimodule"
