@@ -56,7 +56,7 @@ class Espressif32Platform(PlatformBase):
 
             openocd_board = debug.get("openocd_board")
             openocd_interface = "mbftdi" if link == "minimodule" else link
-            if board == "esp-wrover-kit":
+            if board.id == "esp-wrover-kit":
                 openocd_interface = "esp32_devkitj_v1"
 
             server_args = [
