@@ -236,9 +236,11 @@ if upload_protocol == "esptool":
             "$UPLOAD_FLAGS"
         ],
 
-        UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS $FLASH_EXTRA_IMAGES 0x10000 $SOURCE',
+        UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS 0x10000 $SOURCE',
         UPLOADOTACMD='"$PYTHONEXE" "$UPLOADEROTA" $UPLOADEROTAFLAGS -f $SOURCE',
     )
+    for image in env.get("FLASH_EXTRA_IMAGES", []):
+        env.Append(UPLOADERFLAGS=[image[0], '"%s"' % image[1]])
 
     if env.subst("$PIOFRAMEWORK") == "arduino":
         # Handle uploading via OTA
@@ -278,11 +280,11 @@ elif upload_protocol in debug_tools:
     uploader_flags.extend(debug_tools.get(upload_protocol).get(
         "server").get("arguments", []))
     uploader_flags.extend([
-        "-c", "program_esp32 {{$SOURCE}} 0x10000 verify"
+        "-c", 'program_esp32 "{{$SOURCE}}" 0x10000 verify'
     ])
     for image in env.get("FLASH_EXTRA_IMAGES", []):
         uploader_flags.extend([
-            "-c", "program_esp32 %s %s verify" % (image[1], image[0])
+            "-c", 'program_esp32 "%s" %s verify' % (image[1], image[0])
         ])
     uploader_flags.extend(["-c", "reset run; shutdown"])
     for i, item in enumerate(uploader_flags):
