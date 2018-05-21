@@ -264,7 +264,8 @@ if upload_protocol == "esptool":
                 "--flash_mode", "$BOARD_FLASH_MODE",
                 "--flash_size", "detect",
                 "${int(SPIFFS_START, 16)}"
-            ]
+            ],
+            UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS $SOURCE',
         )
         env.Append(UPLOADEROTAFLAGS=["-s"])
 
