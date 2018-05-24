@@ -240,7 +240,7 @@ if upload_protocol == "esptool":
         UPLOADOTACMD='"$PYTHONEXE" "$UPLOADEROTA" $UPLOADEROTAFLAGS -f $SOURCE',
     )
     for image in env.get("FLASH_EXTRA_IMAGES", []):
-        env.Append(UPLOADERFLAGS=[image[0], '"%s"' % image[1]])
+        env.Append(UPLOADERFLAGS=[image[0], "%s" % image[1]])
 
     if env.subst("$PIOFRAMEWORK") == "arduino":
         # Handle uploading via OTA
