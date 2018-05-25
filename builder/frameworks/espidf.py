@@ -302,7 +302,7 @@ env.Append(
 
     FLASH_EXTRA_IMAGES=[
         ("0x1000", join("$BUILD_DIR", "bootloader.bin")),
-        ("0x8000", join("$BUILD_DIR", "partitions_table.bin"))
+        ("0x8000", join("$BUILD_DIR", "partitions.bin"))
     ]
 )
 
@@ -339,17 +339,16 @@ else:
 # Generate partition table
 #
 
-# Export path to the partitions table
+fwpartitions_dir = join(FRAMEWORK_DIR, "components", "partition_table")
+partitions_csv = env.BoardConfig().get("build.partitions",
+                                       "partitions_singleapp.csv")
 env.Replace(
-    PARTITION_TABLE_CSV=join(
-        FRAMEWORK_DIR, "components", "partition_table",
-        "%s.csv" % env.BoardConfig().get("build.partitions", "partitions_singleapp")
-    )
-)
+    PARTITIONS_TABLE_CSV=join(fwpartitions_dir, partitions_csv) if isfile(
+        join(fwpartitions_dir, partitions_csv)) else partitions_csv)
 
 partition_table = env.Command(
-    join("$BUILD_DIR", "partitions_table.bin"),
-    "$PARTITION_TABLE_CSV",
+    join("$BUILD_DIR", "partitions.bin"),
+    "$PARTITIONS_TABLE_CSV",
     env.VerboseAction('"$PYTHONEXE" "%s" -q $SOURCE $TARGET' % join(
         FRAMEWORK_DIR, "components", "partition_table", "gen_esp32part.py"),
         "Generating partitions $TARGET"))

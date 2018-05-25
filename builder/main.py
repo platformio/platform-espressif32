@@ -20,6 +20,10 @@ from SCons.Script import (COMMAND_LINE_TARGETS, AlwaysBuild, Builder, Default,
                           DefaultEnvironment)
 
 
+#
+# Helpers
+#
+
 def _get_board_f_flash(env):
     frequency = env.subst("$BOARD_F_FLASH")
     frequency = str(frequency).replace("L", "")
@@ -34,30 +38,73 @@ def _get_board_flash_mode(env):
         return "dout"
     return mode
 
+
+def _parse_size(value):
+    if value.isdigit():
+        return int(value)
+    elif value.startswith("0x"):
+        return int(value, 16)
+    elif value[-1] in ("K", "M"):
+        base = 1024 if value[-1] == "K" else 1024 * 1024
+        return int(value[:-1]) * base
+    return value
+
+
+def _parse_partitions(env):
+    partitions_csv = env.subst("$PARTITIONS_TABLE_CSV")
+    if not isfile(partitions_csv):
+        sys.stderr.write("Could not find the file %s with partitions "
+                         "table.\n" % partitions_csv)
+        env.Exit(1)
+
+    result = []
+    with open(partitions_csv) as fp:
+        for line in fp.readlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            tokens = [t.strip() for t in line.split(",") if t.strip()]
+            if len(tokens) < 5:
+                continue
+            result.append({
+                "name": tokens[0],
+                "type": tokens[1],
+                "subtype": tokens[2],
+                "offset": tokens[3],
+                "size": tokens[4],
+                "flags": tokens[5] if len(tokens) > 5 else None
+            })
+    return result
+
+
+def _update_max_upload_size(env):
+    if not env.get("PARTITIONS_TABLE_CSV"):
+        return
+    sizes = [
+        _parse_size(p['size']) for p in _parse_partitions(env)
+        if p['type'] in ("0", "app")
+    ]
+    if sizes:
+        env.BoardConfig().update("upload.maximum_size", max(sizes))
+
+
 #
 # SPIFFS helpers
 #
 
 def fetch_spiffs_size(env):
-    path_to_patition_table = env.get("PARTITION_TABLE_CSV")
-    if not isfile(path_to_patition_table):
-        sys.stderr.write("Could not find the file %s with paritions table." %
-                         path_to_patition_table)
-        env.Exit(1)
-
-    with open(path_to_patition_table) as fp:
-        for l in fp.readlines():
-            if l.startswith("spiffs"):
-                spiffs_config = [s.strip() for s in l.split(",")]
-                env["SPIFFS_START"] = spiffs_config[3]
-                env["SPIFFS_SIZE"] = spiffs_config[4]
-                env["SPIFFS_PAGE"] = "0x100"
-                env["SPIFFS_BLOCK"] = "0x1000"
-                return
-
-    sys.stderr.write("Could not find the spiffs section in the paritions "
-                     "file %s" % path_to_patition_table)
-    env.Exit(1)
+    spiffs = None
+    for p in _parse_partitions(env):
+        if p['type'] == "data" and p['subtype'] == "spiffs":
+            spiffs = p
+    if not spiffs:
+        sys.stderr.write(
+            env.subst("Could not find the `spiffs` section in the partitions "
+                      "table $PARTITIONS_TABLE_CSV\n"))
+    env["SPIFFS_START"] = _parse_size(spiffs['offset'])
+    env["SPIFFS_SIZE"] = _parse_size(spiffs['size'])
+    env["SPIFFS_PAGE"] = int("0x100", 16)
+    env["SPIFFS_BLOCK"] = int("0x1000", 16)
 
 
 def __fetch_spiffs_size(target, source, env):
@@ -157,9 +204,9 @@ env.Append(
             action=env.VerboseAction(" ".join([
                 '"$MKSPIFFSTOOL"',
                 "-c", "$SOURCES",
-                "-p", "${int(SPIFFS_PAGE, 16)}",
-                "-b", "${int(SPIFFS_BLOCK, 16)}",
-                "-s", "${int(SPIFFS_SIZE, 16)}",
+                "-p", "$SPIFFS_PAGE",
+                "-b", "$SPIFFS_BLOCK",
+                "-s", "$SPIFFS_SIZE",
                 "$TARGET"
             ]), "Building SPIFFS image from '$SOURCES' directory to $TARGET"),
             emitter=__fetch_spiffs_size,
@@ -193,6 +240,10 @@ else:
 
 AlwaysBuild(env.Alias("nobuild", target_firm))
 target_buildprog = env.Alias("buildprog", target_firm, target_firm)
+
+# update max upload size based on CSV file
+if "upload" in COMMAND_LINE_TARGETS:
+    _update_max_upload_size(env)
 
 #
 # Target: Print binary size
@@ -263,7 +314,7 @@ if upload_protocol == "esptool":
                 "write_flash", "-z",
                 "--flash_mode", "$BOARD_FLASH_MODE",
                 "--flash_size", "detect",
-                "${int(SPIFFS_START, 16)}"
+                "$SPIFFS_START"
             ],
             UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS $SOURCE',
         )

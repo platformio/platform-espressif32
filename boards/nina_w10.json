@@ -7,7 +7,7 @@
     "flash_mode": "dio",
     "ldscript": "esp32_out.ld",
     "mcu": "esp32",
-    "partitions": "minimal",
+    "partitions": "minimal.csv",
     "variant": "nina_w10"
   },
   "connectivity": [

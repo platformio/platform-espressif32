@@ -54,7 +54,7 @@ env.AddMethod(VariantDirWrap)
 
 env.Replace(
     PLATFORMFW_DIR=env.PioPlatform().get_package_dir("framework-pumbaa"),
-    UPLOADERFLAGS=[],  # Backward compatibility for obsolete build script
+    UPLOADERFLAGS=[]  # Backward compatibility for obsolete build script
 )
 
 SConscript(
