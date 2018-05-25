@@ -89,8 +89,8 @@ env.Replace(
     CFLAGS=["-std=gnu99"],
 
     CCFLAGS=[
-        "%s" % "-Os" if env.subst("$PIOFRAMEWORK") == "arduino" else "-Og",
-        "-g3",
+        "-Os",
+        "-Wall",
         "-nostdlib",
         "-Wpointer-arith",
         "-Wno-error=unused-but-set-variable",
