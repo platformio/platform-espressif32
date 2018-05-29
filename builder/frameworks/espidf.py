@@ -293,7 +293,6 @@ env.Append(
     LINKFLAGS=[
         "-u", "__cxa_guard_dummy",
         "-u", "ld_include_panic_highint_hdl",
-        "-u", "__cxx_fatal_exception",
         "-T", "esp32.common.ld",
         "-T", "esp32.rom.ld",
         "-T", "esp32.peripherals.ld",
@@ -307,6 +306,29 @@ env.Append(
 )
 
 
+if "PIO_FRAMEWORK_ESP_IDF_ENABLE_EXCEPTIONS" in env.Flatten(
+        env.get("CPPDEFINES", [])):
+
+    # remove unnecessary flag defined in main.py that disables exceptions
+    try:
+        index = env['CXXFLAGS'].index("-fno-exceptions")
+        if index > 0:
+            env['CXXFLAGS'].remove("-fno-exceptions")
+    except IndexError:
+        pass
+
+    env.Append(
+        CPPDEFINES=[
+            ("CONFIG_CXX_EXCEPTIONS", 1),
+            ("CONFIG_CXX_EXCEPTIONS_EMG_POOL_SIZE", 0)
+        ],
+        
+        CXXFLAGS=["-fexceptions"]
+    )
+
+else:
+    env.Append(LINKFLAGS=["-u", "__cxx_fatal_exception"])
+    
 #
 # Handle missing sdkconfig.h
 #
