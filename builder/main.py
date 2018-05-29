@@ -56,6 +56,7 @@ def _parse_partitions(env):
         sys.stderr.write("Could not find the file %s with partitions "
                          "table.\n" % partitions_csv)
         env.Exit(1)
+        return
 
     result = []
     with open(partitions_csv) as fp:
@@ -101,6 +102,8 @@ def fetch_spiffs_size(env):
         sys.stderr.write(
             env.subst("Could not find the `spiffs` section in the partitions "
                       "table $PARTITIONS_TABLE_CSV\n"))
+        env.Exit(1)
+        return
     env["SPIFFS_START"] = _parse_size(spiffs['offset'])
     env["SPIFFS_SIZE"] = _parse_size(spiffs['size'])
     env["SPIFFS_PAGE"] = int("0x100", 16)
