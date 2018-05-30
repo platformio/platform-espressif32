@@ -1,13 +1,13 @@
 {
   "build": {
     "core": "esp32",
-    "extra_flags": "-DARDUINO_Node32s",
+    "extra_flags": "-DARDUINO_ESP32_PICO",
     "f_cpu": "240000000L",
     "f_flash": "40000000L",
     "flash_mode": "dio",
     "ldscript": "esp32_out.ld",
     "mcu": "esp32",
-    "variant": "esp32"
+    "variant": "pico32"
   },
   "connectivity": [
     "wifi",
@@ -15,14 +15,11 @@
     "ethernet",
     "can"
   ],
-  "debug": {
-    "openocd_board": "esp-wroom-32.cfg"
-  },
   "frameworks":  [
     "arduino",
     "espidf"
   ],
-  "name": "Node32s",
+  "name": "ESP32 Pico Kit",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 294912,
@@ -31,12 +28,9 @@
     "speed": 115200,
     "protocol": "esptool",
     "protocols": [
-      "esptool",
-      "olimex-arm-usb-tiny-h",
-      "olimex-arm-usb-ocd-h",
-      "minimodule"
+      "esptool"
     ]
   },
-  "url": "http://www.ayarafun.com",
-  "vendor": "Aiyarafun"
+  "url": "http://esp-idf.readthedocs.io/en/latest/get-started/get-started-pico-kit.html",
+  "vendor": "Espressif"
 }

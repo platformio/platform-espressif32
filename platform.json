@@ -12,7 +12,7 @@
     "type": "git",
     "url": "https://github.com/platformio/platform-espressif32.git"
   },
-  "version": "0.12.0",
+  "version": "1.0.0",
   "packageRepositories": [
     "https://dl.bintray.com/platformio/dl-packages/manifest.json",
     "http://dl.platformio.org/packages/manifest.json",
@@ -40,17 +40,17 @@
   "packages": {
     "toolchain-xtensa32": {
       "type": "toolchain",
-      "version": "~1.50200.2"
+      "version": "~2.50200.0"
     },
     "framework-arduinoespressif32": {
       "type": "framework",
       "optional": true,
-      "version": "~1.4.0"
+      "version": "~1.5.0"
     },
     "framework-espidf": {
       "type": "framework",
       "optional": true,
-      "version": "~2.211.0"
+      "version": "~2.300.0"
     },
     "framework-simba": {
       "type": "framework",
@@ -64,12 +64,22 @@
     },
     "tool-esptoolpy": {
       "type": "uploader",
-      "version": "~1.20100.0"
+      "version": "~1.20310.0"
     },
     "tool-espotapy": {
       "type": "uploader",
       "optional": true,
       "version": "~1.1.0"
+    },
+    "tool-openocd-esp32": {
+      "type": "debugger",
+      "optional": true,
+      "version": "~1.1000.0"
+    },
+    "tool-mkspiffs": {
+      "type": "uploader",
+      "optional": true,
+      "version": "~2.230.0"
     }
   }
 }

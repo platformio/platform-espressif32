@@ -88,14 +88,25 @@ def build_component(path):
             src_dirs = params.get("COMPONENT_SRCDIRS")
             if "." in src_dirs:
                 src_dirs.remove(".")
-                src_filter += " +<*.c*>"
+                src_filter += " +<*.[sSc]*>"
             for f in src_dirs:
-                src_filter += " +<%s/*.c*>" % f
+                src_filter += " +<%s/*.[sSc]*>" % f
 
     return envsafe.BuildLibrary(
         join("$BUILD_DIR", "%s" % basename(path)), path,
         src_filter=src_filter
     )
+
+
+def find_valid_config_file():
+    search_path = join(
+        platform.get_dir(), "examples", "*", "src", "sdkconfig.h")
+    files = glob(search_path)
+    if not files:
+        sys.stderr.write(
+            "Error: Could not find default \"sdkconfig.h\" file\n")
+        env.Exit(1)
+    return files[0]
 
 
 def build_espidf_bootloader():
@@ -105,7 +116,7 @@ def build_espidf_bootloader():
         LIBPATH=[
             join(FRAMEWORK_DIR, "components", "esp32", "ld"),
             join(FRAMEWORK_DIR, "components", "esp32", "lib"),
-            join(FRAMEWORK_DIR, "components", "bootloader", "src", "main")
+            join(FRAMEWORK_DIR, "components", "bootloader", "subproject", "main")
         ],
 
         LINKFLAGS=[
@@ -115,8 +126,9 @@ def build_espidf_bootloader():
             "-Wl,--gc-sections",
             "-T", "esp32.bootloader.ld",
             "-T", "esp32.rom.ld",
+            "-T", "esp32.rom.spiram_incompatible_fns.ld",
             "-T", "esp32.peripherals.ld",
-            "-T", "esp32.bootloader.rom.ld"
+            "-T", "esp32.bootloader.rom.ld",
         ]
     ),
 
@@ -160,7 +172,7 @@ def build_espidf_bootloader():
         join("$BUILD_DIR", "bootloader.elf"),
         envsafe.CollectBuildFiles(
             join("$BUILD_DIR", "bootloader"),
-            join(FRAMEWORK_DIR, "components", "bootloader", "src", "main")
+            join(FRAMEWORK_DIR, "components", "bootloader", "subproject", "main")
         )
     )
 
@@ -183,9 +195,11 @@ env.Prepend(
         join(FRAMEWORK_DIR, "components", "coap", "libcoap", "include"),
         join(FRAMEWORK_DIR, "components", "coap",
              "libcoap", "include", "coap"),
+        join(FRAMEWORK_DIR, "components", "console"),
         join(FRAMEWORK_DIR, "components", "cxx", "include"),
         join(FRAMEWORK_DIR, "components", "driver", "include"),
         join(FRAMEWORK_DIR, "components", "driver", "include", "driver"),
+        join(FRAMEWORK_DIR, "components", "esp_adc_cal", "include"),
         join(FRAMEWORK_DIR, "components", "esp32", "include"),
         join(FRAMEWORK_DIR, "components", "ethernet", "include"),
         join(FRAMEWORK_DIR, "components", "expat", "include", "expat"),
@@ -219,6 +233,7 @@ env.Prepend(
         join(FRAMEWORK_DIR, "components", "openssl", "include", "openssl"),
         join(FRAMEWORK_DIR, "components", "sdmmc", "include"),
         join(FRAMEWORK_DIR, "components", "spi_flash", "include"),
+        join(FRAMEWORK_DIR, "components", "spiffs", "include"),
         join(FRAMEWORK_DIR, "components", "tcpip_adapter", "include"),
         join(FRAMEWORK_DIR, "components", "soc", "esp32", "include"),
         join(FRAMEWORK_DIR, "components", "soc", "include"),
@@ -241,7 +256,7 @@ env.Prepend(
 
     LIBS=[
         "btdm_app", "hal", "coexist", "core", "net80211", "phy", "rtc", "pp",
-        "wpa", "wpa2", "wps", "smartconfig", "m", "c", "gcc", "stdc++"
+        "wpa", "wpa2", "espnow", "wps", "smartconfig", "m", "c", "gcc", "stdc++"
     ]
 )
 
@@ -277,48 +292,85 @@ env.Prepend(
 env.Append(
     LINKFLAGS=[
         "-u", "__cxa_guard_dummy",
+        "-u", "ld_include_panic_highint_hdl",
         "-T", "esp32.common.ld",
         "-T", "esp32.rom.ld",
-        "-T", "esp32.peripherals.ld"
+        "-T", "esp32.peripherals.ld",
+        "-T", "esp32.rom.spiram_incompatible_fns.ld"
     ],
 
-    UPLOADERFLAGS=[
-        "0x1000", join("$BUILD_DIR", "bootloader.bin"),
-        "0x8000", join("$BUILD_DIR", "partitions_table.bin"),
-        "0x10000"
+    FLASH_EXTRA_IMAGES=[
+        ("0x1000", join("$BUILD_DIR", "bootloader.bin")),
+        ("0x8000", join("$BUILD_DIR", "partitions.bin"))
     ]
 )
 
 
+if "PIO_FRAMEWORK_ESP_IDF_ENABLE_EXCEPTIONS" in env.Flatten(
+        env.get("CPPDEFINES", [])):
+
+    # remove unnecessary flag defined in main.py that disables exceptions
+    try:
+        index = env['CXXFLAGS'].index("-fno-exceptions")
+        if index > 0:
+            env['CXXFLAGS'].remove("-fno-exceptions")
+    except IndexError:
+        pass
+
+    env.Append(
+        CPPDEFINES=[
+            ("CONFIG_CXX_EXCEPTIONS", 1),
+            ("CONFIG_CXX_EXCEPTIONS_EMG_POOL_SIZE", 0)
+        ],
+        
+        CXXFLAGS=["-fexceptions"]
+    )
+
+else:
+    env.Append(LINKFLAGS=["-u", "__cxx_fatal_exception"])
+    
 #
 # Handle missing sdkconfig.h
 #
 
 if not isfile(join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h")):
-    search_path = join(
-        env.subst("$PIOHOME_DIR"), "platforms",
-        env.subst("$PIOPLATFORM"), "examples", "*", "src", "sdkconfig.h"
-    )
+    print("Warning! Cannot find \"sdkconfig.h\" file. "
+          "Default \"sdkconfig.h\" will be added to your project!")
+    copy(find_valid_config_file(), join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h"))
+else:
+    is_new = False
+    with open(join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h")) as fp:
+        for l in fp.readlines():
+            if "CONFIG_ADC_CAL_LUT_ENABLE" in l:
+                is_new = True
+                break
 
-    files = glob(search_path)
-    if not files:
-        sys.stderr.write(
-            "Error: \"sdkconfig.h\" file is required for esp-idf framework!\n")
-        env.Exit(1)
+    if not is_new:
+        print("Warning! Detected an outdated \"sdkconfig.h\" file. "
+              "The old \"sdkconfig.h\" will be replaced by the new one.")
 
-    print("Warning! Cannot find \"sdk_config.h\" file. "
-          "Default \"sdk_config.h\" will be added to your project!")
-    copy(files[0], join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h"))
+        new_config = find_valid_config_file()
+        copy(
+            join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h"),
+            join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h.bak")
+        )
+        copy(new_config, join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h"))
 
 
 #
 # Generate partition table
 #
 
+fwpartitions_dir = join(FRAMEWORK_DIR, "components", "partition_table")
+partitions_csv = env.BoardConfig().get("build.partitions",
+                                       "partitions_singleapp.csv")
+env.Replace(
+    PARTITIONS_TABLE_CSV=join(fwpartitions_dir, partitions_csv) if isfile(
+        join(fwpartitions_dir, partitions_csv)) else partitions_csv)
+
 partition_table = env.Command(
-    join("$BUILD_DIR", "partitions_table.bin"),
-    join(FRAMEWORK_DIR, "components", "partition_table",
-         "partitions_singleapp.csv"),
+    join("$BUILD_DIR", "partitions.bin"),
+    "$PARTITIONS_TABLE_CSV",
     env.VerboseAction('"$PYTHONEXE" "%s" -q $SOURCE $TARGET' % join(
         FRAMEWORK_DIR, "components", "partition_table", "gen_esp32part.py"),
         "Generating partitions $TARGET"))
@@ -353,8 +405,11 @@ env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", env.ElfToBin(
 libs = []
 
 ignore_dirs = (
+    "app_trace",
+    "aws_iot",
+    "espcoredump",
     "bootloader",
-    "bootloader_support",
+    "heap",
     "esptool_py",
     "idf_test",
     "partition_table",
@@ -382,7 +437,7 @@ libs.append(env.BuildLibrary(
 libs.append(env.BuildLibrary(
     join("$BUILD_DIR", "app_trace"),
     join(FRAMEWORK_DIR, "components", "app_trace"),
-    src_filter="+<*> -<test> -<sys_view>"
+    src_filter="+<*> -<test> -<sys_view> -<gcov>"
 ))
 
 libs.append(env.BuildLibrary(
@@ -391,14 +446,21 @@ libs.append(env.BuildLibrary(
     src_filter="+<*> -<test> -<esp32/test>"
 ))
 
+libs.append(env.BuildLibrary(
+    join("$BUILD_DIR", "heap"),
+    join(FRAMEWORK_DIR, "components", "heap"),
+    src_filter="+<*> -<test*> -<multi_heap_poisoning.c>"
+))
+
 envsafe = env.Clone()
 envsafe.Prepend(
     CPPDEFINES=[
         "CONFIGURED", "NATIVE_LITTLE_ENDIAN", "HAVE_WEAK_SYMBOLS",
-        "__STDC_LIMIT_MACROS", "__STDC_CONSTANT_MACROS"
+        "__STDC_LIMIT_MACROS", "__STDC_CONSTANT_MACROS", "-DRANDOMBYTES_DEFAULT_IMPLEMENTATION"
     ],
     CCFLAGS=["-Wno-type-limits", "-Wno-unknown-pragmas"],
     CPPPATH=[
+        join(FRAMEWORK_DIR, "components", "libsodium", "port"),
         join(FRAMEWORK_DIR, "components", "libsodium", "port_include",
              "sodium")
     ]

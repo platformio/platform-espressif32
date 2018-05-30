@@ -80,7 +80,7 @@ async_handler(coap_context_t *ctx, struct coap_resource_t *resource,
     async = coap_register_async(ctx, peer, request, COAP_ASYNC_SEPARATE | COAP_ASYNC_CONFIRM, (void*)"no data");
 }
 
-static void coap_demo_thread(void *p)
+static void coap_example_thread(void *p)
 {
     coap_context_t*  ctx = NULL;
     coap_address_t   serv_addr;
@@ -120,7 +120,7 @@ static void coap_demo_thread(void *p)
                     FD_CLR( ctx->sockfd, &readfds);
                     FD_SET( ctx->sockfd, &readfds);
 
-                    int result = select( FD_SETSIZE, &readfds, 0, 0, &tv );
+                    int result = select( ctx->sockfd+1, &readfds, 0, 0, &tv );
                     if (result > 0){
                         if (FD_ISSET( ctx->sockfd, &readfds ))
                             coap_read(ctx);
@@ -185,8 +185,8 @@ static void wifi_conn_init(void)
 
 void app_main(void)
 {
-    nvs_flash_init();
+    ESP_ERROR_CHECK( nvs_flash_init() );
     wifi_conn_init();
 
-    xTaskCreate(coap_demo_thread, "coap", 2048, NULL, 5, NULL);
+    xTaskCreate(coap_example_thread, "coap", 2048, NULL, 5, NULL);
 }

@@ -51,18 +51,18 @@ env.AddMethod(LookupSources)
 env.AddMethod(VariantDirWrap)
 
 env.Replace(
-    PLATFORMFW_DIR=env.PioPlatform().get_package_dir("framework-simba")
-)
-
-env.Append(
-    UPLOADERFLAGS=[
-        "0x1000", join("$PLATFORMFW_DIR", "3pp", "esp32",
-                       "bin", "bootloader.bin"),
-        "0x4000", join("$PLATFORMFW_DIR", "3pp", "esp32",
-                       "bin", "partitions_singleapp.bin"),
-        "0x10000"
-    ]
+    PLATFORMFW_DIR=env.PioPlatform().get_package_dir("framework-simba"),
+    UPLOADERFLAGS=[]  # Backward compatibility for obsolete build script
 )
 
 SConscript(
     [env.subst(join("$PLATFORMFW_DIR", "make", "platformio.sconscript"))])
+
+env.Replace(
+    FLASH_EXTRA_IMAGES=[
+        ("0x1000", join("$PLATFORMFW_DIR", "3pp", "esp32",
+                        "bin", "bootloader.bin")),
+        ("0x8000", join("$PLATFORMFW_DIR", "3pp", "esp32",
+                        "bin", "partitions_singleapp.bin"))
+    ]
+)

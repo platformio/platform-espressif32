@@ -5,9 +5,9 @@
     "f_cpu": "240000000L",
     "f_flash": "40000000L",
     "flash_mode": "dio",
-    "partitions": "minimal",
     "ldscript": "esp32_out.ld",
     "mcu": "esp32",
+    "partitions": "minimal.csv",
     "variant": "nina_w10"
   },
   "connectivity": [
@@ -27,7 +27,10 @@
     "maximum_size": 1310720,
     "require_upload_port": true,
     "speed": 115200,
-    "wait_for_upload_port": true
+    "protocol": "esptool",
+    "protocols": [
+      "esptool"
+    ]
   },
   "url": "https://www.u-blox.com/en/product/nina-w10-series",
   "vendor": "u-blox"
