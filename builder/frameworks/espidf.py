@@ -22,7 +22,7 @@ https://github.com/espressif/esp-idf
 
 from glob import glob
 from os import listdir, walk
-from os.path import basename, isdir, isfile, join
+from os.path import abspath, basename, isdir, isfile, join
 
 from shutil import copy
 import sys
@@ -322,13 +322,13 @@ if "PIO_FRAMEWORK_ESP_IDF_ENABLE_EXCEPTIONS" in env.Flatten(
             ("CONFIG_CXX_EXCEPTIONS", 1),
             ("CONFIG_CXX_EXCEPTIONS_EMG_POOL_SIZE", 0)
         ],
-        
+
         CXXFLAGS=["-fexceptions"]
     )
 
 else:
     env.Append(LINKFLAGS=["-u", "__cxx_fatal_exception"])
-    
+
 #
 # Handle missing sdkconfig.h
 #
@@ -365,8 +365,9 @@ fwpartitions_dir = join(FRAMEWORK_DIR, "components", "partition_table")
 partitions_csv = env.BoardConfig().get("build.partitions",
                                        "partitions_singleapp.csv")
 env.Replace(
-    PARTITIONS_TABLE_CSV=join(fwpartitions_dir, partitions_csv) if isfile(
-        join(fwpartitions_dir, partitions_csv)) else partitions_csv)
+    PARTITIONS_TABLE_CSV=abspath(
+        join(fwpartitions_dir, partitions_csv) if isfile(
+            join(fwpartitions_dir, partitions_csv)) else partitions_csv))
 
 partition_table = env.Command(
     join("$BUILD_DIR", "partitions.bin"),
