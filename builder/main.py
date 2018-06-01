@@ -210,7 +210,7 @@ AlwaysBuild(env.Alias("nobuild", target_firm))
 target_buildprog = env.Alias("buildprog", target_firm, target_firm)
 
 # update max upload size based on CSV file
-if "upload" in COMMAND_LINE_TARGETS:
+if set(["checkprogsize", "upload"]) & set(COMMAND_LINE_TARGETS):
     _update_max_upload_size(env)
 
 #
