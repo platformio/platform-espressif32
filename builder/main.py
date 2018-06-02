@@ -128,6 +128,7 @@ platform = env.PioPlatform()
 env.Replace(
     __get_board_f_flash=_get_board_f_flash,
     __get_board_flash_mode=_get_board_flash_mode,
+
     AR="xtensa-esp32-elf-ar",
     AS="xtensa-esp32-elf-as",
     CC="xtensa-esp32-elf-gcc",
@@ -137,6 +138,7 @@ env.Replace(
         platform.get_package_dir("tool-esptoolpy") or "", "esptool.py"),
     RANLIB="xtensa-esp32-elf-ranlib",
     SIZETOOL="xtensa-esp32-elf-size",
+
     ARFLAGS=["rc"],
     ASFLAGS=["-x", "assembler-with-cpp"],
     CFLAGS=["-std=gnu99"],
@@ -155,9 +157,15 @@ env.Replace(
         "-nostdlib", "-Wl,-static", "-u", "call_user_start_cpu0",
         "-Wl,--undefined=uxTopUsedPriority", "-Wl,--gc-sections"
     ],
+
+    SIZEPROGREGEXP=r"^(?:\.iram0\.text|\.dram0\.text|\.flash\.text|\.dram0\.data|\.flash\.rodata|)\s+(\d+).*",
+    SIZEDATAREGEXP=r"^(?:\.dram0\.data|\.dram0\.bss)\s+(\d+).*",
+    SIZECHECKCMD="$SIZETOOL -A -d $SOURCES",
+    SIZEPRINTCMD="$SIZETOOL -B -d $SOURCES",
+
     MKSPIFFSTOOL="mkspiffs_${PIOPLATFORM}_${PIOFRAMEWORK}",
-    SIZEPRINTCMD='$SIZETOOL -B -d $SOURCES',
-    PROGSUFFIX=".elf")
+    PROGSUFFIX=".elf"
+)
 
 # Allow user to override via pre:script
 if env.get("PROGNAME", "program") == "program":
