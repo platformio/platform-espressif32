@@ -218,7 +218,14 @@ AlwaysBuild(env.Alias("nobuild", target_firm))
 target_buildprog = env.Alias("buildprog", target_firm, target_firm)
 
 # update max upload size based on CSV file
-if set(["checkprogsize", "upload"]) & set(COMMAND_LINE_TARGETS):
+if env.get("PIOMAINPROG"):
+    env.AddPreAction(
+        "checkprogsize",
+        env.VerboseAction(
+            lambda source, target, env: _update_max_upload_size(env),
+            "Retrieving maximum program size $SOURCES"))
+# remove after PIO Core 3.6 release
+elif set(["checkprogsize", "upload"]) & set(COMMAND_LINE_TARGETS):
     _update_max_upload_size(env)
 
 #
