@@ -140,22 +140,44 @@ env.Replace(
     SIZETOOL="xtensa-esp32-elf-size",
 
     ARFLAGS=["rc"],
+
     ASFLAGS=["-x", "assembler-with-cpp"],
+
     CFLAGS=["-std=gnu99"],
+
     CCFLAGS=[
-        "-Os", "-Wall", "-nostdlib", "-Wpointer-arith",
-        "-Wno-error=unused-but-set-variable", "-Wno-error=unused-variable",
-        "-mlongcalls", "-ffunction-sections", "-fdata-sections",
+        "-Os",
+        "-Wall",
+        "-nostdlib",
+        "-Wpointer-arith",
+        "-Wno-error=unused-but-set-variable",
+        "-Wno-error=unused-variable",
+        "-mlongcalls",
+        "-ffunction-sections",
+        "-fdata-sections",
         "-fstrict-volatile-bitfields"
     ],
-    CXXFLAGS=["-fno-rtti", "-fno-exceptions", "-std=gnu++11"],
+
+    CXXFLAGS=[
+        "-fno-rtti",
+        "-fno-exceptions",
+        "-std=gnu++11"
+    ],
+
     CPPDEFINES=[
-        "ESP32", "ESP_PLATFORM", ("F_CPU", "$BOARD_F_CPU"), "HAVE_CONFIG_H",
+        "ESP32",
+        "ESP_PLATFORM",
+        ("F_CPU", "$BOARD_F_CPU"),
+        "HAVE_CONFIG_H",
         ("MBEDTLS_CONFIG_FILE", '\\"mbedtls/esp_config.h\\"')
     ],
+
     LINKFLAGS=[
-        "-nostdlib", "-Wl,-static", "-u", "call_user_start_cpu0",
-        "-Wl,--undefined=uxTopUsedPriority", "-Wl,--gc-sections"
+        "-nostdlib",
+        "-Wl,-static",
+        "-u", "call_user_start_cpu0",
+        "-Wl,--undefined=uxTopUsedPriority",
+        "-Wl,--gc-sections"
     ],
 
     SIZEPROGREGEXP=r"^(?:\.iram0\.text|\.dram0\.text|\.flash\.text|\.dram0\.data|\.flash\.rodata|)\s+(\d+).*",
@@ -177,17 +199,24 @@ env.Append(
     BUILDERS=dict(
         ElfToBin=Builder(
             action=env.VerboseAction(" ".join([
-                '"$PYTHONEXE" "$OBJCOPY"', "--chip", "esp32", "elf2image",
-                "--flash_mode", "$BOARD_FLASH_MODE", "--flash_freq",
-                "${__get_board_f_flash(__env__)}", "--flash_size",
-                env.BoardConfig().get("upload.flash_size",
-                                      "detect"), "-o", "$TARGET", "$SOURCES"
+                '"$PYTHONEXE" "$OBJCOPY"',
+                "--chip", "esp32",
+                "elf2image",
+                "--flash_mode", "$BOARD_FLASH_MODE",
+                "--flash_freq", "${__get_board_f_flash(__env__)}",
+                "--flash_size", env.BoardConfig().get(
+                    "upload.flash_size", "detect"),
+                "-o", "$TARGET", "$SOURCES"
             ]), "Building $TARGET"),
             suffix=".bin"),
         DataToBin=Builder(
             action=env.VerboseAction(" ".join([
-                '"$MKSPIFFSTOOL"', "-c", "$SOURCES", "-p", "$SPIFFS_PAGE",
-                "-b", "$SPIFFS_BLOCK", "-s", "$SPIFFS_SIZE", "$TARGET"
+                '"$MKSPIFFSTOOL"',
+                "-c", "$SOURCES",
+                "-p", "$SPIFFS_PAGE",
+                "-b", "$SPIFFS_BLOCK",
+                "-s", "$SPIFFS_SIZE",
+                "$TARGET"
             ]), "Building SPIFFS image from '$SOURCES' directory to $TARGET"),
             emitter=__fetch_spiffs_size,
             source_factory=env.Dir,
@@ -252,11 +281,15 @@ if upload_protocol == "esptool":
         UPLOADEROTA=join(
             platform.get_package_dir("tool-espotapy") or "", "espota.py"),
         UPLOADERFLAGS=[
-            "--chip", "esp32", "--port", '"$UPLOAD_PORT"', "--baud",
-            "$UPLOAD_SPEED", "--before", "default_reset", "--after",
-            "hard_reset", "write_flash", "-z", "--flash_mode",
-            "${__get_board_flash_mode(__env__)}", "--flash_freq",
-            "${__get_board_f_flash(__env__)}", "--flash_size", "detect"
+            "--chip", "esp32",
+            "--port", '"$UPLOAD_PORT"',
+            "--baud", "$UPLOAD_SPEED",
+            "--before", "default_reset",
+            "--after", "hard_reset",
+            "write_flash", "-z",
+            "--flash_mode", "${__get_board_flash_mode(__env__)}",
+            "--flash_freq", "${__get_board_f_flash(__env__)}",
+            "--flash_size", "detect"
         ],
         UPLOADEROTAFLAGS=[
             "--debug", "--progress", "-i", "$UPLOAD_PORT", "-p", "3232",
@@ -281,10 +314,15 @@ if upload_protocol == "esptool":
     if "uploadfs" in COMMAND_LINE_TARGETS:
         env.Replace(
             UPLOADERFLAGS=[
-                "--chip", "esp32", "--port", '"$UPLOAD_PORT"', "--baud",
-                "$UPLOAD_SPEED", "--before", "default_reset", "--after",
-                "hard_reset", "write_flash", "-z", "--flash_mode",
-                "$BOARD_FLASH_MODE", "--flash_size", "detect", "$SPIFFS_START"
+                "--chip", "esp32",
+                "--port", '"$UPLOAD_PORT"',
+                "--baud", "$UPLOAD_SPEED",
+                "--before", "default_reset",
+                "--after", "hard_reset",
+                "write_flash", "-z",
+                "--flash_mode", "$BOARD_FLASH_MODE",
+                "--flash_size", "detect",
+                "$SPIFFS_START"
             ],
             UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS $SOURCE',
         )
