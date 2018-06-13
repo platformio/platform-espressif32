@@ -7,7 +7,7 @@
     "flash_mode": "dio",
     "ldscript": "esp32_out.ld",
     "mcu": "esp32",
-    "variant": "esp32vn_iot_uno"
+    "variant": "esp32vn-iot-uno"
   },
   "connectivity": [
     "wifi",
