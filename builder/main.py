@@ -46,8 +46,8 @@ def _parse_size(value):
         return int(value)
     elif value.startswith("0x"):
         return int(value, 16)
-    elif value[-1] in ("K", "M"):
-        base = 1024 if value[-1] == "K" else 1024 * 1024
+    elif value[-1].upper() in ("K", "M"):
+        base = 1024 if value[-1].upper() == "K" else 1024 * 1024
         return int(value[:-1]) * base
     return value
 
