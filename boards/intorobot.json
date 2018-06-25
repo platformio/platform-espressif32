@@ -15,7 +15,7 @@
     "ethernet",
     "can"
   ],
-  "frameworks":  [
+  "frameworks": [
     "arduino",
     "espidf"
   ],
@@ -24,12 +24,12 @@
     "flash_size": "4MB",
     "maximum_ram_size": 294912,
     "maximum_size": 1310720,
-    "require_upload_port": true,
-    "speed": 115200,
     "protocol": "esptool",
     "protocols": [
       "esptool"
-    ]
+    ],
+    "require_upload_port": true,
+    "speed": 115200
   },
   "url": "http://docs.intorobot.com/zh/hardware/fig/hardware/",
   "vendor": "IntoRobot"

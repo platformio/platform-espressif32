@@ -22,9 +22,13 @@
     "can"
   ],
   "debug": {
-    "openocd_board": "esp32-wrover.cfg",
-    "onboard_tools": ["ft2232h"],
-    "default_tools": ["ft2232h"]
+    "default_tools": [
+      "ft2232h"
+    ],
+    "onboard_tools": [
+      "ft2232h"
+    ],
+    "openocd_board": "esp32-wrover.cfg"
   },
   "frameworks": [
     "arduino",
@@ -35,16 +39,18 @@
     "flash_size": "4MB",
     "maximum_ram_size": 4194304,
     "maximum_size": 1310720,
-    "require_upload_port": true,
-    "speed": 115200,
     "protocol": "esptool",
     "protocols": [
       "esptool",
       "ft2232h",
       "olimex-arm-usb-tiny-h",
       "olimex-arm-usb-ocd-h",
+      "olimex-arm-usb-ocd",
+      "olimex-jtag-tiny",
       "minimodule"
-    ]
+    ],
+    "require_upload_port": true,
+    "speed": 115200
   },
   "url": "https://espressif.com/en/products/hardware/esp-wrover-kit/overview",
   "vendor": "Espressif"
