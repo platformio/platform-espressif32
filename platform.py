@@ -74,7 +74,7 @@ class Espressif32Platform(PlatformBase):
                 "init_cmds": [
                     "define pio_reset_halt_target",
                     "   mon reset halt",
-                    "   x $a1=0",
+                    "   flushregs",
                     "end",
                     "define pio_reset_target",
                     "   mon reset",
