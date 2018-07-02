@@ -31,7 +31,7 @@
       "esptool"
     ],
     "require_upload_port": true,
-    "speed": 115200
+    "speed": 921600
   },
   "url": "http://iot-bits.com/nano32-esp32-development-board",
   "vendor": "MakerAsia"

@@ -29,7 +29,7 @@
       "esptool"
     ],
     "require_upload_port": true,
-    "speed": 115200
+    "speed": 921600
   },
   "url": "http://wiki.jackslab.org/Noduino",
   "vendor": "Noduino"

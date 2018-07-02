@@ -29,7 +29,7 @@
       "esptool"
     ],
     "require_upload_port": true,
-    "speed": 115200
+    "speed": 921600
   },
   "url": "http://esp-idf.readthedocs.io/en/latest/get-started/get-started-pico-kit.html",
   "vendor": "Espressif"

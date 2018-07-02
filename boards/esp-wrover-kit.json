@@ -50,7 +50,7 @@
       "minimodule"
     ],
     "require_upload_port": true,
-    "speed": 115200
+    "speed": 921600
   },
   "url": "https://espressif.com/en/products/hardware/esp-wrover-kit/overview",
   "vendor": "Espressif"

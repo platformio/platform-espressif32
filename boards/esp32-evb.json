@@ -37,7 +37,7 @@
       "minimodule"
     ],
     "require_upload_port": true,
-    "speed": 115200
+    "speed": 921600
   },
   "url": "https://www.olimex.com/Products/IoT/ESP32-EVB/open-source-hardware",
   "vendor": "OLIMEX"

@@ -37,7 +37,7 @@
       "minimodule"
     ],
     "require_upload_port": true,
-    "speed": 115200
+    "speed": 921600
   },
   "url": "https://en.wikipedia.org/wiki/ESP32",
   "vendor": "Espressif"

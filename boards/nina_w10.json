@@ -30,7 +30,7 @@
       "esptool"
     ],
     "require_upload_port": true,
-    "speed": 115200
+    "speed": 921600
   },
   "url": "https://www.u-blox.com/en/product/nina-w10-series",
   "vendor": "u-blox"
