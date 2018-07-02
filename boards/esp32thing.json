@@ -18,24 +18,26 @@
   "debug": {
     "openocd_board": "esp-wroom-32.cfg"
   },
-  "frameworks":  [
+  "frameworks": [
     "arduino",
     "espidf"
   ],
   "name": "SparkFun ESP32 Thing",
   "upload": {
     "flash_size": "4MB",
-    "maximum_ram_size": 294912,
-    "maximum_size": 1310720,
-    "require_upload_port": true,
-    "speed": 115200,
+    "maximum_ram_size": 327680,
+    "maximum_size": 4194304,
     "protocol": "esptool",
     "protocols": [
       "esptool",
       "olimex-arm-usb-tiny-h",
       "olimex-arm-usb-ocd-h",
+      "olimex-arm-usb-ocd",
+      "olimex-jtag-tiny",
       "minimodule"
-    ]
+    ],
+    "require_upload_port": true,
+    "speed": 921600
   },
   "url": "https://www.sparkfun.com/products/13907",
   "vendor": "SparkFun Electronics"

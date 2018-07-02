@@ -15,7 +15,7 @@
     "ethernet",
     "can"
   ],
-  "frameworks":  [
+  "frameworks": [
     "arduino",
     "espidf",
     "simba",
@@ -24,14 +24,14 @@
   "name": "MakerAsia Nano32",
   "upload": {
     "flash_size": "4MB",
-    "maximum_ram_size": 294912,
-    "maximum_size": 1310720,
-    "require_upload_port": true,
-    "speed": 115200,
+    "maximum_ram_size": 327680,
+    "maximum_size": 4194304,
     "protocol": "esptool",
     "protocols": [
       "esptool"
-    ]
+    ],
+    "require_upload_port": true,
+    "speed": 921600
   },
   "url": "http://iot-bits.com/nano32-esp32-development-board",
   "vendor": "MakerAsia"

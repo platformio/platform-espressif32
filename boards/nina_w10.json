@@ -16,21 +16,21 @@
     "ethernet",
     "can"
   ],
-  "frameworks":  [
+  "frameworks": [
     "arduino",
     "espidf"
   ],
   "name": "u-blox NINA-W10 series",
   "upload": {
     "flash_size": "2MB",
-    "maximum_ram_size": 294912,
-    "maximum_size": 1310720,
-    "require_upload_port": true,
-    "speed": 115200,
+    "maximum_ram_size": 327680,
+    "maximum_size": 2097152,
     "protocol": "esptool",
     "protocols": [
       "esptool"
-    ]
+    ],
+    "require_upload_port": true,
+    "speed": 921600
   },
   "url": "https://www.u-blox.com/en/product/nina-w10-series",
   "vendor": "u-blox"
