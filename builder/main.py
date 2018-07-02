@@ -180,8 +180,8 @@ env.Replace(
         "-Wl,--gc-sections"
     ],
 
-    SIZEPROGREGEXP=r"^(?:\.iram0\.text|\.dram0\.text|\.flash\.text|\.dram0\.data|\.flash\.rodata|)\s+(\d+).*",
-    SIZEDATAREGEXP=r"^(?:\.dram0\.data|\.dram0\.bss)\s+(\d+).*",
+    SIZEPROGREGEXP=r"^(?:\.iram0\.text|\.iram0\.vectors|\.dram0\.data|\.flash\.text|\.flash\.rodata|)\s+([0-9]+).*",
+    SIZEDATAREGEXP=r"^(?:\.dram0\.data|\.dram0\.bss|\.noinit)\s+([0-9]+).*",
     SIZECHECKCMD="$SIZETOOL -A -d $SOURCES",
     SIZEPRINTCMD="$SIZETOOL -B -d $SOURCES",
 

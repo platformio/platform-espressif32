@@ -23,7 +23,7 @@
   "name": "u-blox NINA-W10 series",
   "upload": {
     "flash_size": "2MB",
-    "maximum_ram_size": 294912,
+    "maximum_ram_size": 327680,
     "maximum_size": 2097152,
     "protocol": "esptool",
     "protocols": [
