@@ -301,16 +301,6 @@ if upload_protocol == "esptool":
     for image in env.get("FLASH_EXTRA_IMAGES", []):
         env.Append(UPLOADERFLAGS=[image[0], "%s" % image[1]])
 
-    if env.subst("$PIOFRAMEWORK") == "arduino":
-        # Handle uploading via OTA
-        ota_port = None
-        if env.get("UPLOAD_PORT"):
-            ota_port = re.match(
-                r"\"?((([0-9]{1,3}\.){3}[0-9]{1,3})|.+\.local)\"?$",
-                env.get("UPLOAD_PORT"))
-        if ota_port:
-            env.Replace(UPLOADCMD="$UPLOADOTACMD")
-
     if "uploadfs" in COMMAND_LINE_TARGETS:
         env.Replace(
             UPLOADERFLAGS=[
@@ -327,6 +317,15 @@ if upload_protocol == "esptool":
             UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS $SOURCE',
         )
         env.Append(UPLOADEROTAFLAGS=["-s"])
+
+    # Handle uploading via OTA
+    ota_port = None
+    if env.get("UPLOAD_PORT"):
+        ota_port = re.match(
+            r"\"?((([0-9]{1,3}\.){3}[0-9]{1,3})|.+\.local)\"?$",
+            env.get("UPLOAD_PORT"))
+    if ota_port:
+        env.Replace(UPLOADCMD="$UPLOADOTACMD")
 
     upload_actions = [
         env.VerboseAction(env.AutodetectUploadPort,
