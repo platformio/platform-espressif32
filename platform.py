@@ -86,7 +86,6 @@ class Espressif32Platform(PlatformBase):
                     "pio_reset_halt_target"
                 ],
                 "load_cmd": "preload",
-                "load_mode": "modified",
                 "onboard": link in debug.get("onboard_tools", []),
                 "default": link in debug.get("default_tools", [])
 
