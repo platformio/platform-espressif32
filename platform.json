@@ -45,7 +45,7 @@
     "framework-arduinoespressif32": {
       "type": "framework",
       "optional": true,
-      "version": "~1.6.0"
+      "version": "~1.10000.0"
     },
     "framework-espidf": {
       "type": "framework",
