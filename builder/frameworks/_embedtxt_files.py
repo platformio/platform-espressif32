@@ -1,3 +1,17 @@
+# Copyright 2014-present PlatformIO <contact@platformio.org>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from os import SEEK_CUR, SEEK_END
 from os.path import basename, isfile, join
 
@@ -27,17 +41,17 @@ def prepare_files(files):
 
 def extract_files(cppdefines):
     for define in cppdefines:
-        if "EMBED_TXT_FILES" not in define:
+        if "COMPONENT_EMBED_TXTFILES" not in define:
             continue
 
         if not isinstance(define, tuple):
-            print("Warning! EMBED_TXT_FILES config cannot be empty!")
+            print("Warning! COMPONENT_EMBED_TXTFILES macro cannot be empty!")
             return []
 
         with cd(env.subst("$PROJECT_DIR")):
             value = define[1]
             if not isinstance(value, str):
-                print("Warning! EMBED_TXT_FILES config must contain "
+                print("Warning! COMPONENT_EMBED_TXTFILES macro must contain "
                       "a list of files separated by ':'")
                 return []
 
@@ -53,7 +67,7 @@ def extract_files(cppdefines):
 
 def remove_config_define(cppdefines):
     for define in cppdefines:
-        if "EMBED_TXT_FILES" in define:
+        if "COMPONENT_EMBED_TXTFILES" in define:
             env.ProcessUnFlags("-D%s" % "=".join(str(d) for d in define))
             return
 
@@ -81,7 +95,7 @@ env.Append(
 )
 
 flags = env.get("CPPDEFINES")
-if "EMBED_TXT_FILES" in env.Flatten(flags):
+if "COMPONENT_EMBED_TXTFILES" in env.Flatten(flags):
     files = extract_files(flags)
     prepare_files(files)
     embed_files(files)
