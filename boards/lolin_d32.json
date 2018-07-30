@@ -1,13 +1,13 @@
 {
   "build": {
     "core": "esp32",
-    "extra_flags": "-DARDUINO_LOLIN32",
+    "extra_flags": "-DARDUINO_LOLIN_D32",
     "f_cpu": "240000000L",
     "f_flash": "40000000L",
     "flash_mode": "dio",
     "ldscript": "esp32_out.ld",
     "mcu": "esp32",
-    "variant": "lolin32"
+    "variant": "d32"
   },
   "connectivity": [
     "wifi",
@@ -22,7 +22,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "WEMOS LOLIN32",
+  "name": "WEMOS LOLIN D32",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
@@ -39,6 +39,6 @@
     "require_upload_port": true,
     "speed": 921600
   },
-  "url": "https://wiki.wemos.cc/products:lolin32:lolin32",
+  "url": "https://wiki.wemos.cc/products:d32:d32",
   "vendor": "WEMOS"
 }
