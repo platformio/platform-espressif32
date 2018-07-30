@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """
 Arduino
 
@@ -24,6 +25,10 @@ http://arduino.cc/en/Reference/HomePage
 from os.path import join
 
 from SCons.Script import DefaultEnvironment, SConscript
+
+env = DefaultEnvironment()
+
+SConscript("_embedtxt_files.py", exports="env")
 
 SConscript(
     join(DefaultEnvironment().PioPlatform().get_package_dir(

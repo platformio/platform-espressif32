@@ -4,6 +4,7 @@ environment:
   matrix:
     - PLATFORMIO_PROJECT_DIR: "examples/arduino-blink"
     - PLATFORMIO_PROJECT_DIR: "examples/arduino-wifiscan"
+    - PLATFORMIO_PROJECT_DIR: "examples/espidf-aws-iot"
     - PLATFORMIO_PROJECT_DIR: "examples/espidf-ble-adv"
     - PLATFORMIO_PROJECT_DIR: "examples/espidf-coap-server"
     - PLATFORMIO_PROJECT_DIR: "examples/espidf-exceptions"

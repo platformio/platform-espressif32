@@ -81,7 +81,6 @@ class Espressif32Platform(PlatformBase):
                     "end",
                     "target extended-remote $DEBUG_PORT",
                     "$INIT_BREAK",
-                    "mon reset halt",
                     "$LOAD_CMD",
                     "pio_reset_halt_target"
                 ],
