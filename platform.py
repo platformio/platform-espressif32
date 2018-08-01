@@ -44,7 +44,7 @@ class Espressif32Platform(PlatformBase):
         if "tools" not in debug:
             debug['tools'] = {}
 
-        available_tools = ("ft2232h", "minimodule", "olimex-arm-usb-tiny-h",
+        available_tools = ("ftdi", "minimodule", "olimex-arm-usb-tiny-h",
                            "olimex-arm-usb-ocd-h", "olimex-arm-usb-ocd",
                            "olimex-jtag-tiny")
 
