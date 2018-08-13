@@ -32,6 +32,7 @@ from SCons.Script import DefaultEnvironment
 env = DefaultEnvironment()
 platform = env.PioPlatform()
 
+env.SConscript("_bare.py", exports="env")
 env.SConscript("_embedtxt_files.py", exports="env")
 
 FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")

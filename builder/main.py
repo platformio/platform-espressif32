@@ -141,45 +141,6 @@ env.Replace(
 
     ARFLAGS=["rc"],
 
-    ASFLAGS=["-x", "assembler-with-cpp"],
-
-    CFLAGS=["-std=gnu99"],
-
-    CCFLAGS=[
-        "-Os",
-        "-Wall",
-        "-nostdlib",
-        "-Wpointer-arith",
-        "-Wno-error=unused-but-set-variable",
-        "-Wno-error=unused-variable",
-        "-mlongcalls",
-        "-ffunction-sections",
-        "-fdata-sections",
-        "-fstrict-volatile-bitfields"
-    ],
-
-    CXXFLAGS=[
-        "-fno-rtti",
-        "-fno-exceptions",
-        "-std=gnu++11"
-    ],
-
-    CPPDEFINES=[
-        "ESP32",
-        "ESP_PLATFORM",
-        ("F_CPU", "$BOARD_F_CPU"),
-        "HAVE_CONFIG_H",
-        ("MBEDTLS_CONFIG_FILE", '\\"mbedtls/esp_config.h\\"')
-    ],
-
-    LINKFLAGS=[
-        "-nostdlib",
-        "-Wl,-static",
-        "-u", "call_user_start_cpu0",
-        "-Wl,--undefined=uxTopUsedPriority",
-        "-Wl,--gc-sections"
-    ],
-
     SIZEPROGREGEXP=r"^(?:\.iram0\.text|\.iram0\.vectors|\.dram0\.data|\.flash\.text|\.flash\.rodata|)\s+([0-9]+).*",
     SIZEDATAREGEXP=r"^(?:\.dram0\.data|\.dram0\.bss|\.noinit)\s+([0-9]+).*",
     SIZECHECKCMD="$SIZETOOL -A -d $SOURCES",
@@ -194,8 +155,9 @@ if env.get("PROGNAME", "program") == "program":
     env.Replace(PROGNAME="firmware")
 
 env.Append(
-    # Clone actual CCFLAGS to ASFLAGS
+    # copy CCFLAGS to ASFLAGS (-x assembler-with-cpp mode)
     ASFLAGS=env.get("CCFLAGS", [])[:],
+
     BUILDERS=dict(
         ElfToBin=Builder(
             action=env.VerboseAction(" ".join([
@@ -208,7 +170,8 @@ env.Append(
                     "upload.flash_size", "detect"),
                 "-o", "$TARGET", "$SOURCES"
             ]), "Building $TARGET"),
-            suffix=".bin"),
+            suffix=".bin"
+        ),
         DataToBin=Builder(
             action=env.VerboseAction(" ".join([
                 '"$MKSPIFFSTOOL"',
@@ -220,7 +183,13 @@ env.Append(
             ]), "Building SPIFFS image from '$SOURCES' directory to $TARGET"),
             emitter=__fetch_spiffs_size,
             source_factory=env.Dir,
-            suffix=".bin")))
+            suffix=".bin"
+        )
+    )
+)
+
+if not env.get("PIOFRAMEWORK"):
+    env.SConscript("frameworks/_bare.py", exports="env")
 
 #
 # Target: Build executable and linkable firmware or SPIFFS image
