@@ -268,7 +268,7 @@ if upload_protocol == "esptool":
         UPLOADOTACMD='"$PYTHONEXE" "$UPLOADEROTA" $UPLOADEROTAFLAGS -f $SOURCE',
     )
     for image in env.get("FLASH_EXTRA_IMAGES", []):
-        env.Append(UPLOADERFLAGS=[image[0], "%s" % image[1]])
+        env.Append(UPLOADERFLAGS=[image[0], '"%s"' % image[1]])
 
     if "uploadfs" in COMMAND_LINE_TARGETS:
         env.Replace(
