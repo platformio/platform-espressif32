@@ -56,8 +56,6 @@ class Espressif32Platform(PlatformBase):
 
             if link in ("esp-prog", "ftdi"):
                 openocd_interface = "esp32_devkitj_v1"
-            elif link == "minimodule":
-                openocd_interface = "mbftdi"
             else:
                 openocd_interface = link
 
