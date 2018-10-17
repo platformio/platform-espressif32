@@ -1,6 +1,6 @@
 # Continuous Integration (CI) is the practice, in software
 # engineering, of merging all developer working copies with a shared mainline
-# several times a day < http://docs.platformio.org/page/ci/index.html >
+# several times a day < https://docs.platformio.org/page/ci/index.html >
 #
 # Documentation:
 #
@@ -8,13 +8,13 @@
 #   < https://docs.travis-ci.com/user/integration/platformio/ >
 #
 # * PlatformIO integration with Travis CI
-#   < http://docs.platformio.org/page/ci/travis.html >
+#   < https://docs.platformio.org/page/ci/travis.html >
 #
 # * User Guide for `platformio ci` command
-#   < http://docs.platformio.org/page/userguide/cmd_ci.html >
+#   < https://docs.platformio.org/page/userguide/cmd_ci.html >
 #
 #
-# Please choice one of the following templates (proposed below) and uncomment
+# Please choose one of the following templates (proposed below) and uncomment
 # it (remove "# " before each line) or use own configuration according to the
 # Travis CI documentation (see above).
 #
@@ -35,13 +35,14 @@
 #
 # install:
 #     - pip install -U platformio
+#     - platformio update
 #
 # script:
 #     - platformio run
 
 
 #
-# Template #2: The project is intended to by used as a library with examples
+# Template #2: The project is intended to be used as a library with examples.
 #
 
 # language: python
@@ -60,6 +61,7 @@
 #
 # install:
 #     - pip install -U platformio
+#     - platformio update
 #
 # script:
 #     - platformio ci --lib="." --board=ID_1 --board=ID_2 --board=ID_N
