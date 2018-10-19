@@ -45,7 +45,7 @@ class Espressif32Platform(PlatformBase):
             debug['tools'] = {}
 
         available_tools = [
-            "esp-prog", "ftdi", "minimodule", "olimex-arm-usb-tiny-h",
+            "esp-prog", "ftdi", "jlink", "minimodule", "olimex-arm-usb-tiny-h",
             "olimex-arm-usb-ocd-h", "olimex-arm-usb-ocd", "olimex-jtag-tiny"
         ]
 
@@ -54,14 +54,16 @@ class Espressif32Platform(PlatformBase):
             if link not in upload_protocols or link in debug['tools']:
                 continue
 
-            if link in ("esp-prog", "ftdi"):
-                openocd_interface = "esp32_devkitj_v1"
-            else:
+            if link == "jlink":
                 openocd_interface = link
+            elif link in ("esp-prog", "ftdi"):
+                openocd_interface = "ftdi/esp32_devkitj_v1"
+            else:
+                openocd_interface = "ftdi/" + link
 
             server_args = [
                 "-s", "$PACKAGE_DIR/share/openocd/scripts",
-                "-f", "share/openocd/scripts/interface/ftdi/%s.cfg" % openocd_interface,
+                "-f", "share/openocd/scripts/interface/%s.cfg" % openocd_interface,
                 "-f", "share/openocd/scripts/board/%s" % debug.get("openocd_board")
             ]
 
