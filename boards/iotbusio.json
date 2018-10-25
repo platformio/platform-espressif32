@@ -16,7 +16,8 @@
     "can"
   ],
   "debug": {
-    "openocd_board": "esp-wroom-32.cfg"
+    "openocd_board": "esp-wroom-32.cfg",
+    "default_tool": "iot-bus-jtag"
   },
   "frameworks": [
     "arduino",

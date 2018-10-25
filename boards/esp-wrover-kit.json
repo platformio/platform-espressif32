@@ -22,9 +22,7 @@
     "can"
   ],
   "debug": {
-    "default_tools": [
-      "ftdi"
-    ],
+    "default_tool": "ftdi",
     "onboard_tools": [
       "ftdi"
     ],
