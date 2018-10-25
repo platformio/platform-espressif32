@@ -74,7 +74,7 @@
     "tool-openocd-esp32": {
       "type": "debugger",
       "optional": true,
-      "version": "~1.1000.0"
+      "version": "~1.1000.20181026"
     },
     "tool-mkspiffs": {
       "type": "uploader",
