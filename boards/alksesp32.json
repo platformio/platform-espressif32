@@ -36,6 +36,7 @@
       "olimex-arm-usb-ocd",
       "olimex-jtag-tiny",
       "iot-bus-jtag",
+      "tumpa",
       "minimodule"
     ],
     "require_upload_port": true,
