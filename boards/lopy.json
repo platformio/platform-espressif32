@@ -11,7 +11,8 @@
   },
   "connectivity": [
     "wifi",
-    "bluetooth"
+    "bluetooth",
+    "can"
   ],
   "debug": {
     "openocd_board": "esp-wroom-32.cfg"
