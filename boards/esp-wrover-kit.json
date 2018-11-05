@@ -22,9 +22,7 @@
     "can"
   ],
   "debug": {
-    "default_tools": [
-      "ftdi"
-    ],
+    "default_tool": "ftdi",
     "onboard_tools": [
       "ftdi"
     ],
@@ -44,10 +42,13 @@
       "esptool",
       "ftdi",
       "esp-prog",
+      "jlink",
       "olimex-arm-usb-tiny-h",
       "olimex-arm-usb-ocd-h",
       "olimex-arm-usb-ocd",
       "olimex-jtag-tiny",
+      "iot-bus-jtag",
+      "tumpa",
       "minimodule"
     ],
     "require_upload_port": true,

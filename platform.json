@@ -12,7 +12,7 @@
     "type": "git",
     "url": "https://github.com/platformio/platform-espressif32.git"
   },
-  "version": "1.4.0",
+  "version": "1.5.0",
   "packageRepositories": [
     "https://dl.bintray.com/platformio/dl-packages/manifest.json",
     "http://dl.platformio.org/packages/manifest.json",
@@ -50,7 +50,7 @@
     "framework-espidf": {
       "type": "framework",
       "optional": true,
-      "version": "~3.30100.0"
+      "version": "~3.30101.0"
     },
     "framework-simba": {
       "type": "framework",
@@ -74,7 +74,7 @@
     "tool-openocd-esp32": {
       "type": "debugger",
       "optional": true,
-      "version": "~1.1000.0"
+      "version": "~1.1000.20181026"
     },
     "tool-mkspiffs": {
       "type": "uploader",

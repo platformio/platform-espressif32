@@ -22,8 +22,8 @@ class Espressif32Platform(PlatformBase):
             self.packages['tool-mkspiffs']['optional'] = False
         if variables.get("upload_protocol"):
             self.packages['tool-openocd-esp32']['optional'] = False
-        return PlatformBase.configure_default_packages(
-            self, variables, targets)
+        return PlatformBase.configure_default_packages(self, variables,
+                                                       targets)
 
     def get_boards(self, id_=None):
         result = PlatformBase.get_boards(self, id_)
@@ -44,24 +44,23 @@ class Espressif32Platform(PlatformBase):
         if "tools" not in debug:
             debug['tools'] = {}
 
-        available_tools = [
-            "esp-prog", "ftdi", "minimodule", "olimex-arm-usb-tiny-h",
-            "olimex-arm-usb-ocd-h", "olimex-arm-usb-ocd", "olimex-jtag-tiny"
-        ]
+        non_debug_protocols = ["esptool"]
 
         # Only FTDI based debug probes
-        for link in available_tools:
-            if link not in upload_protocols or link in debug['tools']:
+        for link in upload_protocols:
+            if link in non_debug_protocols or link in debug['tools']:
                 continue
 
-            if link in ("esp-prog", "ftdi"):
-                openocd_interface = "esp32_devkitj_v1"
-            else:
+            if link == "jlink":
                 openocd_interface = link
+            elif link in ("esp-prog", "ftdi"):
+                openocd_interface = "ftdi/esp32_devkitj_v1"
+            else:
+                openocd_interface = "ftdi/" + link
 
             server_args = [
                 "-s", "$PACKAGE_DIR/share/openocd/scripts",
-                "-f", "share/openocd/scripts/interface/ftdi/%s.cfg" % openocd_interface,
+                "-f", "share/openocd/scripts/interface/%s.cfg" % openocd_interface,
                 "-f", "share/openocd/scripts/board/%s" % debug.get("openocd_board")
             ]
 
@@ -86,7 +85,7 @@ class Espressif32Platform(PlatformBase):
                     "pio_reset_halt_target"
                 ],
                 "onboard": link in debug.get("onboard_tools", []),
-                "default": link in debug.get("default_tools", [])
+                "default": link == debug.get("default_tool")
 
             }
 

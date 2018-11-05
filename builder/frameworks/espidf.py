@@ -82,10 +82,6 @@ def build_component(path):
                 CPPPATH=[join(path, d) for d in inc_dirs])
         if params.get("CFLAGS"):
             envsafe.Append(CCFLAGS=params.get("CFLAGS"))
-        if params.get("COMPONENT_OBJEXCLUDE"):
-            src_filter = "+<*>"
-            for f in params.get("COMPONENT_OBJEXCLUDE"):
-                src_filter += " -<%s>" % f.replace(".o", ".c")
         if params.get("COMPONENT_OBJS"):
             src_filter = "-<*>"
             for f in params.get("COMPONENT_OBJS"):
@@ -98,6 +94,9 @@ def build_component(path):
                 src_filter += " +<*.[sSc]*>"
             for f in src_dirs:
                 src_filter += " +<%s/*.[sSc]*>" % f
+        if params.get("COMPONENT_OBJEXCLUDE"):
+            for f in params.get("COMPONENT_OBJEXCLUDE"):
+                src_filter += " -<%s>" % f.replace(".o", ".c")
 
     return envsafe.BuildLibrary(
         join("$BUILD_DIR", "%s" % basename(path)), path,
@@ -228,10 +227,10 @@ env.Prepend(
         join(FRAMEWORK_DIR, "components", "mbedtls", "mbedtls", "include"),
         join(FRAMEWORK_DIR, "components", "mdns", "include"),
         join(FRAMEWORK_DIR, "components", "micro-ecc", "micro-ecc"),
-        join(FRAMEWORK_DIR, "components", "newlib", "platform_include"),
-        join(FRAMEWORK_DIR, "components", "newlib", "include"),
         join(FRAMEWORK_DIR, "components", "nghttp", "nghttp2", "lib", "includes"),
         join(FRAMEWORK_DIR, "components", "nghttp", "port", "include"),
+        join(FRAMEWORK_DIR, "components", "newlib", "platform_include"),
+        join(FRAMEWORK_DIR, "components", "newlib", "include"),
         join(FRAMEWORK_DIR, "components", "nvs_flash", "include"),
         join(FRAMEWORK_DIR, "components", "openssl", "include"),
         join(FRAMEWORK_DIR, "components", "pthread", "include"),
@@ -425,9 +424,9 @@ ignore_dirs = (
     "bootloader",
     "heap",
     "esptool_py",
+    "freertos",
     "idf_test",
     "partition_table",
-    "nghttp",
     "soc",
     "spi_flash",
     "libsodium",
@@ -473,6 +472,21 @@ libs.append(env.BuildLibrary(
     src_filter="-<*> +<port> +<aws-iot-device-sdk-embedded-C/src>"
 ))
 
+envsafe = env.Clone()
+envsafe.Prepend(
+    CPPDEFINES=["_ESP_FREERTOS_INTERNAL"],
+    CPPPATH=[
+        join(FRAMEWORK_DIR, "components", "freertos", "include", "freertos")
+    ]
+)
+
+libs.append(
+    envsafe.BuildLibrary(
+        join("$BUILD_DIR", "freertos"),
+        join(FRAMEWORK_DIR, "components", "freertos"),
+        src_filter="+<*> -<test*>"
+    )
+)
 
 envsafe = env.Clone()
 envsafe.Prepend(
@@ -493,8 +507,8 @@ envsafe.Prepend(
 libs.append(
     envsafe.BuildLibrary(
         join("$BUILD_DIR", "libsodium"),
-        join(FRAMEWORK_DIR, "components", "libsodium", "libsodium", "src",
-             "libsodium")
+        join(FRAMEWORK_DIR, "components", "libsodium"),
+        src_filter="-<*> +<libsodium/src> +<port>"
     )
 )
 
