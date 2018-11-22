@@ -530,4 +530,84 @@ libs.append(
     )
 )
 
+build_arduino_framework = False
+if isfile(join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h")):
+    with open(join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h")) as fp:
+        for l in fp.readlines():
+            if "ENABLE_ARDUINO_DEPENDS" in l and l.rstrip('\r\n').split(' ')[2] == '1':
+                build_arduino_framework = True
+
+if build_arduino_framework:
+    ARDUINO_FRAMEWORK_DIR = platform.get_package_dir("framework-arduinoespressif32")
+    assert isdir(ARDUINO_FRAMEWORK_DIR)
+    print 'Including Arduino-ESP32 from %s' % ARDUINO_FRAMEWORK_DIR
+    env.Prepend(
+        ASFLAGS=["-x", "assembler-with-cpp"],
+
+        CFLAGS=[
+            "-std=gnu99"
+        ],
+
+        CCFLAGS=[
+            "-nostdlib",
+            "-Wpointer-arith",
+            "-Wno-error=unused-but-set-variable",
+            "-Wno-error=unused-variable",
+            "-mlongcalls",
+            "-ffunction-sections",
+            "-fdata-sections",
+            "-fstrict-volatile-bitfields",
+            "-fexceptions"
+        ],
+
+        CXXFLAGS=[
+            "-fno-rtti",
+            "-std=gnu++11"
+        ],
+
+        LINKFLAGS=[
+            "-nostdlib",
+            "-Wl,-static",
+            "-u", "call_user_start_cpu0",
+            "-Wl,--undefined=uxTopUsedPriority",
+            "-Wl,--gc-sections",
+            "-Wl,-EL",
+            "-u", "__cxx_fatal_exception"
+        ],
+
+        CPPDEFINES=[
+            "ESP32",
+            "ESP_PLATFORM",
+            ("F_CPU", "$BOARD_F_CPU"),
+            ("ARDUINO", 10805),
+            "ARDUINO_ARCH_ESP32",
+            ("ARDUINO_VARIANT", '\\"%s\\"' % env.BoardConfig().get("build.variant").replace('"', "")),
+            ("ARDUINO_BOARD", '\\"%s\\"' % env.BoardConfig().get("name").replace('"', ""))
+        ],
+        LIBSOURCE_DIRS=[
+            join(ARDUINO_FRAMEWORK_DIR, "libraries")
+        ],
+        CPPPATH=[
+            join(ARDUINO_FRAMEWORK_DIR, "cores", env.BoardConfig().get("build.core")),
+            join(ARDUINO_FRAMEWORK_DIR, "cores", env.BoardConfig().get("build.core"), "libb64"),
+        ]
+    )
+    if "build.variant" in env.BoardConfig():
+        env.Append(
+            CPPPATH=[
+                join(ARDUINO_FRAMEWORK_DIR, "variants",
+                    env.BoardConfig().get("build.variant"))
+            ]
+        )
+        libs.append(env.BuildLibrary(
+            join("$BUILD_DIR", "FrameworkArduinoVariant"),
+            join(ARDUINO_FRAMEWORK_DIR, "variants", env.BoardConfig().get("build.variant"))
+        ))
+    src_filter = "+<cores/%s/*> -<cores/%s/main.cpp>" % (env.BoardConfig().get("build.core"), env.BoardConfig().get("build.core"))
+    libs.append(
+        env.BuildLibrary(join("$BUILD_DIR", "ArduinoFramework"),
+            ARDUINO_FRAMEWORK_DIR,
+            src_filter=src_filter)
+    )
+
 env.Prepend(LIBS=libs)
