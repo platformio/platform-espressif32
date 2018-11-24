@@ -1,19 +1,19 @@
-{
+
   "build": {
     "core": "esp32",
-    "extra_flags": "-DARDUINO_Heltec_WIFI_LoRa_32",
+    "extra_flags": "-DARDUINO_LoPy",
     "f_cpu": "240000000L",
     "f_flash": "40000000L",
     "flash_mode": "dio",
     "ldscript": "esp32_out.ld",
     "mcu": "esp32",
-    "variant": "heltec_wifi_lora_32"
+    "variant": "lopy"
   },
   "connectivity": [
     "wifi",
     "bluetooth",
-    "ethernet",
-    "can"
+    "can",
+    "ethernet"
   ],
   "debug": {
     "openocd_board": "esp-wroom-32.cfg"
@@ -22,7 +22,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "Heltec WIFI LoRa 32",
+  "name": "Pycom LoPy",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
@@ -40,6 +40,6 @@
     "require_upload_port": true,
     "speed": 921600
   },
-  "url": "http://www.heltec.cn",
-  "vendor": "Heltec Automation"
+  "url": "https://pycom.io/",
+  "vendor": "Pycom Ltd."
 }
