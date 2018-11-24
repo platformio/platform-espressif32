@@ -38,13 +38,29 @@ class Espressif32Platform(PlatformBase):
 
     def _add_default_debug_tools(self, board):
         debug = board.manifest.get("debug", {})
-
+        upload_protocol = board.manifest.get("upload", {}).get("protocol")
         upload_protocols = board.manifest.get("upload", {}).get(
             "protocols", [])
         if "tools" not in debug:
             debug['tools'] = {}
 
         non_debug_protocols = ["esptool"]
+        supported_debu_tools = [
+          "esp-prog",
+          "iot-bus-jtag",
+          "jlink",
+          "minimodule",
+          "olimex-arm-usb-tiny-h",
+          "olimex-arm-usb-ocd-h",
+          "olimex-arm-usb-ocd",
+          "olimex-jtag-tiny",
+          "tumpa"
+        ]
+        if debug:
+            upload_protocols.extend(supported_debu_tools)
+
+        if upload_protocol and upload_protocol not in upload_protocols:
+            upload_protocols.append(upload_protocol)
 
         # Only FTDI based debug probes
         for link in upload_protocols:
