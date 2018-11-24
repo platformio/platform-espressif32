@@ -146,6 +146,12 @@ env.Replace(
     SIZECHECKCMD="$SIZETOOL -A -d $SOURCES",
     SIZEPRINTCMD="$SIZETOOL -B -d $SOURCES",
 
+    ERASEFLAGS=[
+        "--chip", "esp32",
+        "--port", '"$UPLOAD_PORT"'
+    ],
+    ERASECMD='"$PYTHONEXE" "$OBJCOPY" $ERASEFLAGS erase_flash',
+
     MKSPIFFSTOOL="mkspiffs_${PIOPLATFORM}_${PIOFRAMEWORK}",
     PROGSUFFIX=".elf"
 )
@@ -330,6 +336,17 @@ else:
     sys.stderr.write("Warning! Unknown upload protocol %s\n" % upload_protocol)
 
 AlwaysBuild(env.Alias(["upload", "uploadfs"], target_firm, upload_actions))
+
+#
+# Target: Erase Flash
+#
+
+AlwaysBuild(
+    env.Alias("erase", None, [
+        env.VerboseAction(env.AutodetectUploadPort,
+                          "Looking for serial port..."),
+        env.VerboseAction("$ERASECMD", "Ready for erasing")
+    ]))
 
 #
 # Default targets
