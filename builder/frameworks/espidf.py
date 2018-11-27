@@ -531,11 +531,15 @@ libs.append(
 )
 
 build_arduino_framework = False
+build_arduino_main = False
 if isfile(join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h")):
     with open(join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h")) as fp:
         for l in fp.readlines():
             if "ENABLE_ARDUINO_DEPENDS" in l and l.rstrip('\r\n').split(' ')[2] == '1':
                 build_arduino_framework = True
+                build_arduino_main = False
+            if "CONFIG_AUTOSTART_ARDUINO" in l and l.rstrip('\r\n').split(' ')[2] == '1':
+                build_arduino_main = True
 
 if build_arduino_framework:
     ARDUINO_FRAMEWORK_DIR = platform.get_package_dir("framework-arduinoespressif32")
@@ -603,7 +607,15 @@ if build_arduino_framework:
             join("$BUILD_DIR", "FrameworkArduinoVariant"),
             join(ARDUINO_FRAMEWORK_DIR, "variants", env.BoardConfig().get("build.variant"))
         ))
-    src_filter = "+<cores/%s/*> -<cores/%s/main.cpp>" % (env.BoardConfig().get("build.core"), env.BoardConfig().get("build.core"))
+    src_filter = "+<cores/%s/*>" % env.BoardConfig().get("build.core")
+    if not build_arduino_main:
+        src_filter += " -<cores/%s/main.cpp>" % env.BoardConfig().get("build.core")
+    else:
+        env.Append(
+            CPPDEFINES=[
+                ("CONFIG_AUTOSTART_ARDUINO", "1")
+            ]
+        )
     libs.append(
         env.BuildLibrary(join("$BUILD_DIR", "ArduinoFramework"),
             ARDUINO_FRAMEWORK_DIR,

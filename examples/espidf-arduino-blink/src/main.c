@@ -43,6 +43,7 @@ void blink_task(void *pvParameter)
     }
 }
 
+#if !CONFIG_AUTOSTART_ARDUINO
 void arduinoTask(void *pvParameter) {
     pinMode(LED_BUILTIN, OUTPUT);
     while(1) {
@@ -59,3 +60,13 @@ void app_main()
     xTaskCreate(&blink_task, "blink_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
     xTaskCreate(&arduinoTask, "arduino_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
 }
+#else
+void setup() {
+    xTaskCreate(&blink_task, "blink_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
+    pinMode(LED_BUILTIN, OUTPUT);
+}
+void loop() {
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    delay(1000);
+}
+#endif

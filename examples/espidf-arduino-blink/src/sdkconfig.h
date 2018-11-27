@@ -293,3 +293,5 @@
 
 // include arduino-esp32 libraries
 #define ENABLE_ARDUINO_DEPENDS 1
+
+#define CONFIG_AUTOSTART_ARDUINO 0
