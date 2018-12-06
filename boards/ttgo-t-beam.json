@@ -1,0 +1,36 @@
+{
+  "build": {
+    "core": "esp32",
+    "extra_flags": "-DT-Beam",
+    "f_cpu": "240000000L",
+    "f_flash": "40000000L",
+    "flash_mode": "dio",
+    "ldscript": "esp32_out.ld",
+    "mcu": "esp32",
+    "variant": "t-beam"
+  },
+  "connectivity": [
+    "wifi",
+    "bluetooth",
+    "can",
+    "ethernet"
+  ],
+  "debug": {
+    "openocd_board": "esp-wroom-32.cfg"
+  },
+  "frameworks": [
+    "arduino",
+    "espidf"
+  ],
+  "name": "TTGO T-Beam",
+  "upload": {
+    "flash_size": "4MB",
+    "maximum_ram_size": 1310720,
+    "maximum_size": 4194304,
+    "protocol": "esptool",
+    "require_upload_port": true,
+    "speed": 921600
+  },
+  "url": "https://github.com/LilyGO/TTGO-T-Beam",
+  "vendor": "TTGO"
+}
