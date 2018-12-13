@@ -9,6 +9,7 @@
     "mcu": "esp32",
     "variant": "esp32"
   },
+  "certified": true,
   "connectivity": [
     "wifi",
     "bluetooth",
