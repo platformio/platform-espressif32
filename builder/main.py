@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
+import socket
 import sys
 from os.path import isfile, join
 
@@ -296,9 +296,10 @@ if upload_protocol == "esptool":
     # Handle uploading via OTA
     ota_port = None
     if env.get("UPLOAD_PORT"):
-        ota_port = re.match(
-            r"\"?((([0-9]{1,3}\.){3}[0-9]{1,3})|.+\.local)\"?$",
-            env.get("UPLOAD_PORT"))
+        try:
+            ota_port = socket.gethostbyname(env.get("UPLOAD_PORT"))
+        except socket.error:
+            pass
     if ota_port:
         env.Replace(UPLOADCMD="$UPLOADOTACMD")
 
