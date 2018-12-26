@@ -315,14 +315,14 @@ if upload_protocol == "esptool":
 
 elif upload_protocol in debug_tools:
     openocd_dir = platform.get_package_dir("tool-openocd-esp32") or ""
-    uploader_flags = ["-s", openocd_dir.replace('\\', '/')]
+    uploader_flags = ["-s", _to_unix_slashes(openocd_dir)]
     uploader_flags.extend(
         debug_tools.get(upload_protocol).get("server").get("arguments", []))
     uploader_flags.extend(["-c", 'program_esp32 "{{$SOURCE}}" 0x10000 verify'])
     for image in env.get("FLASH_EXTRA_IMAGES", []):
         uploader_flags.extend(
             ["-c", 'program_esp32 "{{%s}}" %s verify' % (
-                _to_unix_slashes(image[1]), _to_unix_slashes(image[0]))])
+                _to_unix_slashes(image[1]), image[0])])
     uploader_flags.extend(["-c", "reset run; shutdown"])
     for i, item in enumerate(uploader_flags):
         if "$PACKAGE_DIR" in item:
