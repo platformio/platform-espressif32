@@ -318,10 +318,10 @@ elif upload_protocol in debug_tools:
     uploader_flags = ["-s", _to_unix_slashes(openocd_dir)]
     uploader_flags.extend(
         debug_tools.get(upload_protocol).get("server").get("arguments", []))
-    uploader_flags.extend(["-c", 'program_esp32 "{{$SOURCE}}" 0x10000 verify'])
+    uploader_flags.extend(["-c", 'program_esp32 {{$SOURCE}} 0x10000 verify'])
     for image in env.get("FLASH_EXTRA_IMAGES", []):
         uploader_flags.extend(
-            ["-c", 'program_esp32 "{{%s}}" %s verify' % (
+            ["-c", 'program_esp32 {{%s}} %s verify' % (
                 _to_unix_slashes(image[1]), image[0])])
     uploader_flags.extend(["-c", "reset run; shutdown"])
     for i, item in enumerate(uploader_flags):
