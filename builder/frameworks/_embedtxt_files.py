@@ -36,7 +36,7 @@ def prepare_files(files):
             fp.seek(-1, SEEK_END)
             if fp.read(1) != '\0':
                 fp.seek(0, SEEK_CUR)
-                fp.write('\0')
+                fp.write(b'\0')
 
 
 def extract_files(cppdefines):
