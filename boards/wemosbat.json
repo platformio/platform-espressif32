@@ -22,7 +22,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "WeMos WiFi & Bluetooth Battery",
+  "name": "WeMos WiFi and Bluetooth Battery",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
