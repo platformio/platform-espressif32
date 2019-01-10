@@ -1,7 +1,7 @@
 {
   "build": {
     "core": "esp32",
-    "extra_flags": "-DARDUINO_T-Beam",
+    "extra_flags": "-DARDUINO_T_Beam",
     "f_cpu": "240000000L",
     "f_flash": "40000000L",
     "flash_mode": "dio",
