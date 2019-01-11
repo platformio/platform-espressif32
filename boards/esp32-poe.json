@@ -19,7 +19,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "me=OLIMEX ESP32-PoE",
+  "name": "OLIMEX ESP32-PoE",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
