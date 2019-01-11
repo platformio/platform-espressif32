@@ -26,9 +26,6 @@
     "maximum_ram_size": 327680,
     "maximum_size": 2097152,
     "protocol": "esptool",
-    "protocols": [
-      "esptool"
-    ],
     "require_upload_port": true,
     "speed": 921600
   },

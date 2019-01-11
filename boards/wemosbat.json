@@ -22,24 +22,12 @@
     "arduino",
     "espidf"
   ],
-  "name": "WeMos WiFi & Bluetooth Battery",
+  "name": "WeMos WiFi and Bluetooth Battery",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
     "maximum_size": 4194304,
     "protocol": "esptool",
-    "protocols": [
-      "esptool",
-      "esp-prog",
-      "jlink",
-      "olimex-arm-usb-tiny-h",
-      "olimex-arm-usb-ocd-h",
-      "olimex-arm-usb-ocd",
-      "olimex-jtag-tiny",
-      "iot-bus-jtag",
-      "tumpa",
-      "minimodule"
-    ],
     "require_upload_port": true,
     "speed": 921600
   },
