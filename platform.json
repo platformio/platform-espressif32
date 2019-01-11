@@ -6,7 +6,7 @@
   "homepage": "http://platformio.org/platforms/espressif32",
   "license": "Apache-2.0",
   "engines": {
-    "platformio": "^3.0.0"
+    "platformio": "<5"
   },
   "repository": {
     "type": "git",
