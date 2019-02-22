@@ -192,6 +192,7 @@ env.Prepend(
         join(FRAMEWORK_DIR, "components", "aws_iot",
              "aws-iot-device-sdk-embedded-C", "include"),
         join(FRAMEWORK_DIR, "components", "bootloader_support", "include"),
+        join(FRAMEWORK_DIR, "components", "bootloader_support", "include_priv"),
         join(FRAMEWORK_DIR, "components", "bt", "include"),
         join(FRAMEWORK_DIR, "components", "bt", "bluedroid", "api", "include", "api"),
         join(FRAMEWORK_DIR, "components", "coap", "port", "include"),
@@ -422,6 +423,7 @@ ignore_dirs = (
     "aws_iot",
     "espcoredump",
     "bootloader",
+    "bootloader_support",
     "heap",
     "esptool_py",
     "freertos",
@@ -452,6 +454,12 @@ libs.append(env.BuildLibrary(
     join("$BUILD_DIR", "app_trace"),
     join(FRAMEWORK_DIR, "components", "app_trace"),
     src_filter="+<*> -<test> -<sys_view> -<gcov>"
+))
+
+libs.append(env.BuildLibrary(
+    join("$BUILD_DIR", "bootloader_support"),
+    join(FRAMEWORK_DIR, "components", "bootloader_support"),
+    src_filter="+<*> -<test> -<src/bootloader_init.c>"
 ))
 
 libs.append(env.BuildLibrary(
