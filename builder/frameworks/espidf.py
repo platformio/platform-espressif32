@@ -545,7 +545,6 @@ if isfile(join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h")):
         for l in fp.readlines():
             if "ENABLE_ARDUINO_DEPENDS" in l and l.rstrip('\r\n').split(' ')[2] == '1':
                 build_arduino_framework = True
-                build_arduino_main = False
             if "CONFIG_AUTOSTART_ARDUINO" in l and l.rstrip('\r\n').split(' ')[2] == '1':
                 build_arduino_main = True
 
