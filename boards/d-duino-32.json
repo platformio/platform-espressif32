@@ -1,49 +1,36 @@
 {
-    "build": {
-      "core": "esp32",
-      "extra_flags": "-DARDUINO_D_DUINO_32",
-      "f_cpu": "240000000L",
-      "f_flash": "40000000L",
-      "flash_mode": "dio",
-      "ldscript": "esp32_out.ld",
-      "mcu": "esp32",
-      "variant": "d-duino-32"
-    },
-    "connectivity": [
-      "wifi",
-      "bluetooth",
-      "ethernet",
-      "can"
-    ],
-    "debug": {
-      "openocd_board": "esp-wroom-32.cfg"
-    },
-    "frameworks": [
-      "arduino",
-      "espidf"
-    ],
-    "name": "D-duino-32",
-    "upload": {
-      "flash_size": "4MB",
-      "maximum_ram_size": 327680,
-      "maximum_size": 4194304,
-      "protocol": "esptool",
-      "protocols": [
-        "esptool",
-        "esp-prog",
-        "jlink",
-        "olimex-arm-usb-tiny-h",
-        "olimex-arm-usb-ocd-h",
-        "olimex-arm-usb-ocd",
-        "olimex-jtag-tiny",
-        "iot-bus-jtag",
-        "tumpa",
-        "minimodule"
-      ],
-      "require_upload_port": true,
-      "speed": 921600
-    },
-    "url": "https://www.tindie.com/products/lspoplove/dstike-d-duino-32-v3/",
-    "vendor": "DSTIKE"
-  }
-  
+  "build": {
+    "core": "esp32",
+    "extra_flags": "-DARDUINO_D_DUINO_32",
+    "f_cpu": "240000000L",
+    "f_flash": "40000000L",
+    "flash_mode": "dio",
+    "ldscript": "esp32_out.ld",
+    "mcu": "esp32",
+    "variant": "d-duino-32"
+  },
+  "connectivity": [
+    "wifi",
+    "bluetooth",
+    "ethernet",
+    "can"
+  ],
+  "debug": {
+    "openocd_board": "esp-wroom-32.cfg"
+  },
+  "frameworks": [
+    "arduino",
+    "espidf"
+  ],
+  "name": "D-duino-32",
+  "upload": {
+    "flash_size": "4MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 4194304,
+    "protocol": "esptool",
+    "require_upload_port": true,
+    "speed": 921600
+  },
+  "url": "https://www.tindie.com/products/lspoplove/dstike-d-duino-32-v3/",
+  "vendor": "DSTIKE"
+}

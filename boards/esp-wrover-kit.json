@@ -1,7 +1,7 @@
 {
   "build": {
     "core": "esp32",
-    "extra_flags": "-DARDUINO_ESP32_DEV -DBOARD_HAS_PSRAM -mfix-esp32-psram-cache-issue",
+    "extra_flags": "-DARDUINO_ESP32_DEV",
     "f_cpu": "240000000L",
     "f_flash": "40000000L",
     "flash_mode": "dio",
@@ -40,16 +40,7 @@
     "protocol": "esptool",
     "protocols": [
       "esptool",
-      "ftdi",
-      "esp-prog",
-      "jlink",
-      "olimex-arm-usb-tiny-h",
-      "olimex-arm-usb-ocd-h",
-      "olimex-arm-usb-ocd",
-      "olimex-jtag-tiny",
-      "iot-bus-jtag",
-      "tumpa",
-      "minimodule"
+      "ftdi"
     ],
     "require_upload_port": true,
     "speed": 921600
