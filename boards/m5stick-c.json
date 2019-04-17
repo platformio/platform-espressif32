@@ -1,13 +1,13 @@
 {
   "build": {
     "core": "esp32",
-    "extra_flags": "-DARDUINO_HELTEC_WIFI_KIT_32",
+    "extra_flags": "-DARDUINO_M5Stick_C",
     "f_cpu": "240000000L",
     "f_flash": "40000000L",
     "flash_mode": "dio",
     "ldscript": "esp32_out.ld",
     "mcu": "esp32",
-    "variant": "heltec_wifi_kit_32"
+    "variant": "m5stick_c"
   },
   "connectivity": [
     "wifi",
@@ -19,15 +19,15 @@
     "arduino",
     "espidf"
   ],
-  "name": "Heltec WiFi Kit 32",
+  "name": "M5Stick-C",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
     "maximum_size": 4194304,
     "protocol": "esptool",
     "require_upload_port": true,
-    "speed": 921600
+    "speed": 1500000
   },
-  "url": "http://www.heltec.cn/project/wifi-kit-32/?lang=en",
-  "vendor": "Heltec Automation"
+  "url": "http://www.m5stack.com",
+  "vendor": "M5Stack"
 }
