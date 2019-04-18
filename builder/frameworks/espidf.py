@@ -39,6 +39,23 @@ FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
 assert FRAMEWORK_DIR and isdir(FRAMEWORK_DIR)
 
 
+def get_toolchain_version():
+
+    def get_original_version(version):
+        if version.count(".") != 2:
+            return None
+        _, y = version.split(".")[:2]
+        if int(y) < 100:
+            return None
+        if len(y) % 2 != 0:
+            y = "0" + y
+        parts = [str(int(y[i * 2:i * 2 + 2])) for i in range(int(len(y) / 2))]
+        return ".".join(parts)
+
+    return get_original_version(
+        platform.get_package_version("toolchain-xtensa32"))
+
+
 def parse_mk(path):
     result = {}
     variable = None
@@ -71,17 +88,16 @@ def parse_mk(path):
     return result
 
 
-def build_component(path):
-    envsafe = env.Clone()
-    src_filter = "+<*> -<test*>"
+def extract_component_config(path):
+    inc_dirs = []
+    cc_flags = []
+    src_filter = "+<*> -<test*>"  # default src_filter
     if isfile(join(path, "component.mk")):
         params = parse_mk(join(path, "component.mk"))
         if params.get("COMPONENT_PRIV_INCLUDEDIRS"):
-            inc_dirs = params.get("COMPONENT_PRIV_INCLUDEDIRS")
-            envsafe.Prepend(
-                CPPPATH=[join(path, d) for d in inc_dirs])
+            inc_dirs.extend(params.get("COMPONENT_PRIV_INCLUDEDIRS"))
         if params.get("CFLAGS"):
-            envsafe.Append(CCFLAGS=params.get("CFLAGS"))
+            cc_flags.extend(params.get("CFLAGS"))
         if params.get("COMPONENT_OBJS"):
             src_filter = "-<*>"
             for f in params.get("COMPONENT_OBJS"):
@@ -96,12 +112,51 @@ def build_component(path):
                 src_filter += " +<%s/*.[sSc]*>" % f
         if params.get("COMPONENT_OBJEXCLUDE"):
             for f in params.get("COMPONENT_OBJEXCLUDE"):
-                src_filter += " -<%s>" % f.replace(".o", ".c")
+                src_filter += " -<%s>" % f.replace(".o", ".[sSc]*")
+
+    return {
+        "inc_dirs": inc_dirs,
+        "cc_flags": cc_flags,
+        "src_filter": src_filter
+    }
+
+
+def build_component(path, component_config):
+
+    envsafe = env.Clone()
+    envsafe.Prepend(
+        CPPPATH=[join(path, d) for d in component_config.get("inc_dirs", [])],
+        CCFLAGS=component_config.get("cc_flags", []),
+        CPPDEFINES=component_config.get("cpp_defines", []),
+    )
 
     return envsafe.BuildLibrary(
         join("$BUILD_DIR", "%s" % basename(path)), path,
-        src_filter=src_filter
+        src_filter=component_config.get("src_filter", "+<*> -<test*>")
     )
+
+
+def get_sdk_configuration(config_path):
+    if not isfile(config_path):
+        sys.stderr.write(
+            "Error: Could not find \"sdkconfig.h\" file\n")
+        env.Exit(1)
+
+    config = {}
+    with open(config_path) as fp:
+        for l in fp.readlines():
+            if not l.startswith("#define"):
+                continue
+            values = l.split()
+            config[values[1]] = values[2]
+
+    return config
+
+
+def is_set(parameter, configuration):
+    if int(configuration.get(parameter, 0)):
+        return True
+    return False
 
 
 def find_valid_config_file():
@@ -113,6 +168,117 @@ def find_valid_config_file():
             "Error: Could not find default \"sdkconfig.h\" file\n")
         env.Exit(1)
     return files[0]
+
+
+def build_lwip_lib(sdk_params):
+    src_dirs = [
+        "apps/dhcpserver",
+        "apps/ping",
+        "lwip/src/api",
+        "lwip/src/apps/sntp",
+        "lwip/src/core",
+        "lwip/src/core/ipv4",
+        "lwip/src/core/ipv6",
+        "lwip/src/netif",
+        "port/esp32",
+        "port/esp32/freertos",
+        "port/esp32/netif",
+        "port/esp32/debug"
+    ]
+
+    # PPP support can be enabled in sdkconfig.h
+    if int(sdk_params.get("CONFIG_PPP_SUPPORT", 0)):
+        src_dirs.extend(
+            ["lwip/src/netif/ppp", "lwip/src/netif/ppp/polarssl"])
+
+    src_filter = "-<*>"
+    for d in src_dirs:
+        src_filter += " +<%s>" % d
+
+    config = {
+        "cc_flags": ["-Wno-address"],
+        "src_filter": src_filter
+    }
+
+    return build_component(
+        join(FRAMEWORK_DIR, "components", "lwip"), config)
+
+
+def build_protocomm_lib(sdk_params):
+    src_dirs = [
+        "src/common",
+        "src/security",
+        "proto-c",
+        "src/simple_ble",
+        "src/transports"
+    ]
+
+    src_filter = "-<*>"
+    for d in src_dirs:
+        src_filter += " +<%s>" % d
+
+    if is_set("CONFIG_BT_ENABLED", sdk_params) and is_set(
+            "CONFIG_BLUEDROID_ENABLED", sdk_params):
+        src_filter += " -<src/simple_ble/simple_ble.c>"
+        src_filter += " -<src/transports/protocomm_ble.c>"
+
+    inc_dirs = ["proto-c", join("src", "common"), join("src", "simple_ble")]
+
+    config = {
+        "inc_dirs": inc_dirs,
+        "src_filter": src_filter
+    }
+
+    return build_component(
+        join(FRAMEWORK_DIR, "components", "protocomm"), config)
+
+
+def build_rtos_lib():
+    config = {
+        "cpp_defines": ["_ESP_FREERTOS_INTERNAL"],
+        "inc_dirs": [join("include", "freertos")]
+    }
+
+    return build_component(
+        join(FRAMEWORK_DIR, "components", "freertos"), config)
+
+
+def build_libsodium_lib():
+    defines = ["CONFIGURED", "NATIVE_LITTLE_ENDIAN", "HAVE_WEAK_SYMBOLS",
+               "__STDC_LIMIT_MACROS", "__STDC_CONSTANT_MACROS",
+               "RANDOMBYTES_DEFAULT_IMPLEMENTATION"]
+
+    inc_dirs = [
+        "port",
+        join("port_include", "sodium"),
+        join("libsodium", "src", "libsodium", "include", "sodium")
+    ]
+
+    config = {
+        "cpp_defines": defines,
+        "cc_flags": ["-Wno-type-limits", "-Wno-unknown-pragmas"],
+        "inc_dirs": inc_dirs,
+        "src_filter": "-<*> +<libsodium/src> +<port>"
+    }
+
+    return build_component(
+        join(FRAMEWORK_DIR, "components", "libsodium"), config)
+
+
+def build_wpa_supplicant_lib():
+    defines = ["EMBEDDED_SUPP", "IEEE8021X_EAPOL", "EAP_PEER_METHOD",
+               "EAP_MSCHAPv2", "EAP_TTLS", "EAP_TLS", "EAP_PEAP",
+               "USE_WPA2_TASK", "CONFIG_WPS2", "CONFIG_WPS_PIN",
+               "USE_WPS_TASK", "ESPRESSIF_USE", "ESP32_WORKAROUND",
+               "CONFIG_ECC", "__ets__"]
+
+    config = {
+        "cpp_defines": defines,
+        "cc_flags": ["-Wno-strict-aliasing"]
+    }
+
+    return build_component(
+        join(FRAMEWORK_DIR, "components", "wpa_supplicant"), config)
 
 
 def build_espidf_bootloader():
@@ -188,11 +354,13 @@ env.Prepend(
     CPPPATH=[
         join(FRAMEWORK_DIR, "components", "app_trace", "include"),
         join(FRAMEWORK_DIR, "components", "app_update", "include"),
+        join(FRAMEWORK_DIR, "components", "asio", "asio", "asio", "include"),
+        join(FRAMEWORK_DIR, "components", "asio", "port", "include"),
         join(FRAMEWORK_DIR, "components", "aws_iot", "include"),
         join(FRAMEWORK_DIR, "components", "aws_iot",
              "aws-iot-device-sdk-embedded-C", "include"),
         join(FRAMEWORK_DIR, "components", "bootloader_support", "include"),
-        join(FRAMEWORK_DIR, "components", "bootloader_support", "include_priv"),
+        join(FRAMEWORK_DIR, "components", "bootloader_support", "include_bootloader"),
         join(FRAMEWORK_DIR, "components", "bt", "include"),
         join(FRAMEWORK_DIR, "components", "bt", "bluedroid", "api", "include", "api"),
         join(FRAMEWORK_DIR, "components", "coap", "port", "include"),
@@ -204,13 +372,18 @@ env.Prepend(
         join(FRAMEWORK_DIR, "components", "driver", "include"),
         join(FRAMEWORK_DIR, "components", "esp-tls"),
         join(FRAMEWORK_DIR, "components", "esp_adc_cal", "include"),
+        join(FRAMEWORK_DIR, "components", "esp_event", "include"),
         join(FRAMEWORK_DIR, "components", "esp_http_client", "include"),
+        join(FRAMEWORK_DIR, "components", "esp_http_server", "include"),
         join(FRAMEWORK_DIR, "components", "esp_https_ota", "include"),
+        join(FRAMEWORK_DIR, "components", "esp_ringbuf", "include"),
         join(FRAMEWORK_DIR, "components", "esp32", "include"),
         join(FRAMEWORK_DIR, "components", "ethernet", "include"),
+        join(FRAMEWORK_DIR, "components", "expat", "expat", "lib"),
         join(FRAMEWORK_DIR, "components", "expat", "port", "include"),
-        join(FRAMEWORK_DIR, "components", "expat", "include", "expat"),
         join(FRAMEWORK_DIR, "components", "fatfs", "src"),
+        join(FRAMEWORK_DIR, "components", "freemodbus", "modbus", "include"),
+        join(FRAMEWORK_DIR, "components", "freemodbus", "modbus_controller"),
         join(FRAMEWORK_DIR, "components", "freertos", "include"),
         join(FRAMEWORK_DIR, "components", "heap", "include"),
         join(FRAMEWORK_DIR, "components", "jsmn", "include"),
@@ -219,21 +392,27 @@ env.Prepend(
              "libsodium", "include"),
         join(FRAMEWORK_DIR, "components", "libsodium", "port_include"),
         join(FRAMEWORK_DIR, "components", "log", "include"),
-        join(FRAMEWORK_DIR, "components", "lwip", "include", "lwip"),
-        join(FRAMEWORK_DIR, "components", "lwip", "include", "lwip", "port"),
-        join(FRAMEWORK_DIR, "components", "lwip", "include", "lwip", "posix"),
-        join(FRAMEWORK_DIR, "components", "lwip", "apps", "ping"),
+        join(FRAMEWORK_DIR, "components", "lwip", "include", "apps"),
+        join(FRAMEWORK_DIR, "components", "lwip", "lwip", "src", "include"),
+        join(FRAMEWORK_DIR, "components", "lwip", "port", "esp32", "include"),
+        join(FRAMEWORK_DIR, "components", "lwip", "port", "esp32", "include", "arch"),
+        join(FRAMEWORK_DIR, "components", "include_compat"),
         join("$PROJECTSRC_DIR"),
         join(FRAMEWORK_DIR, "components", "mbedtls", "port", "include"),
         join(FRAMEWORK_DIR, "components", "mbedtls", "mbedtls", "include"),
         join(FRAMEWORK_DIR, "components", "mdns", "include"),
         join(FRAMEWORK_DIR, "components", "micro-ecc", "micro-ecc"),
+        join(FRAMEWORK_DIR, "components", "mqtt", "esp-mqtt", "include"),
         join(FRAMEWORK_DIR, "components", "nghttp", "nghttp2", "lib", "includes"),
         join(FRAMEWORK_DIR, "components", "nghttp", "port", "include"),
         join(FRAMEWORK_DIR, "components", "newlib", "platform_include"),
         join(FRAMEWORK_DIR, "components", "newlib", "include"),
         join(FRAMEWORK_DIR, "components", "nvs_flash", "include"),
         join(FRAMEWORK_DIR, "components", "openssl", "include"),
+        join(FRAMEWORK_DIR, "components", "protobuf-c", "protobuf-c"),
+        join(FRAMEWORK_DIR, "components", "protocomm", "include", "common"),
+        join(FRAMEWORK_DIR, "components", "protocomm", "include", "security"),
+        join(FRAMEWORK_DIR, "components", "protocomm", "include", "transports"),
         join(FRAMEWORK_DIR, "components", "pthread", "include"),
         join(FRAMEWORK_DIR, "components", "sdmmc", "include"),
         join(FRAMEWORK_DIR, "components", "smartconfig_ack", "include"),
@@ -241,10 +420,12 @@ env.Prepend(
         join(FRAMEWORK_DIR, "components", "soc", "include"),
         join(FRAMEWORK_DIR, "components", "spi_flash", "include"),
         join(FRAMEWORK_DIR, "components", "spiffs", "include"),
+        join(FRAMEWORK_DIR, "components", "tcp_transport", "include"),
         join(FRAMEWORK_DIR, "components", "tcpip_adapter", "include"),
         join(FRAMEWORK_DIR, "components", "ulp", "include"),
         join(FRAMEWORK_DIR, "components", "vfs", "include"),
         join(FRAMEWORK_DIR, "components", "wear_levelling", "include"),
+        join(FRAMEWORK_DIR, "components", "wifi_provisioning", "include"),
         join(FRAMEWORK_DIR, "components", "wpa_supplicant", "include"),
         join(FRAMEWORK_DIR, "components", "wpa_supplicant", "port", "include"),
         join(FRAMEWORK_DIR, "components", "xtensa-debug-module", "include")
@@ -308,12 +489,16 @@ env.Append(
     FLASH_EXTRA_IMAGES=[
         ("0x1000", join("$BUILD_DIR", "bootloader.bin")),
         ("0x8000", join("$BUILD_DIR", "partitions.bin"))
+    ],
+
+    CPPDEFINES=[
+        ("GCC_NOT_5_2_0", "%d" % 1 if get_toolchain_version() != "5.2.0" else 0)
     ]
 )
 
+cppdefines = env.Flatten(env.get("CPPDEFINES", []))
 
-if "PIO_FRAMEWORK_ESP_IDF_ENABLE_EXCEPTIONS" in env.Flatten(
-        env.get("CPPDEFINES", [])):
+if "PIO_FRAMEWORK_ESP_IDF_ENABLE_EXCEPTIONS" in cppdefines:
 
     # remove unnecessary flag defined in main.py that disables exceptions
     try:
@@ -346,15 +531,17 @@ env.Replace(ASFLAGS=[])
 # Handle missing sdkconfig.h
 #
 
-if not isfile(join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h")):
+sdk_config_file = join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h")
+
+if not isfile(sdk_config_file):
     print("Warning! Cannot find \"sdkconfig.h\" file. "
           "Default \"sdkconfig.h\" will be added to your project!")
-    copy(find_valid_config_file(), join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h"))
+    copy(find_valid_config_file(), sdk_config_file)
 else:
     is_new = False
-    with open(join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h")) as fp:
+    with open(sdk_config_file) as fp:
         for l in fp.readlines():
-            if "CONFIG_PARTITION_TABLE_OFFSET" in l:
+            if "CONFIG_PTHREAD_STACK_MIN" in l:
                 is_new = True
                 break
 
@@ -364,11 +551,12 @@ else:
 
         new_config = find_valid_config_file()
         copy(
-            join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h"),
+            sdk_config_file,
             join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h.bak")
         )
-        copy(new_config, join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h"))
+        copy(new_config, sdk_config_file)
 
+sdk_params = get_sdk_configuration(sdk_config_file)
 
 #
 # Generate partition table
@@ -383,10 +571,12 @@ env.Replace(
             join(fwpartitions_dir, partitions_csv)) else partitions_csv))
 
 partition_table = env.Command(
-    join("$BUILD_DIR", "partitions.bin"),
-    "$PARTITIONS_TABLE_CSV",
-    env.VerboseAction('"$PYTHONEXE" "%s" -q $SOURCE $TARGET' % join(
-        FRAMEWORK_DIR, "components", "partition_table", "gen_esp32part.py"),
+    join("$BUILD_DIR", "partitions.bin"), "$PARTITIONS_TABLE_CSV",
+    env.VerboseAction(
+        '"$PYTHONEXE" "%s" -q --flash-size "%s" $SOURCE $TARGET' % (join(
+            FRAMEWORK_DIR, "components",
+            "partition_table", "gen_esp32part.py"), env.BoardConfig().get(
+                "upload.flash_size", "detect")),
         "Generating partitions $TARGET"))
 
 
@@ -419,123 +609,53 @@ env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", env.ElfToBin(
 libs = []
 
 ignore_dirs = (
-    "app_trace",
-    "aws_iot",
-    "espcoredump",
     "bootloader",
-    "bootloader_support",
-    "heap",
     "esptool_py",
-    "freertos",
+    "espcoredump",
     "idf_test",
-    "partition_table",
-    "soc",
-    "spi_flash",
+    "partition_table"
+)
+
+special_src_filter = {
+    "app_trace": "+<*> -<test> -<sys_view> -<gcov>",
+    "aws_iot": "-<*> +<port> +<aws-iot-device-sdk-embedded-C/src>",
+    "esp32": "-<*> +<*.[sSc]*> +<hwcrypto>",
+    "bootloader_support": "+<*> -<test> -<src/bootloader_init.c>",
+    "heap": "+<*> -<test*> -<multi_heap_poisoning.c>",
+    "soc": "+<*> -<test> -<esp32/test>",
+    "spi_flash": "+<*> -<test*> -<sim>"
+}
+
+special_env = (
+    "freertos",
+    "lwip",
+    "protocomm",
     "libsodium",
     "wpa_supplicant"
 )
 
 for d in listdir(join(FRAMEWORK_DIR, "components")):
-    if d in ignore_dirs:
+    if d in special_src_filter or d in special_env or d in ignore_dirs:
         continue
     component_dir = join(FRAMEWORK_DIR, "components", d)
     if isdir(component_dir):
-        libs.append(build_component(component_dir))
+        libs.append(
+            build_component(component_dir,
+                            extract_component_config(component_dir)))
 
 
-# component.mk contains configuration for bootloader
-libs.append(env.BuildLibrary(
-    join("$BUILD_DIR", "spi_flash"),
-    join(FRAMEWORK_DIR, "components", "spi_flash"),
-    src_filter="+<*> -<test*> -<sim>"
+for component, src_filter in special_src_filter.items():
+    config = {"src_filter": src_filter}
+    libs.append(
+        build_component(
+            join(FRAMEWORK_DIR, "components", component), config))
+
+libs.extend((
+    build_lwip_lib(sdk_params),
+    build_protocomm_lib(sdk_params),
+    build_rtos_lib(),
+    build_libsodium_lib(),
+    build_wpa_supplicant_lib()
 ))
-
-libs.append(env.BuildLibrary(
-    join("$BUILD_DIR", "app_trace"),
-    join(FRAMEWORK_DIR, "components", "app_trace"),
-    src_filter="+<*> -<test> -<sys_view> -<gcov>"
-))
-
-libs.append(env.BuildLibrary(
-    join("$BUILD_DIR", "bootloader_support"),
-    join(FRAMEWORK_DIR, "components", "bootloader_support"),
-    src_filter="+<*> -<test> -<src/bootloader_init.c>"
-))
-
-libs.append(env.BuildLibrary(
-    join("$BUILD_DIR", "soc"),
-    join(FRAMEWORK_DIR, "components", "soc"),
-    src_filter="+<*> -<test> -<esp32/test>"
-))
-
-libs.append(env.BuildLibrary(
-    join("$BUILD_DIR", "heap"),
-    join(FRAMEWORK_DIR, "components", "heap"),
-    src_filter="+<*> -<test*> -<multi_heap_poisoning.c>"
-))
-
-libs.append(env.BuildLibrary(
-    join("$BUILD_DIR", "aws_iot"),
-    join(FRAMEWORK_DIR, "components", "aws_iot"),
-    src_filter="-<*> +<port> +<aws-iot-device-sdk-embedded-C/src>"
-))
-
-envsafe = env.Clone()
-envsafe.Prepend(
-    CPPDEFINES=["_ESP_FREERTOS_INTERNAL"],
-    CPPPATH=[
-        join(FRAMEWORK_DIR, "components", "freertos", "include", "freertos")
-    ]
-)
-
-libs.append(
-    envsafe.BuildLibrary(
-        join("$BUILD_DIR", "freertos"),
-        join(FRAMEWORK_DIR, "components", "freertos"),
-        src_filter="+<*> -<test*>"
-    )
-)
-
-envsafe = env.Clone()
-envsafe.Prepend(
-    CPPDEFINES=[
-        "CONFIGURED", "NATIVE_LITTLE_ENDIAN", "HAVE_WEAK_SYMBOLS",
-        "__STDC_LIMIT_MACROS", "__STDC_CONSTANT_MACROS",
-        "RANDOMBYTES_DEFAULT_IMPLEMENTATION"
-    ],
-    CCFLAGS=["-Wno-type-limits", "-Wno-unknown-pragmas"],
-    CPPPATH=[
-        join(FRAMEWORK_DIR, "components", "libsodium", "port"),
-        join(FRAMEWORK_DIR, "components", "libsodium", "port_include", "sodium"),
-        join(FRAMEWORK_DIR, "components", "libsodium", "libsodium", "src",
-             "libsodium", "include", "sodium")
-    ]
-)
-
-libs.append(
-    envsafe.BuildLibrary(
-        join("$BUILD_DIR", "libsodium"),
-        join(FRAMEWORK_DIR, "components", "libsodium"),
-        src_filter="-<*> +<libsodium/src> +<port>"
-    )
-)
-
-envsafe = env.Clone()
-envsafe.Prepend(
-    CPPDEFINES=[
-        "EMBEDDED_SUPP", "IEEE8021X_EAPOL", "EAP_PEER_METHOD", "EAP_MSCHAPv2",
-        "EAP_TTLS", "EAP_TLS", "EAP_PEAP", "USE_WPA2_TASK", "CONFIG_WPS2",
-        "CONFIG_WPS_PIN", "USE_WPS_TASK", "ESPRESSIF_USE", "ESP32_WORKAROUND",
-        "__ets__"
-    ],
-    CCFLAGS=["-Wno-strict-aliasing"]
-)
-
-libs.append(
-    envsafe.BuildLibrary(
-        join("$BUILD_DIR", "wpa_supplicant"),
-        join(FRAMEWORK_DIR, "components", "wpa_supplicant")
-    )
-)
 
 env.Prepend(LIBS=libs)
