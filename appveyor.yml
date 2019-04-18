@@ -17,8 +17,8 @@ environment:
 
 install:
 - cmd: git submodule update --init --recursive
-- cmd: SET PATH=%PATH%;C:\Python27\Scripts
-- cmd: pip install -U https://github.com/platformio/platformio/archive/develop.zip
+- cmd: SET PATH=%PATH%;C:\Python36\Scripts
+- cmd: pip3 install -U https://github.com/platformio/platformio/archive/develop.zip
 - cmd: platformio platform install file://.
 
 test_script:
