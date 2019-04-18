@@ -27,7 +27,7 @@
     "maximum_size": 4194304,
     "protocol": "esptool",
     "require_upload_port": true,
-    "speed": 921600
+    "speed": 460800
   },
   "url": "https://wiki.ai-thinker.com/esp32-cam",
   "vendor": "AI Thinker"
