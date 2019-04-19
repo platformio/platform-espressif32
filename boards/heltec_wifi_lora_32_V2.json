@@ -1,13 +1,14 @@
 {
   "build": {
     "core": "esp32",
-    "extra_flags": "-DARDUINO_HELTEC_WIFI_KIT_32",
+    "extra_flags": "-DARDUINO_HELTEC_WIFI_LORA_32_V2",
     "f_cpu": "240000000L",
     "f_flash": "40000000L",
     "flash_mode": "dio",
     "ldscript": "esp32_out.ld",
+    "partitions": "default_8MB.csv",
     "mcu": "esp32",
-    "variant": "heltec_wifi_kit_32"
+    "variant": "heltec_wifi_lora_32_V2"
   },
   "connectivity": [
     "wifi",
@@ -15,19 +16,22 @@
     "ethernet",
     "can"
   ],
+  "debug": {
+    "openocd_board": "esp-wroom-32.cfg"
+  },
   "frameworks": [
     "arduino",
     "espidf"
   ],
-  "name": "Heltec WiFi Kit 32",
+  "name": "Heltec WiFi LoRa 32 (V2)",
   "upload": {
-    "flash_size": "4MB",
+    "flash_size": "8MB",
     "maximum_ram_size": 327680,
-    "maximum_size": 4194304,
+    "maximum_size": 8388608,
     "protocol": "esptool",
     "require_upload_port": true,
     "speed": 921600
   },
-  "url": "http://www.heltec.cn/project/wifi-kit-32/?lang=en",
+  "url": "http://www.heltec.cn/project/wifi-lora-32/?lang=en",
   "vendor": "Heltec Automation"
 }

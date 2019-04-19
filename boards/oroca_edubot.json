@@ -6,6 +6,7 @@
     "f_flash": "40000000L",
     "flash_mode": "dio",
     "ldscript": "esp32_out.ld",
+    "partitions": "huge_app.csv",
     "mcu": "esp32",
     "variant": "oroca_edubot"
   },

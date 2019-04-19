@@ -1,7 +1,7 @@
 {
   "build": {
     "core": "esp32",
-    "extra_flags": "-DARDUINO_Heltec_WIFI_LoRa_32",
+    "extra_flags": "-DARDUINO_HELTEC_WIFI_LORA_32",
     "f_cpu": "240000000L",
     "f_flash": "40000000L",
     "flash_mode": "dio",
@@ -22,7 +22,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "Heltec WIFI LoRa 32",
+  "name": "Heltec WiFi LoRa 32",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
