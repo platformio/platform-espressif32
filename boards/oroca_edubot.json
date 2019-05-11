@@ -6,8 +6,8 @@
     "f_flash": "40000000L",
     "flash_mode": "dio",
     "ldscript": "esp32_out.ld",
-    "partitions": "huge_app.csv",
     "mcu": "esp32",
+    "partitions": "huge_app.csv",
     "variant": "oroca_edubot"
   },
   "connectivity": [
@@ -25,7 +25,6 @@
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
     "maximum_size": 4194304,
-    "protocol": "esptool",
     "require_upload_port": true,
     "speed": 921600
   },

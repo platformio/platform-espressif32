@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import socket
+import re
 import sys
 from os.path import isfile, join
 
@@ -253,12 +253,39 @@ upload_protocol = env.subst("$UPLOAD_PROTOCOL")
 debug_tools = env.BoardConfig().get("debug.tools", {})
 upload_actions = []
 
-if upload_protocol == "esptool":
+# Compatibility with old OTA configurations
+if (upload_protocol != "espota"
+        and re.match(r"\"?((([0-9]{1,3}\.){3}[0-9]{1,3})|[^\\/]+\.local)\"?$",
+                     env.get("UPLOAD_PORT", ""))):
+    upload_protocol = "espota"
+    sys.stderr.write(
+        "Warning! We have just detected `upload_port` as IP address or host "
+        "name of ESP device. `upload_protocol` is switched to `espota`.\n"
+        "Please specify `upload_protocol = espota` in `platformio.ini` "
+        "project configuration file.\n")
+
+if upload_protocol == "espota":
+    if not env.subst("$UPLOAD_PORT"):
+        sys.stderr.write(
+            "Error: Please specify IP address or host name of ESP device "
+            "using `upload_port` for build environment or use "
+            "global `--upload-port` option.\n"
+            "See https://docs.platformio.org/page/platforms/"
+            "espressif32.html#over-the-air-ota-update\n")
+    env.Replace(
+        UPLOADER=join(
+            platform.get_package_dir("tool-espotapy") or "", "espota.py"),
+        UPLOADERFLAGS=["--debug", "--progress", "-i", "$UPLOAD_PORT"],
+        UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS -f $SOURCE'
+    )
+    if "uploadfs" in COMMAND_LINE_TARGETS:
+        env.Append(UPLOADERFLAGS=["-s"])
+    upload_actions = [env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")]
+
+elif upload_protocol == "esptool":
     env.Replace(
         UPLOADER=join(
             platform.get_package_dir("tool-esptoolpy") or "", "esptool.py"),
-        UPLOADEROTA=join(
-            platform.get_package_dir("tool-espotapy") or "", "espota.py"),
         UPLOADERFLAGS=[
             "--chip", "esp32",
             "--port", '"$UPLOAD_PORT"',
@@ -270,12 +297,7 @@ if upload_protocol == "esptool":
             "--flash_freq", "${__get_board_f_flash(__env__)}",
             "--flash_size", "detect"
         ],
-        UPLOADEROTAFLAGS=[
-            "--debug", "--progress", "-i", "$UPLOAD_PORT", "-p", "3232",
-            "$UPLOAD_FLAGS"
-        ],
-        UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS 0x10000 $SOURCE',
-        UPLOADOTACMD='"$PYTHONEXE" "$UPLOADEROTA" $UPLOADEROTAFLAGS -f $SOURCE',
+        UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS 0x10000 $SOURCE'
     )
     for image in env.get("FLASH_EXTRA_IMAGES", []):
         env.Append(UPLOADERFLAGS=[image[0], env.subst(image[1])])
@@ -295,17 +317,6 @@ if upload_protocol == "esptool":
             ],
             UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS $SOURCE',
         )
-        env.Append(UPLOADEROTAFLAGS=["-s"])
-
-    # Handle uploading via OTA
-    ota_port = None
-    if env.get("UPLOAD_PORT"):
-        try:
-            ota_port = socket.gethostbyname(env.get("UPLOAD_PORT"))
-        except socket.error:
-            pass
-    if ota_port:
-        env.Replace(UPLOADCMD="$UPLOADOTACMD")
 
     upload_actions = [
         env.VerboseAction(env.AutodetectUploadPort,
@@ -350,9 +361,8 @@ AlwaysBuild(env.Alias(["upload", "uploadfs"], target_firm, upload_actions))
 
 AlwaysBuild(
     env.Alias("erase", None, [
-        env.VerboseAction(env.AutodetectUploadPort,
-                          "Looking for serial port..."),
-        env.VerboseAction("$ERASECMD", "Ready for erasing")
+        env.VerboseAction(env.AutodetectUploadPort, "Looking for serial port..."),
+        env.VerboseAction("$ERASECMD", "Erasing...")
     ]))
 
 #
