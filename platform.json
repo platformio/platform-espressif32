@@ -66,11 +66,6 @@
       "type": "uploader",
       "version": "~1.20600.0"
     },
-    "tool-espotapy": {
-      "type": "uploader",
-      "optional": true,
-      "version": "~1.1.0"
-    },
     "tool-openocd-esp32": {
       "type": "debugger",
       "optional": true,
