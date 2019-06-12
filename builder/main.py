@@ -330,7 +330,7 @@ elif upload_protocol in debug_tools:
     openocd_dir = platform.get_package_dir("tool-openocd-esp32") or ""
     uploader_flags = ["-s", _to_unix_slashes(openocd_dir)]
     if not int(ARGUMENTS.get("PIOVERBOSE", 0)):
-        uploader_flags.extend(["--debug", "1"])
+        uploader_flags.append("--debug=1")
     uploader_flags.extend(
         debug_tools.get(upload_protocol).get("server").get("arguments", []))
     uploader_flags.extend(["-c", 'program_esp32 {{$SOURCE}} 0x10000 verify'])
