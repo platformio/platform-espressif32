@@ -84,8 +84,8 @@ class Espressif32Platform(PlatformBase):
 
             server_args = [
                 "-s", "$PACKAGE_DIR/share/openocd/scripts",
-                "-f", "share/openocd/scripts/interface/%s.cfg" % openocd_interface,
-                "-f", "share/openocd/scripts/board/%s" % debug.get("openocd_board")
+                "-f", "interface/%s.cfg" % openocd_interface,
+                "-f", "board/%s" % debug.get("openocd_board")
             ]
 
             debug['tools'][link] = {

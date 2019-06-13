@@ -93,7 +93,7 @@ def _update_max_upload_size(env):
         if p['type'] in ("0", "app")
     ]
     if sizes:
-        env.BoardConfig().update("upload.maximum_size", max(sizes))
+        board.update("upload.maximum_size", max(sizes))
 
 
 def _to_unix_slashes(path):
@@ -129,6 +129,7 @@ def __fetch_spiffs_size(target, source, env):
 
 env = DefaultEnvironment()
 platform = env.PioPlatform()
+board = env.BoardConfig()
 
 env.Replace(
     __get_board_f_flash=_get_board_f_flash,
@@ -177,8 +178,7 @@ env.Append(
                 "elf2image",
                 "--flash_mode", "$BOARD_FLASH_MODE",
                 "--flash_freq", "${__get_board_f_flash(__env__)}",
-                "--flash_size", env.BoardConfig().get(
-                    "upload.flash_size", "detect"),
+                "--flash_size", board.get("upload.flash_size", "detect"),
                 "-o", "$TARGET", "$SOURCES"
             ]), "Building $TARGET"),
             suffix=".bin"
@@ -252,7 +252,7 @@ AlwaysBuild(target_size)
 #
 
 upload_protocol = env.subst("$UPLOAD_PROTOCOL")
-debug_tools = env.BoardConfig().get("debug.tools", {})
+debug_tools = board.get("debug.tools", {})
 upload_actions = []
 
 # Compatibility with old OTA configurations
@@ -328,27 +328,31 @@ elif upload_protocol == "esptool":
     ]
 
 elif upload_protocol in debug_tools:
-    openocd_dir = platform.get_package_dir("tool-openocd-esp32") or ""
-    uploader_flags = ["-s", _to_unix_slashes(openocd_dir)]
-    if not int(ARGUMENTS.get("PIOVERBOSE", 0)):
-        uploader_flags.append("--debug=1")
-    uploader_flags.extend(
+    openocd_args = ["-d%d" % (2 if int(ARGUMENTS.get("PIOVERBOSE", 0)) else 1)]
+    openocd_args.extend(
         debug_tools.get(upload_protocol).get("server").get("arguments", []))
-    uploader_flags.extend(["-c", 'program_esp32 {{$SOURCE}} 0x10000 verify'])
+    openocd_args.extend([
+        "-c",
+        "program_esp32 {{$SOURCE}} %s verify" %
+        board.get("upload.offset_address", "0x10000")
+    ])
     for image in env.get("FLASH_EXTRA_IMAGES", []):
-        uploader_flags.extend(
-            ["-c", 'program_esp32 {{%s}} %s verify' % (
-                _to_unix_slashes(image[1]), image[0])])
-    uploader_flags.extend(["-c", "reset run; shutdown"])
-    for i, item in enumerate(uploader_flags):
-        if "$PACKAGE_DIR" in item:
-            uploader_flags[i] = item.replace(
-                "$PACKAGE_DIR", _to_unix_slashes(openocd_dir))
-
-    env.Replace(
-        UPLOADER="openocd",
-        UPLOADERFLAGS=uploader_flags,
-        UPLOADCMD="$UPLOADER $UPLOADERFLAGS")
+        openocd_args.extend([
+            "-c",
+            'program_esp32 {{%s}} %s verify' %
+            (_to_unix_slashes(image[1]), image[0])
+        ])
+    openocd_args.extend(["-c", "reset run; shutdown"])
+    openocd_args = [
+        f.replace(
+            "$PACKAGE_DIR",
+            _to_unix_slashes(
+                platform.get_package_dir("tool-openocd-esp32") or ""))
+        for f in openocd_args
+    ]
+    env.Replace(UPLOADER="openocd",
+                UPLOADERFLAGS=openocd_args,
+                UPLOADCMD="$UPLOADER $UPLOADERFLAGS")
     upload_actions = [env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")]
 
 # custom upload tool
@@ -366,7 +370,8 @@ AlwaysBuild(env.Alias(["upload", "uploadfs"], target_firm, upload_actions))
 
 AlwaysBuild(
     env.Alias("erase", None, [
-        env.VerboseAction(env.AutodetectUploadPort, "Looking for serial port..."),
+        env.VerboseAction(env.AutodetectUploadPort,
+                          "Looking for serial port..."),
         env.VerboseAction("$ERASECMD", "Erasing...")
     ]))
 
