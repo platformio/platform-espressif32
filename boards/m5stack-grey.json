@@ -7,7 +7,7 @@
     "flash_mode": "dio",
     "ldscript": "esp32_out.ld",
     "mcu": "esp32",
-    "variant": "m5stack_core_esp32"
+    "variant": "m5stack_grey_esp32"
   },
   "connectivity": [
     "wifi",
@@ -19,7 +19,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "M5Stack Core ESP32",
+  "name": "M5Stack GREY ESP32",
   "upload": {
     "flash_size": "16MB",
     "maximum_ram_size": 532480,
