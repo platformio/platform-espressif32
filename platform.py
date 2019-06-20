@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from os.path import isdir
+
 from platformio.managers.platform import PlatformBase
 
 
@@ -22,6 +24,9 @@ class Espressif32Platform(PlatformBase):
             self.packages['tool-mkspiffs']['optional'] = False
         if variables.get("upload_protocol"):
             self.packages['tool-openocd-esp32']['optional'] = False
+        if isdir("ulp"):
+            self.packages['toolchain-esp32ulp']['optional'] = False
+
         return PlatformBase.configure_default_packages(self, variables,
                                                        targets)
 

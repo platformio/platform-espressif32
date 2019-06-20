@@ -35,6 +35,11 @@ platform = env.PioPlatform()
 env.SConscript("_bare.py", exports="env")
 env.SConscript("_embedtxt_files.py", exports="env")
 
+ulp_lib = None
+ulp_dir = join(env.subst("$PROJECT_DIR"), "ulp")
+if isdir(ulp_dir) and listdir(ulp_dir):
+    ulp_lib = env.SConscript("ulp.py", exports="env")
+
 FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
 assert FRAMEWORK_DIR and isdir(FRAMEWORK_DIR)
 
@@ -54,6 +59,12 @@ def get_toolchain_version():
 
     return get_original_version(
         platform.get_package_version("toolchain-xtensa32"))
+
+
+def is_ulp_enabled(sdk_params):
+    ulp_memory = int(sdk_params.get("CONFIG_ULP_COPROC_RESERVE_MEM", 0))
+    ulp_enabled = int(sdk_params.get("CONFIG_ULP_COPROC_ENABLED", 0))
+    return ulp_memory > 0 and ulp_enabled != 0
 
 
 def parse_mk(path):
@@ -607,6 +618,20 @@ env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", env.ElfToBin(
 #
 
 libs = []
+
+if ulp_lib:
+    if not is_ulp_enabled(sdk_params):
+        print("Warning! ULP is not properly configured."
+              "Add next configuration lines to your sdkconfig.h:")
+        print ("    #define CONFIG_ULP_COPROC_ENABLED 1")
+        print ("    #define CONFIG_ULP_COPROC_RESERVE_MEM 1024")
+
+    libs.append(ulp_lib)
+    env.Append(
+        CPPPATH=[join("$BUILD_DIR", "ulp_app")],
+        LIBPATH=[join("$BUILD_DIR", "ulp_app")],
+        LINKFLAGS=["-T", "ulp_main.ld"]
+    )
 
 ignore_dirs = (
     "bootloader",
