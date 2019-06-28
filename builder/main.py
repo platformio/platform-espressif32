@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import socket
+import re
 import sys
 from os.path import isfile, join
 
-from SCons.Script import (COMMAND_LINE_TARGETS, AlwaysBuild, Builder, Default,
-                          DefaultEnvironment)
+from SCons.Script import (
+    ARGUMENTS, COMMAND_LINE_TARGETS, AlwaysBuild, Builder, Default,
+    DefaultEnvironment)
 
 #
 # Helpers
@@ -92,7 +93,7 @@ def _update_max_upload_size(env):
         if p['type'] in ("0", "app")
     ]
     if sizes:
-        env.BoardConfig().update("upload.maximum_size", max(sizes))
+        board.update("upload.maximum_size", max(sizes))
 
 
 def _to_unix_slashes(path):
@@ -128,6 +129,7 @@ def __fetch_spiffs_size(target, source, env):
 
 env = DefaultEnvironment()
 platform = env.PioPlatform()
+board = env.BoardConfig()
 
 env.Replace(
     __get_board_f_flash=_get_board_f_flash,
@@ -176,8 +178,7 @@ env.Append(
                 "elf2image",
                 "--flash_mode", "$BOARD_FLASH_MODE",
                 "--flash_freq", "${__get_board_f_flash(__env__)}",
-                "--flash_size", env.BoardConfig().get(
-                    "upload.flash_size", "detect"),
+                "--flash_size", board.get("upload.flash_size", "detect"),
                 "-o", "$TARGET", "$SOURCES"
             ]), "Building $TARGET"),
             suffix=".bin"
@@ -207,6 +208,7 @@ if not env.get("PIOFRAMEWORK"):
 
 target_elf = env.BuildProgram()
 if "nobuild" in COMMAND_LINE_TARGETS:
+    target_elf = join("$BUILD_DIR", "${PROGNAME}.elf")
     if set(["uploadfs", "uploadfsota"]) & set(COMMAND_LINE_TARGETS):
         fetch_spiffs_size(env)
         target_firm = join("$BUILD_DIR", "spiffs.bin")
@@ -250,15 +252,43 @@ AlwaysBuild(target_size)
 #
 
 upload_protocol = env.subst("$UPLOAD_PROTOCOL")
-debug_tools = env.BoardConfig().get("debug.tools", {})
+debug_tools = board.get("debug.tools", {})
 upload_actions = []
 
-if upload_protocol == "esptool":
+# Compatibility with old OTA configurations
+if (upload_protocol != "espota"
+        and re.match(r"\"?((([0-9]{1,3}\.){3}[0-9]{1,3})|[^\\/]+\.local)\"?$",
+                     env.get("UPLOAD_PORT", ""))):
+    upload_protocol = "espota"
+    sys.stderr.write(
+        "Warning! We have just detected `upload_port` as IP address or host "
+        "name of ESP device. `upload_protocol` is switched to `espota`.\n"
+        "Please specify `upload_protocol = espota` in `platformio.ini` "
+        "project configuration file.\n")
+
+if upload_protocol == "espota":
+    if not env.subst("$UPLOAD_PORT"):
+        sys.stderr.write(
+            "Error: Please specify IP address or host name of ESP device "
+            "using `upload_port` for build environment or use "
+            "global `--upload-port` option.\n"
+            "See https://docs.platformio.org/page/platforms/"
+            "espressif32.html#over-the-air-ota-update\n")
+    env.Replace(
+        UPLOADER=join(
+            platform.get_package_dir("framework-arduinoespressif32") or "",
+            "tools", "espota.py"),
+        UPLOADERFLAGS=["--debug", "--progress", "-i", "$UPLOAD_PORT"],
+        UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS -f $SOURCE'
+    )
+    if "uploadfs" in COMMAND_LINE_TARGETS:
+        env.Append(UPLOADERFLAGS=["-s"])
+    upload_actions = [env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")]
+
+elif upload_protocol == "esptool":
     env.Replace(
         UPLOADER=join(
             platform.get_package_dir("tool-esptoolpy") or "", "esptool.py"),
-        UPLOADEROTA=join(
-            platform.get_package_dir("tool-espotapy") or "", "espota.py"),
         UPLOADERFLAGS=[
             "--chip", "esp32",
             "--port", '"$UPLOAD_PORT"',
@@ -270,12 +300,7 @@ if upload_protocol == "esptool":
             "--flash_freq", "${__get_board_f_flash(__env__)}",
             "--flash_size", "detect"
         ],
-        UPLOADEROTAFLAGS=[
-            "--debug", "--progress", "-i", "$UPLOAD_PORT", "-p", "3232",
-            "$UPLOAD_FLAGS"
-        ],
-        UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS 0x10000 $SOURCE',
-        UPLOADOTACMD='"$PYTHONEXE" "$UPLOADEROTA" $UPLOADEROTAFLAGS -f $SOURCE',
+        UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS 0x10000 $SOURCE'
     )
     for image in env.get("FLASH_EXTRA_IMAGES", []):
         env.Append(UPLOADERFLAGS=[image[0], env.subst(image[1])])
@@ -295,17 +320,6 @@ if upload_protocol == "esptool":
             ],
             UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS $SOURCE',
         )
-        env.Append(UPLOADEROTAFLAGS=["-s"])
-
-    # Handle uploading via OTA
-    ota_port = None
-    if env.get("UPLOAD_PORT"):
-        try:
-            ota_port = socket.gethostbyname(env.get("UPLOAD_PORT"))
-        except socket.error:
-            pass
-    if ota_port:
-        env.Replace(UPLOADCMD="$UPLOADOTACMD")
 
     upload_actions = [
         env.VerboseAction(env.AutodetectUploadPort,
@@ -314,25 +328,31 @@ if upload_protocol == "esptool":
     ]
 
 elif upload_protocol in debug_tools:
-    openocd_dir = platform.get_package_dir("tool-openocd-esp32") or ""
-    uploader_flags = ["-s", _to_unix_slashes(openocd_dir)]
-    uploader_flags.extend(
+    openocd_args = ["-d%d" % (2 if int(ARGUMENTS.get("PIOVERBOSE", 0)) else 1)]
+    openocd_args.extend(
         debug_tools.get(upload_protocol).get("server").get("arguments", []))
-    uploader_flags.extend(["-c", 'program_esp32 {{$SOURCE}} 0x10000 verify'])
+    openocd_args.extend([
+        "-c",
+        "program_esp32 {{$SOURCE}} %s verify" %
+        board.get("upload.offset_address", "0x10000")
+    ])
     for image in env.get("FLASH_EXTRA_IMAGES", []):
-        uploader_flags.extend(
-            ["-c", 'program_esp32 {{%s}} %s verify' % (
-                _to_unix_slashes(image[1]), image[0])])
-    uploader_flags.extend(["-c", "reset run; shutdown"])
-    for i, item in enumerate(uploader_flags):
-        if "$PACKAGE_DIR" in item:
-            uploader_flags[i] = item.replace(
-                "$PACKAGE_DIR", _to_unix_slashes(openocd_dir))
-
-    env.Replace(
-        UPLOADER="openocd",
-        UPLOADERFLAGS=uploader_flags,
-        UPLOADCMD="$UPLOADER $UPLOADERFLAGS")
+        openocd_args.extend([
+            "-c",
+            'program_esp32 {{%s}} %s verify' %
+            (_to_unix_slashes(image[1]), image[0])
+        ])
+    openocd_args.extend(["-c", "reset run; shutdown"])
+    openocd_args = [
+        f.replace(
+            "$PACKAGE_DIR",
+            _to_unix_slashes(
+                platform.get_package_dir("tool-openocd-esp32") or ""))
+        for f in openocd_args
+    ]
+    env.Replace(UPLOADER="openocd",
+                UPLOADERFLAGS=openocd_args,
+                UPLOADCMD="$UPLOADER $UPLOADERFLAGS")
     upload_actions = [env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")]
 
 # custom upload tool
@@ -352,7 +372,7 @@ AlwaysBuild(
     env.Alias("erase", None, [
         env.VerboseAction(env.AutodetectUploadPort,
                           "Looking for serial port..."),
-        env.VerboseAction("$ERASECMD", "Ready for erasing")
+        env.VerboseAction("$ERASECMD", "Erasing...")
     ]))
 
 #
