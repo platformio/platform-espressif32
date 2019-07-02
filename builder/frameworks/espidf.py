@@ -763,7 +763,7 @@ for component, src_filter in special_src_filter.items():
 # support. If the heap poisioning is disabled we can exclude the
 # compilation unit, otherwise we need to include it to avoid link
 # errors.
-if sdk_params.get("CONFIG_HEAP_POISONING_DISABLED", 0) > 0:
+if int(sdk_params.get("CONFIG_HEAP_POISONING_DISABLED", 0)) > 0:
     libs.append(
         build_component(
             join(FRAMEWORK_DIR, "components", "heap"),
