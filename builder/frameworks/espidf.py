@@ -67,6 +67,16 @@ def is_ulp_enabled(sdk_params):
     return ulp_memory > 0 and ulp_enabled != 0
 
 
+def is_arduino_autostart(sdk_params):
+    arduino_auto_start = int(sdk_params.get("CONFIG_CONFIG_AUTOSTART_ARDUINO", -1))
+    return arduino_auto_start
+
+
+def is_arduino_enabled(sdk_params):
+    arduino_enabled = int(sdk_params.get("CONFIG_ENABLE_ARDUINO_DEPENDS", 0))
+    return arduino_enabled > 0
+
+
 def parse_mk(path):
     result = {}
     variable = None
@@ -634,6 +644,79 @@ if ulp_lib:
         LINKFLAGS=["-T", "ulp_main.ld"]
     )
 
+if is_arduino_enabled(sdk_params):
+    ARDUINO_FRAMEWORK_DIR = platform.get_package_dir("framework-arduinoespressif32")
+    assert ARDUINO_FRAMEWORK_DIR and isdir(ARDUINO_FRAMEWORK_DIR)
+    print 'Including Arduino-ESP32 from %s' % ARDUINO_FRAMEWORK_DIR
+    env.Prepend(
+        ASFLAGS=["-x", "assembler-with-cpp"],
+
+        CFLAGS=[
+            "-std=gnu99"
+        ],
+
+        CCFLAGS=[
+            "-nostdlib",
+            "-Wpointer-arith",
+            "-Wno-error=unused-but-set-variable",
+            "-Wno-error=unused-variable",
+            "-mlongcalls",
+            "-ffunction-sections",
+            "-fdata-sections",
+            "-fstrict-volatile-bitfields",
+            "-fexceptions"
+        ],
+
+        CXXFLAGS=[
+            "-fno-rtti",
+            "-std=gnu++11"
+        ],
+
+        LINKFLAGS=[
+            "-nostdlib",
+            "-Wl,-static",
+            "-u", "call_user_start_cpu0",
+            "-Wl,--undefined=uxTopUsedPriority",
+            "-Wl,--gc-sections",
+            "-Wl,-EL",
+            "-u", "__cxx_fatal_exception"
+        ],
+
+        CPPDEFINES=[
+            "ESP32",
+            "ESP_PLATFORM",
+            ("F_CPU", "$BOARD_F_CPU"),
+            ("ARDUINO", 10805),
+            "ARDUINO_ARCH_ESP32",
+            ("ARDUINO_VARIANT", '\\"%s\\"' % env.BoardConfig().get("build.variant").replace('"', "")),
+            ("ARDUINO_BOARD", '\\"%s\\"' % env.BoardConfig().get("name").replace('"', "")),
+            ("ARDUINO_ESP32_VER", '\\"%s\\"' % platform.get_package_version("framework-arduinoespressif32"))
+        ],
+        LIBSOURCE_DIRS=[
+            join(ARDUINO_FRAMEWORK_DIR, "libraries")
+        ],
+        CPPPATH=[
+            join(ARDUINO_FRAMEWORK_DIR, "cores", env.BoardConfig().get("build.core")),
+            join(ARDUINO_FRAMEWORK_DIR, "cores", env.BoardConfig().get("build.core"), "libb64"),
+        ]
+    )
+    if "build.variant" in env.BoardConfig():
+        env.Append(
+            CPPPATH=[
+                join(ARDUINO_FRAMEWORK_DIR, "variants", env.BoardConfig().get("build.variant"))
+            ]
+        )
+        libs.append(env.BuildLibrary(
+            join("$BUILD_DIR", "FrameworkArduinoVariant"),
+            join(ARDUINO_FRAMEWORK_DIR, "variants", env.BoardConfig().get("build.variant"))
+        ))
+    src_filter = "+<cores/%s/*>" % env.BoardConfig().get("build.core")
+    if not is_arduino_autostart(sdk_params):
+        src_filter += " -<cores/%s/main.cpp>" % env.BoardConfig().get("build.core")
+    libs.append(
+        env.BuildLibrary(join("$BUILD_DIR", "ArduinoFramework"), ARDUINO_FRAMEWORK_DIR, src_filter=src_filter)
+    )
+
 ignore_dirs = (
     "bootloader",
     "esptool_py",
@@ -647,12 +730,12 @@ special_src_filter = {
     "aws_iot": "-<*> +<port> +<aws-iot-device-sdk-embedded-C/src>",
     "esp32": "-<*> +<*.[sSc]*> +<hwcrypto>",
     "bootloader_support": "+<*> -<test> -<src/bootloader_init.c>",
-    "heap": "+<*> -<test*> -<multi_heap_poisoning.c>",
     "soc": "+<*> -<test> -<esp32/test>",
     "spi_flash": "+<*> -<test*> -<sim>"
 }
 
 special_env = (
+    "heap",
     "freertos",
     "lwip",
     "protocomm",
@@ -675,6 +758,21 @@ for component, src_filter in special_src_filter.items():
     libs.append(
         build_component(
             join(FRAMEWORK_DIR, "components", component), config))
+
+# The heap component needs special handling for the heap poisioning
+# support. If the heap poisioning is disabled we can exclude the
+# compilation unit, otherwise we need to include it to avoid link
+# errors.
+if sdk_params.get("CONFIG_HEAP_POISONING_DISABLED", 0) > 0:
+    libs.append(
+        build_component(
+            join(FRAMEWORK_DIR, "components", "heap"),
+            {"src_filter": "+<*> -<test*> -<multi_heap_poisoning.c>"}))
+else:
+    libs.append(
+        build_component(
+            join(FRAMEWORK_DIR, "components", "heap"),
+            extract_component_config(join(FRAMEWORK_DIR, "components", "heap"))))
 
 libs.extend((
     build_lwip_lib(sdk_params),
