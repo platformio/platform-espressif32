@@ -646,6 +646,9 @@ if ulp_lib:
 
 if is_arduino_enabled(sdk_params):
     ARDUINO_FRAMEWORK_DIR = platform.get_package_dir("framework-arduinoespressif32")
+    if ARDUINO_FRAMEWORK_DIR is None:
+        platform.install_packages(["framework-arduinoespressif32"])
+        ARDUINO_FRAMEWORK_DIR = platform.get_package_dir("framework-arduinoespressif32")
     assert ARDUINO_FRAMEWORK_DIR and isdir(ARDUINO_FRAMEWORK_DIR)
     print('Including Arduino-ESP32 from %s' % ARDUINO_FRAMEWORK_DIR)
     env.Prepend(
