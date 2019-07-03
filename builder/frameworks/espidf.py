@@ -68,8 +68,8 @@ def is_ulp_enabled(sdk_params):
 
 
 def is_arduino_autostart(sdk_params):
-    arduino_auto_start = int(sdk_params.get("CONFIG_CONFIG_AUTOSTART_ARDUINO", 0))
-    return arduino_auto_start
+    arduino_auto_start = int(sdk_params.get("CONFIG_AUTOSTART_ARDUINO", 0))
+    return arduino_auto_start > 0
 
 
 def is_arduino_enabled(sdk_params):
