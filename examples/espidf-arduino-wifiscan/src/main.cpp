@@ -1,3 +1,13 @@
+/* WiFi scan Example
+   This example code is in the Public Domain (or CC0 licensed, at your option.)
+   Unless required by applicable law or agreed to in writing, this
+   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+   CONDITIONS OF ANY KIND, either express or implied.
+*/
+#include <stdio.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include "sdkconfig.h"
 #include <Arduino.h>
 #include <WiFi.h>
 
@@ -25,15 +35,41 @@ void wifiScan() {
     Serial.println("");
 }
 
-void setup() {
+#if !CONFIG_AUTOSTART_ARDUINO
+void arduinoTask(void *pvParameter) {
     // Set WiFi to station mode and disconnect from an AP if it was previously connected
-    Serial.begin(115200);
     WiFi.mode(WIFI_STA);
     WiFi.disconnect();
+    Serial.begin(115200);
+    delay(100);
+
+    while(1) {
+        wifiScan();
+
+        // Wait a bit before scanning again
+        delay(5000);
+    }
+}
+
+void app_main()
+{
+    // initialize arduino library before we start the tasks
+    initArduino();
+
+    xTaskCreate(&arduinoTask, "arduino_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
+}
+#else
+void setup() {
+    // Set WiFi to station mode and disconnect from an AP if it was previously connected
+    WiFi.mode(WIFI_STA);
+    WiFi.disconnect();
+    Serial.begin(115200);
     delay(100);
 }
 
 void loop() {
     wifiScan();
+    // Wait a bit before scanning again
     delay(5000);
-} 
+}
+#endif 
