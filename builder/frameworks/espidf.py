@@ -41,7 +41,10 @@ if isdir(ulp_dir) and listdir(ulp_dir):
     ulp_lib = env.SConscript("ulp.py", exports="env")
 
 FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
+ARDUINO_FRAMEWORK_DIR = platform.get_package_dir(
+    "framework-arduinoespressif32")
 assert FRAMEWORK_DIR and isdir(FRAMEWORK_DIR)
+assert ARDUINO_FRAMEWORK_DIR and isdir(ARDUINO_FRAMEWORK_DIR)
 
 
 def get_toolchain_version():
@@ -65,6 +68,11 @@ def is_ulp_enabled(sdk_params):
     ulp_memory = int(sdk_params.get("CONFIG_ULP_COPROC_RESERVE_MEM", 0))
     ulp_enabled = int(sdk_params.get("CONFIG_ULP_COPROC_ENABLED", 0))
     return ulp_memory > 0 and ulp_enabled != 0
+
+
+def is_arduino_enabled(sdk_params):
+    arduino_enabled = int(sdk_params.get("CONFIG_ENABLE_ARDUINO_DEPENDS", 0))
+    return arduino_enabled > 0
 
 
 def parse_mk(path):
@@ -292,6 +300,15 @@ def build_wpa_supplicant_lib():
         join(FRAMEWORK_DIR, "components", "wpa_supplicant"), config)
 
 
+def build_heap_lib(params):
+    src_filter = "+<*> -<test*>"
+    if int(sdk_params.get("CONFIG_HEAP_POISONING_DISABLED", 0)) != 0:
+        src_filter += " -<multi_heap_poisoning.c>"
+
+    return build_component(
+        join(FRAMEWORK_DIR, "components", "heap"), {"src_filter": src_filter})
+
+
 def build_espidf_bootloader():
     envsafe = env.Clone()
     envsafe.Append(CPPDEFINES=[("BOOTLOADER_BUILD", 1)])
@@ -358,6 +375,46 @@ def build_espidf_bootloader():
             join("$BUILD_DIR", "bootloader"),
             join(FRAMEWORK_DIR, "components", "bootloader", "subproject", "main")
         )
+    )
+
+
+def build_arduino_framework():
+    core = env.BoardConfig().get("build.core")
+    variant = env.BoardConfig().get("build.variant")
+
+    env.Append(
+        CPPPATH=[
+            join(ARDUINO_FRAMEWORK_DIR, "cores", core),
+            join(ARDUINO_FRAMEWORK_DIR, "variants", variant)
+        ]
+    )
+
+    envsafe = env.Clone()
+    envsafe.Append(
+        CPPDEFINES=[("ARDUINO", 10805), ("ARDUINO_ARCH_ESP32", 1)]
+    )
+
+    arduino_libs = []
+    if "build.variant" in env.BoardConfig():
+        envsafe.Append(
+            CPPPATH=[join(ARDUINO_FRAMEWORK_DIR, "variants", variant)]
+        )
+        arduino_libs.append(envsafe.BuildLibrary(
+            join("$BUILD_DIR", "FrameworkArduinoVariant"),
+            join(ARDUINO_FRAMEWORK_DIR, "variants", variant)
+        ))
+
+    arduino_libs.append(envsafe.BuildLibrary(
+        join("$BUILD_DIR", "FrameworkArduino"),
+        join(ARDUINO_FRAMEWORK_DIR, "cores", core)
+    ))
+
+    env.Append(
+        LIBSOURCE_DIRS=[
+            join(ARDUINO_FRAMEWORK_DIR, "libraries")
+        ],
+
+        LIBS=arduino_libs
     )
 
 
@@ -622,8 +679,8 @@ libs = []
 
 if ulp_lib:
     if not is_ulp_enabled(sdk_params):
-        print("Warning! ULP is not properly configured."
-              "Add next configuration lines to your sdkconfig.h:")
+        print("Warning! ULP is not properly configured. "
+              "Add the next configuration lines to your sdkconfig.h:")
         print ("    #define CONFIG_ULP_COPROC_ENABLED 1")
         print ("    #define CONFIG_ULP_COPROC_RESERVE_MEM 1024")
 
@@ -647,13 +704,13 @@ special_src_filter = {
     "aws_iot": "-<*> +<port> +<aws-iot-device-sdk-embedded-C/src>",
     "esp32": "-<*> +<*.[sSc]*> +<hwcrypto>",
     "bootloader_support": "+<*> -<test> -<src/bootloader_init.c>",
-    "heap": "+<*> -<test*> -<multi_heap_poisoning.c>",
     "soc": "+<*> -<test> -<esp32/test>",
     "spi_flash": "+<*> -<test*> -<sim>"
 }
 
 special_env = (
     "freertos",
+    "heap",
     "lwip",
     "protocomm",
     "libsodium",
@@ -679,9 +736,28 @@ for component, src_filter in special_src_filter.items():
 libs.extend((
     build_lwip_lib(sdk_params),
     build_protocomm_lib(sdk_params),
+    build_heap_lib(sdk_params),
     build_rtos_lib(),
     build_libsodium_lib(),
     build_wpa_supplicant_lib()
 ))
+
+#
+# Process Arduino core
+#
+
+if "arduino" in env.subst("$PIOFRAMEWORK"):
+    if is_arduino_enabled(sdk_params):
+        build_arduino_framework()
+    else:
+        print("Warning! Arduino support is not properly configured. "
+              "Add the next configuration lines to your sdkconfig.h:")
+        print ("    #define CONFIG_ENABLE_ARDUINO_DEPENDS 1")
+        print ("    #define CONFIG_AUTOSTART_ARDUINO 1")
+        print ("    #define CONFIG_ARDUINO_RUNNING_CORE 1")
+        print ("    #define CONFIG_ARDUINO_UDP_RUN_CORE1 1")
+        print ("    #define CONFIG_ARDUINO_EVENT_RUN_CORE1 1")
+        print ("    #define CONFIG_ARDUINO_EVENT_RUNNING_CORE 1")
+        print ("    #define CONFIG_ARDUINO_UDP_RUNNING_CORE 1")
 
 env.Prepend(LIBS=libs)
