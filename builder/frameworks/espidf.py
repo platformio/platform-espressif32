@@ -41,10 +41,12 @@ if isdir(ulp_dir) and listdir(ulp_dir):
     ulp_lib = env.SConscript("ulp.py", exports="env")
 
 FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
-ARDUINO_FRAMEWORK_DIR = platform.get_package_dir(
-    "framework-arduinoespressif32")
 assert FRAMEWORK_DIR and isdir(FRAMEWORK_DIR)
-assert ARDUINO_FRAMEWORK_DIR and isdir(ARDUINO_FRAMEWORK_DIR)
+
+if "arduino" in env.subst("$PIOFRAMEWORK"):
+    ARDUINO_FRAMEWORK_DIR = platform.get_package_dir(
+        "framework-arduinoespressif32")
+    assert ARDUINO_FRAMEWORK_DIR and isdir(ARDUINO_FRAMEWORK_DIR)
 
 
 def get_toolchain_version():
