@@ -400,8 +400,7 @@ def build_arduino_framework():
         variant = env.BoardConfig().get("build.variant")
         env.Append(
             CPPDEFINES=[
-                ("ARDUINO_VARIANT", '\\"%s\\"' % env.BoardConfig().get(
-                    "build.variant").replace('"', ""))
+                ("ARDUINO_VARIANT", '\\"%s\\"' % variant.replace('"', ""))
             ],
 
             CPPPATH=[
