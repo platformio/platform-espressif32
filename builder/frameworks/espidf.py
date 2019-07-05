@@ -382,26 +382,31 @@ def build_espidf_bootloader():
 
 def build_arduino_framework():
     core = env.BoardConfig().get("build.core")
-    variant = env.BoardConfig().get("build.variant")
 
     env.Append(
         CPPDEFINES=[
             ("ARDUINO", 10805),
             ("ARDUINO_ARCH_ESP32", 1),
-            ("ARDUINO_VARIANT", '\\"%s\\"' % env.BoardConfig().get("build.variant").replace('"', "")),
             ("ARDUINO_BOARD", '\\"%s\\"' % env.BoardConfig().get("name").replace('"', ""))
         ],
 
         CPPPATH=[
-            join(ARDUINO_FRAMEWORK_DIR, "cores", core),
-            join(ARDUINO_FRAMEWORK_DIR, "variants", variant)
+            join(ARDUINO_FRAMEWORK_DIR, "cores", core)
         ]
     )
 
     arduino_libs = []
     if "build.variant" in env.BoardConfig():
+        variant = env.BoardConfig().get("build.variant")
         env.Append(
-            CPPPATH=[join(ARDUINO_FRAMEWORK_DIR, "variants", variant)]
+            CPPDEFINES=[
+                ("ARDUINO_VARIANT", '\\"%s\\"' % env.BoardConfig().get(
+                    "build.variant").replace('"', ""))
+            ],
+
+            CPPPATH=[
+                join(ARDUINO_FRAMEWORK_DIR, "variants", variant)
+            ]
         )
         arduino_libs.append(env.BuildLibrary(
             join("$BUILD_DIR", "FrameworkArduinoVariant"),
