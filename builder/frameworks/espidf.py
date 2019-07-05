@@ -385,28 +385,30 @@ def build_arduino_framework():
     variant = env.BoardConfig().get("build.variant")
 
     env.Append(
+        CPPDEFINES=[
+            ("ARDUINO", 10805),
+            ("ARDUINO_ARCH_ESP32", 1),
+            ("ARDUINO_VARIANT", '\\"%s\\"' % env.BoardConfig().get("build.variant").replace('"', "")),
+            ("ARDUINO_BOARD", '\\"%s\\"' % env.BoardConfig().get("name").replace('"', ""))
+        ],
+
         CPPPATH=[
             join(ARDUINO_FRAMEWORK_DIR, "cores", core),
             join(ARDUINO_FRAMEWORK_DIR, "variants", variant)
         ]
     )
 
-    envsafe = env.Clone()
-    envsafe.Append(
-        CPPDEFINES=[("ARDUINO", 10805), ("ARDUINO_ARCH_ESP32", 1)]
-    )
-
     arduino_libs = []
     if "build.variant" in env.BoardConfig():
-        envsafe.Append(
+        env.Append(
             CPPPATH=[join(ARDUINO_FRAMEWORK_DIR, "variants", variant)]
         )
-        arduino_libs.append(envsafe.BuildLibrary(
+        arduino_libs.append(env.BuildLibrary(
             join("$BUILD_DIR", "FrameworkArduinoVariant"),
             join(ARDUINO_FRAMEWORK_DIR, "variants", variant)
         ))
 
-    arduino_libs.append(envsafe.BuildLibrary(
+    arduino_libs.append(env.BuildLibrary(
         join("$BUILD_DIR", "FrameworkArduino"),
         join(ARDUINO_FRAMEWORK_DIR, "cores", core)
     ))
