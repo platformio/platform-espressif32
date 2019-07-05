@@ -422,6 +422,35 @@ def build_arduino_framework():
     )
 
 
+def configure_exceptions(sdk_params):
+    # Exceptions might be configured using a special PIO macro or
+    # directly in sdkconfig.h
+    cppdefines = env.Flatten(env.get("CPPDEFINES", []))
+    pio_exceptions = "PIO_FRAMEWORK_ESP_IDF_ENABLE_EXCEPTIONS" in cppdefines
+    config_exceptions = int(sdk_params.get("CONFIG_CXX_EXCEPTIONS", 0)) != 0
+
+    if pio_exceptions or config_exceptions:
+        # remove unnecessary flag defined in main.py that disables exceptions
+        try:
+            index = env['CXXFLAGS'].index("-fno-exceptions")
+            if index > 0:
+                env['CXXFLAGS'].remove("-fno-exceptions")
+        except IndexError:
+            pass
+
+        env.Append(CXXFLAGS=["-fexceptions"])
+
+        if pio_exceptions:
+            env.Append(
+                CPPDEFINES=[
+                    ("CONFIG_CXX_EXCEPTIONS", 1),
+                    ("CONFIG_CXX_EXCEPTIONS_EMG_POOL_SIZE", 0)
+                ]
+            )
+    else:
+        env.Append(LINKFLAGS=["-u", "__cxx_fatal_exception"])
+
+
 env.Prepend(
     CPPPATH=[
         join(FRAMEWORK_DIR, "components", "app_trace", "include"),
@@ -569,31 +598,6 @@ env.Append(
     ]
 )
 
-cppdefines = env.Flatten(env.get("CPPDEFINES", []))
-
-if "PIO_FRAMEWORK_ESP_IDF_ENABLE_EXCEPTIONS" in cppdefines:
-
-    # remove unnecessary flag defined in main.py that disables exceptions
-    try:
-        index = env['CXXFLAGS'].index("-fno-exceptions")
-        if index > 0:
-            env['CXXFLAGS'].remove("-fno-exceptions")
-    except IndexError:
-        pass
-
-    env.Append(
-        CPPDEFINES=[
-            ("CONFIG_CXX_EXCEPTIONS", 1),
-            ("CONFIG_CXX_EXCEPTIONS_EMG_POOL_SIZE", 0)
-        ],
-
-        CXXFLAGS=["-fexceptions"]
-    )
-
-else:
-    env.Append(LINKFLAGS=["-u", "__cxx_fatal_exception"])
-
-
 #
 # ESP-IDF doesn't need assembler-with-cpp option
 #
@@ -630,6 +634,8 @@ else:
         copy(new_config, sdk_config_file)
 
 sdk_params = get_sdk_configuration(sdk_config_file)
+
+configure_exceptions(sdk_params)
 
 #
 # Generate partition table
