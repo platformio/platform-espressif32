@@ -66,15 +66,21 @@ def get_toolchain_version():
         platform.get_package_version("toolchain-xtensa32"))
 
 
+def is_set(parameter, configuration):
+    if int(configuration.get(parameter, 0)):
+        return True
+    return False
+
+
 def is_ulp_enabled(sdk_params):
     ulp_memory = int(sdk_params.get("CONFIG_ULP_COPROC_RESERVE_MEM", 0))
-    ulp_enabled = int(sdk_params.get("CONFIG_ULP_COPROC_ENABLED", 0))
-    return ulp_memory > 0 and ulp_enabled != 0
+    ulp_enabled = is_set("CONFIG_ULP_COPROC_ENABLED", sdk_params)
+    return ulp_memory > 0 and ulp_enabled
 
 
 def is_arduino_enabled(sdk_params):
-    arduino_enabled = int(sdk_params.get("CONFIG_ENABLE_ARDUINO_DEPENDS", 0))
-    return arduino_enabled > 0
+    arduino_enabled = is_set("CONFIG_ENABLE_ARDUINO_DEPENDS", sdk_params)
+    return arduino_enabled
 
 
 def parse_mk(path):
@@ -174,12 +180,6 @@ def get_sdk_configuration(config_path):
     return config
 
 
-def is_set(parameter, configuration):
-    if int(configuration.get(parameter, 0)):
-        return True
-    return False
-
-
 def find_valid_config_file():
     search_path = join(
         platform.get_dir(), "examples", "*", "src", "sdkconfig.h")
@@ -208,7 +208,7 @@ def build_lwip_lib(sdk_params):
     ]
 
     # PPP support can be enabled in sdkconfig.h
-    if int(sdk_params.get("CONFIG_PPP_SUPPORT", 0)):
+    if is_set("CONFIG_PPP_SUPPORT", sdk_params):
         src_dirs.extend(
             ["lwip/src/netif/ppp", "lwip/src/netif/ppp/polarssl"])
 
@@ -302,9 +302,9 @@ def build_wpa_supplicant_lib():
         join(FRAMEWORK_DIR, "components", "wpa_supplicant"), config)
 
 
-def build_heap_lib(params):
+def build_heap_lib(sdk_params):
     src_filter = "+<*> -<test*>"
-    if int(sdk_params.get("CONFIG_HEAP_POISONING_DISABLED", 0)) != 0:
+    if is_set("CONFIG_HEAP_POISONING_DISABLED", sdk_params):
         src_filter += " -<multi_heap_poisoning.c>"
 
     return build_component(
@@ -427,15 +427,13 @@ def configure_exceptions(sdk_params):
     # directly in sdkconfig.h
     cppdefines = env.Flatten(env.get("CPPDEFINES", []))
     pio_exceptions = "PIO_FRAMEWORK_ESP_IDF_ENABLE_EXCEPTIONS" in cppdefines
-    config_exceptions = int(sdk_params.get("CONFIG_CXX_EXCEPTIONS", 0)) != 0
+    config_exceptions = is_set("CONFIG_CXX_EXCEPTIONS", sdk_params)
 
     if pio_exceptions or config_exceptions:
         # remove unnecessary flag defined in main.py that disables exceptions
         try:
-            index = env['CXXFLAGS'].index("-fno-exceptions")
-            if index > 0:
-                env['CXXFLAGS'].remove("-fno-exceptions")
-        except IndexError:
+            env['CXXFLAGS'].remove("-fno-exceptions")
+        except ValueError:
             pass
 
         env.Append(CXXFLAGS=["-fexceptions"])
