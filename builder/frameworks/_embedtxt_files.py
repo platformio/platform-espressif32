@@ -14,6 +14,7 @@
 
 from os import SEEK_CUR, SEEK_END
 from os.path import basename, isfile, join
+import shutil
 
 from SCons.Script import Builder
 
@@ -32,27 +33,35 @@ def prepare_files(files):
         return
 
     for f in files:
+        shutil.copy(env.subst(f), env.subst(f+".org"))
         with open(env.subst(f), "rb+") as fp:
             fp.seek(-1, SEEK_END)
             if fp.read(1) != '\0':
                 fp.seek(0, SEEK_CUR)
                 fp.write(b'\0')
 
+def fix_files(files):
+    if not files:
+        return
 
-def extract_files(cppdefines):
+    for f in files:
+        shutil.move(env.subst(f+".org"), env.subst(f));
+
+
+def extract_files(cppdefines, type):
     for define in cppdefines:
-        if "COMPONENT_EMBED_TXTFILES" not in define:
+        if type not in define:
             continue
 
         if not isinstance(define, tuple):
-            print("Warning! COMPONENT_EMBED_TXTFILES macro cannot be empty!")
+            print("Warning! %s macro cannot be empty!" % type)
             return []
 
         with cd(env.subst("$PROJECT_DIR")):
             value = define[1]
             if not isinstance(value, str):
-                print("Warning! COMPONENT_EMBED_TXTFILES macro must contain "
-                      "a list of files separated by ':'")
+                print("Warning! %s macro must contain "
+                      "a list of files separated by ':'" % type)
                 return []
 
             result = []
@@ -65,9 +74,9 @@ def extract_files(cppdefines):
             return result
 
 
-def remove_config_define(cppdefines):
+def remove_config_define(cppdefines, type):
     for define in cppdefines:
-        if "COMPONENT_EMBED_TXTFILES" in define:
+        if type in define:
             env.ProcessUnFlags("-D%s" % "=".join(str(d) for d in define))
             return
 
@@ -96,7 +105,13 @@ env.Append(
 
 flags = env.get("CPPDEFINES")
 if "COMPONENT_EMBED_TXTFILES" in env.Flatten(flags):
-    files = extract_files(flags)
+    files = extract_files(flags, "COMPONENT_EMBED_TXTFILES")
     prepare_files(files)
     embed_files(files)
-    remove_config_define(flags)
+    fix_files(files)
+    remove_config_define(flags, "COMPONENT_EMBED_TXTFILES")
+
+if "COMPONENT_EMBED_FILES" in env.Flatten(flags):
+    files = extract_files(flags, "COMPONENT_EMBED_FILES")
+    embed_files(files)
+    remove_config_define(flags, "COMPONENT_EMBED_FILES")
