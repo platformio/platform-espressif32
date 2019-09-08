@@ -27,7 +27,7 @@
     "maximum_ram_size": 327680,
     "maximum_size": 4194304,
     "require_upload_port": true,
-    "speed": 921600
+    "speed": 460800
   },
   "url": "http://iot-bits.com/nano32-esp32-development-board",
   "vendor": "MakerAsia"

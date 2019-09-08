@@ -28,7 +28,7 @@
     "maximum_ram_size": 327680,
     "maximum_size": 4194304,
     "require_upload_port": true,
-    "speed": 921600
+    "speed": 460800
   },
   "url": "https://www.tindie.com/products/lspoplove/dstike-d-duino-32-v3/",
   "vendor": "DSTIKE"

@@ -29,7 +29,7 @@
     "maximum_ram_size": 327680,
     "maximum_size": 8388608,
     "require_upload_port": true,
-    "speed": 921600
+    "speed": 460800
   },
   "url": "http://www.heltec.cn/project/wireless-stick/?lang=en",
   "vendor": "Heltec Automation"

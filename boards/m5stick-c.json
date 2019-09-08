@@ -25,7 +25,7 @@
     "maximum_ram_size": 327680,
     "maximum_size": 4194304,
     "require_upload_port": true,
-    "speed": 1500000
+    "speed": 460800
   },
   "url": "http://www.m5stack.com",
   "vendor": "M5Stack"
