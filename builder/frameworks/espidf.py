@@ -452,9 +452,9 @@ def generate_project_ld_script(target, source, env):
             ["\"%s\"" % f for f in project_files.get("lf_files")]),
         "output": target[0].get_path(),
         "kconfig": join(FRAMEWORK_DIR, "Kconfig"),
-        "kconfigs_projbuild": "COMPONENT_KCONFIGS_PROJBUILD=%s" % "#".join(
+        "kconfigs_projbuild": "COMPONENT_KCONFIGS_PROJBUILD=%s" % " ".join(
             ["%s" % f for f in project_files.get("kconfig_build_files")]),
-        "kconfig_files": "COMPONENT_KCONFIGS=%s" % "#".join(
+        "kconfig_files": "COMPONENT_KCONFIGS=%s" % " ".join(
             ["%s" % f for f in project_files.get("kconfig_files")]),
     }
 
