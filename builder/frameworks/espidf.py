@@ -657,9 +657,7 @@ env.Prepend(
         "WITH_POSIX",
         "UNITY_INCLUDE_CONFIG_H",
         ("IDF_VER", '\\"%s\\"' %
-         platform.get_package_version("framework-espidf")),
-        ("PROJECT_VER", '\\"%s\\"' % "1.0.0"),
-        ("PROJECT_NAME", '\\"%s\\"' % basename(env.subst("$PROJECT_DIR")))
+         platform.get_package_version("framework-espidf"))
 
     ],
 
@@ -696,6 +694,18 @@ env.Append(
         ("GCC_NOT_5_2_0", "%d" % 1 if get_toolchain_version() != "5.2.0" else 0)
     ]
 )
+
+cppdefines = env.Flatten(env.get("CPPDEFINES", []))
+
+if "PROJECT_NAME" not in cppdefines:
+    env.Append(
+        CPPDEFINES=[
+            ("PROJECT_NAME", '\\"%s\\"' % basename(env.subst("$PROJECT_DIR")))
+        ]
+    )
+
+if "PROJECT_VER" not in cppdefines:
+    env.Append(CPPDEFINES=[("PROJECT_VER", '\\"%s\\"' % "1.0.0")])
 
 #
 # ESP-IDF doesn't need assembler-with-cpp option
