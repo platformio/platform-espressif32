@@ -461,7 +461,7 @@ def generate_project_ld_script(target, source, env):
     cmd = ('"$PYTHONEXE" "{script}" --sections "{sections}" --input "{input}" '
         '--config "{sdk_header}" --fragments {fragments} --output "{output}" '
         '--kconfig "{kconfig}" --env "{kconfigs_projbuild}" '
-        '--env "{kconfig_files}" --env "IDF_CMAKE=n" '
+        '--env "{kconfig_files}" --env "IDF_CMAKE=n" --env "IFS=#" '
         '--env "IDF_TARGET=\\\"esp32\\\""').format(**args)
 
     env.Execute(cmd)
