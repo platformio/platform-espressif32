@@ -43,7 +43,7 @@
       "ftdi"
     ],
     "require_upload_port": true,
-    "speed": 921600
+    "speed": 460800
   },
   "url": "https://espressif.com/en/products/hardware/esp-wrover-kit/overview",
   "vendor": "Espressif"
