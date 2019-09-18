@@ -26,7 +26,7 @@
     "maximum_ram_size": 327680,
     "maximum_size": 2097152,
     "require_upload_port": true,
-    "speed": 921600
+    "speed": 460800
   },
   "url": "https://www.u-blox.com/en/product/nina-w10-series",
   "vendor": "u-blox"

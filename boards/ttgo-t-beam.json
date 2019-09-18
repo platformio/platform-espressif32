@@ -28,7 +28,7 @@
     "maximum_ram_size": 1310720,
     "maximum_size": 4194304,
     "require_upload_port": true,
-    "speed": 921600
+    "speed": 460800
   },
   "url": "https://github.com/LilyGO/TTGO-T-Beam",
   "vendor": "TTGO"

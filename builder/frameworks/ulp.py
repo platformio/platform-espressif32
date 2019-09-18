@@ -44,7 +44,7 @@ def bin_converter(target, source, env):
         "elf32-xtensa-le", "--binary-architecture",
         "xtensa", "--rename-section",
         ".data=.rodata.embedded",
-        source[0].name, target[0].get_path()
+        source[0].name, '"%s"' % target[0].get_path()
     ])
 
     ulp_env.Execute(command)
@@ -64,7 +64,7 @@ ulp_env.Append(
                 "esp32ulp-elf-ld",
                 "-o", "$TARGET",
                 "-A", "elf32-esp32ulp",
-                "-L", ULP_BUILD_DIR,
+                "-L", '"%s"' % ULP_BUILD_DIR,
                 "-T", "ulp_main.common.ld",
                 "$SOURCES"
             ]), "Linking $TARGET"),
@@ -89,7 +89,7 @@ ulp_env.Append(
                 "-DWITH_POSIX", "-DHAVE_CONFIG_H",
                 "-MT", "${TARGET}.o",
                 "-DMBEDTLS_CONFIG_FILE=\"mbedtls/esp_config.h\"",
-                "-I %s" % join(
+                '-I "%s"' % join(
                     FRAMEWORK_DIR, "components", "soc", "esp32", "include"),
                 "-E", "-P", "-xc",
                 "-o", "$TARGET", "-D__ASSEMBLER__", "$SOURCE"
@@ -143,7 +143,7 @@ def generate_export_files(symbol_file):
         [join(ULP_BUILD_DIR, "ulp_main.ld"),
          join(ULP_BUILD_DIR, "ulp_main.h")], symbol_file,
         ulp_env.VerboseAction(
-            '"$PYTHONEXE" "%s" -s $SOURCE -o %s' % (gen_script, build_suffix),
+            '"$PYTHONEXE" "%s" -s $SOURCE -o "%s"' % (gen_script, build_suffix),
             "Exporting ULP linker and header files"))
 
 
