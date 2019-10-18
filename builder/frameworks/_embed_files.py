@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from os import SEEK_CUR, SEEK_END
-from os.path import basename, isfile, join
+import shutil
+from os import SEEK_CUR, SEEK_END, makedirs
+from os.path import basename, isfile, isdir, join
 
 from SCons.Script import Builder
 
@@ -21,9 +22,8 @@ from platformio.util import cd
 
 Import("env")
 
-
 #
-# TXT files helpers
+# Embedded files helpers
 #
 
 
@@ -31,28 +31,38 @@ def prepare_files(files):
     if not files:
         return
 
+    fixed_files = []
+    build_dir = env.subst("$BUILD_DIR")
+    if not isdir(build_dir):
+        makedirs(build_dir)
     for f in files:
-        with open(env.subst(f), "rb+") as fp:
+        fixed_file = join(build_dir, basename(f))
+        shutil.copy(env.subst(f), fixed_file)
+        with open(fixed_file, "rb+") as fp:
             fp.seek(-1, SEEK_END)
             if fp.read(1) != '\0':
                 fp.seek(0, SEEK_CUR)
                 fp.write(b'\0')
 
+        fixed_files.append(fixed_file)
 
-def extract_files(cppdefines):
+    return fixed_files
+
+
+def extract_files(cppdefines, files_type):
     for define in cppdefines:
-        if "COMPONENT_EMBED_TXTFILES" not in define:
+        if files_type not in define:
             continue
 
         if not isinstance(define, tuple):
-            print("Warning! COMPONENT_EMBED_TXTFILES macro cannot be empty!")
+            print("Warning! %s macro cannot be empty!" % files_type)
             return []
 
         with cd(env.subst("$PROJECT_DIR")):
             value = define[1]
             if not isinstance(value, str):
-                print("Warning! COMPONENT_EMBED_TXTFILES macro must contain "
-                      "a list of files separated by ':'")
+                print("Warning! %s macro must contain "
+                      "a list of files separated by ':'" % files_type)
                 return []
 
             result = []
@@ -65,9 +75,9 @@ def extract_files(cppdefines):
             return result
 
 
-def remove_config_define(cppdefines):
+def remove_config_define(cppdefines, files_type):
     for define in cppdefines:
-        if "COMPONENT_EMBED_TXTFILES" in define:
+        if files_type in define:
             env.ProcessUnFlags("-D%s" % "=".join(str(d) for d in define))
             return
 
@@ -94,9 +104,14 @@ env.Append(
             suffix=".txt.o"))
 )
 
+
+
 flags = env.get("CPPDEFINES")
-if "COMPONENT_EMBED_TXTFILES" in env.Flatten(flags):
-    files = extract_files(flags)
-    prepare_files(files)
+for component_files in ("COMPONENT_EMBED_TXTFILES", "COMPONENT_EMBED_FILES"):
+    if component_files not in env.Flatten(flags):
+        continue
+    files = extract_files(flags, component_files)
+    if component_files == "COMPONENT_EMBED_TXTFILES":
+        files = prepare_files(files)
     embed_files(files)
-    remove_config_define(flags)
+    remove_config_define(flags, component_files)
