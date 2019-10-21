@@ -13,8 +13,8 @@
 # limitations under the License.
 
 import shutil
-from os import SEEK_CUR, SEEK_END, makedirs
-from os.path import basename, isfile, isdir, join
+from os import SEEK_CUR, SEEK_END
+from os.path import basename, isfile, join
 
 from SCons.Script import Builder
 
@@ -22,32 +22,10 @@ from platformio.util import cd
 
 Import("env")
 
+
 #
 # Embedded files helpers
 #
-
-
-def prepare_files(files):
-    if not files:
-        return
-
-    fixed_files = []
-    build_dir = env.subst("$BUILD_DIR")
-    if not isdir(build_dir):
-        makedirs(build_dir)
-    for f in files:
-        fixed_file = join(build_dir, basename(f))
-        shutil.copy(env.subst(f), fixed_file)
-        with open(fixed_file, "rb+") as fp:
-            fp.seek(-1, SEEK_END)
-            if fp.read(1) != '\0':
-                fp.seek(0, SEEK_CUR)
-                fp.write(b'\0')
-
-        fixed_files.append(fixed_file)
-
-    return fixed_files
-
 
 def extract_files(cppdefines, files_type):
     for define in cppdefines:
@@ -82,11 +60,31 @@ def remove_config_define(cppdefines, files_type):
             return
 
 
-def embed_files(files):
+def prepare_file(source, target, env):
+    filepath = source[0].get_abspath()
+    shutil.copy(filepath, filepath + ".piobkp")
+
+    with open(filepath, "rb+") as fp:
+        fp.seek(-1, SEEK_END)
+        if fp.read(1) != '\0':
+            fp.seek(0, SEEK_CUR)
+            fp.write(b'\0')
+
+
+def revert_original_file(source, target, env):
+    filepath = source[0].get_abspath()
+    if isfile(filepath + ".piobkp"):
+        shutil.move(filepath + ".piobkp", filepath)
+
+
+def embed_files(files, files_type):
     for f in files:
         filename = basename(f) + ".txt.o"
         file_target = env.TxtToBin(join("$BUILD_DIR", filename), f)
         env.Depends("$PIOMAINPROG", file_target)
+        if files_type == "COMPONENT_EMBED_TXTFILES":
+            env.AddPreAction(file_target, prepare_file)
+            env.AddPostAction(file_target, revert_original_file)
         env.Append(PIOBUILDFILES=[env.File(join("$BUILD_DIR", filename))])
 
 
@@ -104,14 +102,10 @@ env.Append(
             suffix=".txt.o"))
 )
 
-
-
 flags = env.get("CPPDEFINES")
-for component_files in ("COMPONENT_EMBED_TXTFILES", "COMPONENT_EMBED_FILES"):
-    if component_files not in env.Flatten(flags):
+for files_type in ("COMPONENT_EMBED_TXTFILES", "COMPONENT_EMBED_FILES"):
+    if files_type not in env.Flatten(flags):
         continue
-    files = extract_files(flags, component_files)
-    if component_files == "COMPONENT_EMBED_TXTFILES":
-        files = prepare_files(files)
-    embed_files(files)
-    remove_config_define(flags, component_files)
+    files = extract_files(flags, files_type)
+    embed_files(files, files_type)
+    remove_config_define(flags, files_type)
