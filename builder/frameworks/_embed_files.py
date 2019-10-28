@@ -22,35 +22,44 @@ from platformio.util import cd
 
 Import("env")
 
+board = env.BoardConfig()
 
 #
 # Embedded files helpers
 #
 
 def extract_files(cppdefines, files_type):
-    for define in cppdefines:
-        if files_type not in define:
-            continue
+    files = []
+    if "build." + files_type in board:
+        files.extend(
+            [join("$PROJECT_DIR", f) for f in board.get(
+                "build." + files_type, "").split() if f])
+    else:
+        files_define = "COMPONENT_" + files_type.upper()
+        for define in cppdefines:
+            if files_define not in define:
+                continue
 
-        if not isinstance(define, tuple):
-            print("Warning! %s macro cannot be empty!" % files_type)
-            return []
-
-        with cd(env.subst("$PROJECT_DIR")):
             value = define[1]
-            if not isinstance(value, str):
-                print("Warning! %s macro must contain "
-                      "a list of files separated by ':'" % files_type)
+            if not isinstance(define, tuple):
+                print("Warning! %s macro cannot be empty!" % files_define)
                 return []
 
-            result = []
-            for f in value.split(':'):
-                if not isfile(f):
-                    print("Warning! Could not find file %s" % f)
-                    continue
-                result.append(join("$PROJECT_DIR", f))
+            if not isinstance(value, str):
+                print("Warning! %s macro must contain "
+                      "a list of files separated by ':'" % files_define)
+                return []
 
-            return result
+            for f in value.split(':'):
+                if not f:
+                    continue
+                files.append(join("$PROJECT_DIR", f))
+
+    for f in files:
+        if not isfile(env.subst(f)):
+            print("Warning! Could not find file \"%s\"" % basename(f))
+
+    return files
 
 
 def remove_config_define(cppdefines, files_type):
@@ -82,7 +91,7 @@ def embed_files(files, files_type):
         filename = basename(f) + ".txt.o"
         file_target = env.TxtToBin(join("$BUILD_DIR", filename), f)
         env.Depends("$PIOMAINPROG", file_target)
-        if files_type == "COMPONENT_EMBED_TXTFILES":
+        if files_type == "embed_txtfiles":
             env.AddPreAction(file_target, prepare_file)
             env.AddPostAction(file_target, revert_original_file)
         env.Append(PIOBUILDFILES=[env.File(join("$BUILD_DIR", filename))])
@@ -103,9 +112,11 @@ env.Append(
 )
 
 flags = env.get("CPPDEFINES")
-for files_type in ("COMPONENT_EMBED_TXTFILES", "COMPONENT_EMBED_FILES"):
-    if files_type not in env.Flatten(flags):
+for files_type in ("embed_txtfiles", "embed_files"):
+    if "COMPONENT_" + files_type.upper() not in env.Flatten(
+        flags) and "build." + files_type not in board:
         continue
+
     files = extract_files(flags, files_type)
     embed_files(files, files_type)
     remove_config_define(flags, files_type)
