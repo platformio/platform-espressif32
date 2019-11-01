@@ -158,7 +158,8 @@ env.Replace(
     ],
     ERASECMD='"$PYTHONEXE" "$OBJCOPY" $ERASEFLAGS erase_flash',
 
-    MKSPIFFSTOOL="mkspiffs_${PIOPLATFORM}_${PIOFRAMEWORK}",
+    MKSPIFFSTOOL="mkspiffs_${PIOPLATFORM}_" + ("espidf" if "espidf" in env.subst(
+        "$PIOFRAMEWORK") else "${PIOFRAMEWORK}"),
     PROGSUFFIX=".elf"
 )
 

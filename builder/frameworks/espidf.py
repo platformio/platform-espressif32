@@ -33,7 +33,7 @@ env = DefaultEnvironment()
 platform = env.PioPlatform()
 
 env.SConscript("_bare.py", exports="env")
-env.SConscript("_embedtxt_files.py", exports="env")
+env.SConscript("_embed_files.py", exports="env")
 
 ulp_lib = None
 ulp_dir = join(env.subst("$PROJECT_DIR"), "ulp")
