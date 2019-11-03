@@ -28,7 +28,7 @@ from SCons.Script import DefaultEnvironment, SConscript
 
 env = DefaultEnvironment()
 
-SConscript("_embedtxt_files.py", exports="env")
+SConscript("_embed_files.py", exports="env")
 
 if "espidf" not in env.subst("$PIOFRAMEWORK"):
     SConscript(
