@@ -15,6 +15,7 @@ env:
   - PLATFORMIO_PROJECT_DIR=examples/espidf-hello-world
   - PLATFORMIO_PROJECT_DIR=examples/espidf-http-request
   - PLATFORMIO_PROJECT_DIR=examples/espidf-peripherals-uart
+  - PLATFORMIO_PROJECT_DIR=examples/espidf-psram
   - PLATFORMIO_PROJECT_DIR=examples/espidf-storage-sdcard
   - PLATFORMIO_PROJECT_DIR=examples/pumbaa-blink
   - PLATFORMIO_PROJECT_DIR=examples/simba-blink

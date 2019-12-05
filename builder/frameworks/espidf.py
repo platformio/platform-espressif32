@@ -83,6 +83,10 @@ def is_arduino_enabled(sdk_params):
     return arduino_enabled
 
 
+def is_spiram_workaround_enabled(sdk_params):
+    return is_set("CONFIG_SPIRAM_CACHE_WORKAROUND", sdk_params)
+
+
 def parse_mk(path):
     result = {}
     variable = None
@@ -432,9 +436,6 @@ def find_framework_service_files(search_path):
             elif f == "Kconfig":
                 result['kconfig_files'].append(join(search_path, d, f))
 
-    result['lf_files'].append(
-        join(FRAMEWORK_DIR, "components", "esp32", "ld", "esp32_fragments.lf"))
-
     return result
 
 
@@ -442,12 +443,14 @@ def generate_project_ld_script(target, source, env):
     project_files = find_framework_service_files(
         join(FRAMEWORK_DIR, "components"))
 
+    lf_files = project_files.get("lf_files") + env["LD_FRAGMENTS"]
+
     args = {
         "script": join(FRAMEWORK_DIR, "tools", "ldgen", "ldgen.py"),
         "sections": source[0].get_path(),
         "input": join(
             FRAMEWORK_DIR, "components", "esp32", "ld", "esp32.project.ld.in"),
-        "sdk_header": join(env.subst("$PROJECT_SRC_DIR"), "sdkconfig.h"),
+        "sdkconfig": join(env.subst("$PROJECT_SRC_DIR"), "sdkconfig"),
         "fragments": " ".join(
             ["\"%s\"" % f for f in project_files.get("lf_files")]),
         "output": target[0].get_path(),
@@ -459,7 +462,7 @@ def generate_project_ld_script(target, source, env):
     }
 
     cmd = ('"$PYTHONEXE" "{script}" --sections "{sections}" --input "{input}" '
-        '--config "{sdk_header}" --fragments {fragments} --output "{output}" '
+        '--config "{sdkconfig}" --fragments {fragments} --output "{output}" '
         '--kconfig "{kconfig}" --env "{kconfigs_projbuild}" '
         '--env "{kconfig_files}" --env "IDF_CMAKE=n" --env "IFS=#" '
         '--env "IDF_TARGET=\\\"esp32\\\""').format(**args)
@@ -538,6 +541,32 @@ def configure_exceptions(sdk_params):
             )
     else:
         env.Append(LINKFLAGS=["-u", "__cxx_fatal_exception"])
+
+
+def configure_libc(sdk_params):
+    if is_spiram_workaround_enabled(sdk_params):
+        env.Append(
+            CCFLAGS=["-mfix-esp32-psram-cache-issue"],
+
+            LIBS=["c-psram-workaround", "m-psram-workaround"],
+
+            LINKFLAGS=[
+                "-mfix-esp32-psram-cache-issue"
+            ],
+
+            LD_FRAGMENTS=[
+                join(FRAMEWORK_DIR, "components", "newlib", "esp32-spiram-rom-functions.lf")
+            ]
+        )
+    else:
+        env.Append(
+            LIBS=["c", "m"],
+
+            LINKFLAGS=[
+                "-T",
+                "esp32.rom.spiram_incompatible_fns.ld"
+            ]
+        )
 
 
 env.Prepend(
@@ -639,8 +668,11 @@ env.Prepend(
 
     LIBS=[
         "btdm_app", "hal", "coexist", "core", "net80211", "phy", "rtc", "pp",
-        "wpa", "wpa2", "espnow", "wps", "smartconfig", "mesh", "c", "m",
-        "gcc", "stdc++"
+        "wpa", "wpa2", "espnow", "wps", "smartconfig", "mesh", "gcc", "stdc++"
+    ],
+
+    LD_FRAGMENTS=[
+        join(FRAMEWORK_DIR, "components", "esp32", "ld", "esp32_fragments.lf")
     ]
 )
 
@@ -682,7 +714,6 @@ env.Append(
         "-T", "esp32.rom.ld",
         "-T", "esp32.peripherals.ld",
         "-T", "esp32.rom.libgcc.ld",
-        "-T", "esp32.rom.spiram_incompatible_fns.ld"
     ],
 
     FLASH_EXTRA_IMAGES=[
@@ -750,6 +781,7 @@ sdk_config_header = join(env.subst("$PROJECT_SRC_DIR"), "sdkconfig.h")
 sdk_params = get_sdk_configuration(sdk_config_header)
 
 configure_exceptions(sdk_params)
+configure_libc(sdk_params)
 
 #
 # Generate partition table
