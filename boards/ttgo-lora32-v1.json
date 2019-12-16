@@ -30,6 +30,6 @@
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://www.google.com.ua/search?q=TTGO+LoRa32-OLED+V1",
+  "url": "https://github.com/Xinyuan-LilyGO/TTGO-LoRa-Series",
   "vendor": "TTGO"
 }
