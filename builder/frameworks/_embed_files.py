@@ -94,7 +94,7 @@ def embed_files(files, files_type):
         if files_type == "embed_txtfiles":
             env.AddPreAction(file_target, prepare_file)
             env.AddPostAction(file_target, revert_original_file)
-        env.Append(PIOBUILDFILES=[env.File(join("$BUILD_DIR", filename))])
+        env.AppendUnique(PIOBUILDFILES=[env.File(join("$BUILD_DIR", filename))])
 
 
 env.Append(
