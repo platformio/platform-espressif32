@@ -56,7 +56,7 @@ def bin_converter(target, source, env):
 
 
 ulp_env.Append(
-    CPPPATH=["$PROJECTSRC_DIR"],
+    CPPPATH=["$PROJECT_SRC_DIR"],
 
     BUILDERS=dict(
         BuildElf=Builder(
@@ -114,7 +114,7 @@ def preprocess_ld_script():
                  "-DWITH_POSIX", "-D__ASSEMBLER__",
                  '-DMBEDTLS_CONFIG_FILE="mbedtls/esp_config.h"',
                  "-DHAVE_CONFIG_H", "-MT", "$TARGET", "-E", "-P", "-xc", "-o",
-                 "$TARGET", "-I $PROJECTSRC_DIR", "$SOURCE")
+                 "$TARGET", "-I $PROJECT_SRC_DIR", "$SOURCE")
 
     return ulp_env.Command(
         join(ULP_BUILD_DIR, "ulp_main.common.ld"),
