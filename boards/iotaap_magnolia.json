@@ -29,6 +29,6 @@
     "require_upload_port": true,
     "speed": 921600
   },
-  "url": "https://iotaap.mvt-solutions.com",
-  "vendor": "MVT Solutions"
+  "url": "https://www.iotaap.io",
+  "vendor": "IoTaaP"
 }
