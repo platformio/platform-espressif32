@@ -779,14 +779,17 @@ env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", partition_table)
 # Generate linker script
 #
 
-linker_script = env.Command(
-    join("$BUILD_DIR", "esp32_out.ld"),
-    join(FRAMEWORK_DIR, "components", "esp32", "ld", "esp32.ld"),
-    env.VerboseAction(
-        '$CC -I"$PROJECT_SRC_DIR" -C -P -x  c -E $SOURCE -o $TARGET',
-        "Generating LD script $TARGET"))
+if not env.BoardConfig().get("build.ldscript", ""):
+    linker_script = env.Command(
+        join("$BUILD_DIR", "esp32_out.ld"),
+        env.BoardConfig().get("build.esp-idf.ldscript", join(
+            FRAMEWORK_DIR, "components", "esp32", "ld", "esp32.ld")),
+        env.VerboseAction(
+            '$CC -I"$PROJECTSRC_DIR" -C -P -x  c -E $SOURCE -o $TARGET',
+            "Generating LD script $TARGET"))
 
-env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", linker_script)
+    env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", linker_script)
+    env.Replace(LDSCRIPT_PATH="esp32_out.ld")
 
 #
 # Compile bootloader
