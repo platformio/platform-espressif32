@@ -1,7 +1,7 @@
 {
   "build": {
     "core": "esp32",
-    "extra_flags": "-DARDUINO_TTGO_Display -DUSER_SETUP_LOADED=1 -DST7789_DRIVER=1 -DTFT_WIDTH=135 -DTFT_HEIGHT=240 -DCGRAM_OFFSET=1 -DTFT_MOSI=19 -DTFT_SCLK=18 -DTFT_CS=5 -DTFT_DC=16 -DTFT_RST=23 -DTFT_BL=4 -DTFT_BACKLIGHT_ON=HIGH -DLOAD_GLCD=1 -DLOAD_FONT2=1 -DLOAD_FONT4=1 -DLOAD_FONT6=1 -DLOAD_FONT7=1 -DLOAD_FONT8=1 -DLOAD_GFXFF=1 -DSMOOTH_FONT=1 -DSPI_FREQUENCY=40000000 -DSPI_READ_FREQUENCY=6000000",
+    "extra_flags": "-DARDUINO_TTGO_Display",
     "f_cpu": "240000000L",
     "f_flash": "40000000L",
     "flash_mode": "dio",
@@ -28,7 +28,7 @@
     "maximum_ram_size": 327680,
     "maximum_size": 4194304,
     "require_upload_port": true,
-    "speed": 460800
+    "speed": 921600
   },
   "url": "https://github.com/Xinyuan-LilyGO/TTGO-T-Display",
   "vendor": "TTGO"
