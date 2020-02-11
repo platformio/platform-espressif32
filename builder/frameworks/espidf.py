@@ -336,6 +336,8 @@ def build_heap_lib(sdk_params):
     src_filter = "+<*> -<test*>"
     if is_set("CONFIG_HEAP_POISONING_DISABLED", sdk_params):
         src_filter += " -<multi_heap_poisoning.c>"
+    if is_set("CONFIG_HEAP_TRACING", sdk_params):
+        env.Append(LINKFLAGS=["-Wl,--wrap=calloc", "-Wl,--wrap=malloc", "-Wl,--wrap=free", "-Wl,--wrap=realloc", "-Wl,--wrap=heap_caps_malloc", "-Wl,--wrap=heap_caps_free", "-Wl,--wrap=heap_caps_realloc", "-Wl,--wrap=heap_caps_malloc_default", "-Wl,--wrap=heap_caps_realloc_default"])
 
     return build_component(
         join(FRAMEWORK_DIR, "components", "heap"), {"src_filter": src_filter})
