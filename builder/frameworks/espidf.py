@@ -447,7 +447,7 @@ def generate_project_ld_script(target, source, env):
         "sections": source[0].get_path(),
         "input": join(
             FRAMEWORK_DIR, "components", "esp32", "ld", "esp32.project.ld.in"),
-        "sdk_header": join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h"),
+        "sdk_header": join(env.subst("$PROJECT_SRC_DIR"), "sdkconfig.h"),
         "fragments": " ".join(
             ["\"%s\"" % f for f in project_files.get("lf_files")]),
         "output": target[0].get_path(),
@@ -591,7 +591,7 @@ env.Prepend(
         join(FRAMEWORK_DIR, "components", "lwip", "port", "esp32", "include"),
         join(FRAMEWORK_DIR, "components", "lwip", "port", "esp32", "include", "arch"),
         join(FRAMEWORK_DIR, "components", "include_compat"),
-        join("$PROJECTSRC_DIR"),
+        join("$PROJECT_SRC_DIR"),
         join(FRAMEWORK_DIR, "components", "mbedtls", "port", "include"),
         join(FRAMEWORK_DIR, "components", "mbedtls", "mbedtls", "include"),
         join(FRAMEWORK_DIR, "components", "mdns", "include"),
@@ -719,7 +719,7 @@ env.Replace(ASFLAGS=[])
 
 
 def process_project_configs(filename):
-    config = join(env.subst("$PROJECTSRC_DIR"), filename)
+    config = join(env.subst("$PROJECT_SRC_DIR"), filename)
     if not isfile(config):
         print("Warning! Cannot find %s file. Default "
               "file will be added to your project!" % filename)
@@ -738,15 +738,15 @@ def process_project_configs(filename):
 
             new_config = find_valid_example_file(filename)
             copy(config, join(
-                env.subst("$PROJECTSRC_DIR"), "%s.bak" % filename))
+                env.subst("$PROJECT_SRC_DIR"), "%s.bak" % filename))
             copy(new_config, config)
 
 
 process_project_configs("sdkconfig")
-sdk_config = join(env.subst("$PROJECTSRC_DIR"), "sdkconfig")
+sdk_config = join(env.subst("$PROJECT_SRC_DIR"), "sdkconfig")
 
 process_project_configs("sdkconfig.h")
-sdk_config_header = join(env.subst("$PROJECTSRC_DIR"), "sdkconfig.h")
+sdk_config_header = join(env.subst("$PROJECT_SRC_DIR"), "sdkconfig.h")
 sdk_params = get_sdk_configuration(sdk_config_header)
 
 configure_exceptions(sdk_params)
@@ -779,14 +779,17 @@ env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", partition_table)
 # Generate linker script
 #
 
-linker_script = env.Command(
-    join("$BUILD_DIR", "esp32_out.ld"),
-    join(FRAMEWORK_DIR, "components", "esp32", "ld", "esp32.ld"),
-    env.VerboseAction(
-        '$CC -I"$PROJECTSRC_DIR" -C -P -x  c -E $SOURCE -o $TARGET',
-        "Generating LD script $TARGET"))
+if not env.BoardConfig().get("build.ldscript", ""):
+    linker_script = env.Command(
+        join("$BUILD_DIR", "esp32_out.ld"),
+        env.BoardConfig().get("build.esp-idf.ldscript", join(
+            FRAMEWORK_DIR, "components", "esp32", "ld", "esp32.ld")),
+        env.VerboseAction(
+            '$CC -I"$PROJECTSRC_DIR" -C -P -x  c -E $SOURCE -o $TARGET',
+            "Generating LD script $TARGET"))
 
-env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", linker_script)
+    env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", linker_script)
+    env.Replace(LDSCRIPT_PATH="esp32_out.ld")
 
 #
 # Compile bootloader

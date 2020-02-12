@@ -12,7 +12,7 @@
     "type": "git",
     "url": "https://github.com/platformio/platform-espressif32.git"
   },
-  "version": "2.0.0",
+  "version": "1.11.2",
   "packageRepositories": [
     "https://dl.bintray.com/platformio/dl-packages/manifest.json",
     "http://dl.platformio.org/packages/manifest.json",
@@ -50,7 +50,7 @@
     "framework-arduinoespressif32": {
       "type": "framework",
       "optional": true,
-      "version": "~2.10004.191002"
+      "version": "~3.10004.191002"
     },
     "framework-espidf": {
       "type": "framework",
