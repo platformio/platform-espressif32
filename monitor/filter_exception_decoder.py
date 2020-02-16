@@ -19,6 +19,7 @@ import sys
 
 from serial.tools import miniterm
 
+from platformio.compat import get_filesystem_encoding, path_to_unicode
 from platformio.project.config import ProjectConfig
 from platformio.project.exception import PlatformioException
 from platformio.project.helpers import load_project_ide_data
@@ -38,10 +39,7 @@ class EspExceptionDecoder(DeviceMonitorFilter):
         return self
 
     def setup_paths(self):
-        self.project_dir = os.path.abspath(self.project_dir)
-        if not self.project_dir.endswith(os.path.sep):
-            self.project_dir += os.path.sep
-
+        self.project_dir = path_to_unicode(os.path.abspath(self.project_dir))
         try:
             data = load_project_ide_data(self.project_dir, self.environment)
             self.firmware_path = data["prog_path"]
@@ -93,13 +91,23 @@ class EspExceptionDecoder(DeviceMonitorFilter):
 
     def get_backtrace(self, match):
         trace = ""
+        enc = get_filesystem_encoding()
+        args = ( self.addr2line_path, "-fipC", "-e", self.firmware_path )
+        args = [ a.encode(enc) for a in args ]
         try:
-            args = [ self.addr2line_path, "-fipC", "-e", self.firmware_path ]
             for i, addr in enumerate(match.group(1).split()):
-                output = subprocess.check_output(args + [ addr ]) \
-                    .decode("utf-8").strip().replace(self.project_dir, "")
+                output = subprocess.check_output(args + [ addr.encode(enc) ]).decode(enc).strip()
+                output = self.strip_project_dir(output)
                 trace += "  #%-2d %s in %s\n" % (i, addr, output)
         except subprocess.CalledProcessError as e:
             sys.stderr.write("%s: failed to call %s: %s\n" %
                 (self.__class__.__name__, self.addr2line_path, e))
+        return trace
+    
+    def strip_project_dir(self, trace):
+        while True:
+            idx = trace.find(self.project_dir)
+            if idx == -1:
+                break
+            trace = trace[:idx] + trace[idx+len(self.project_dir)+1:]
         return trace
