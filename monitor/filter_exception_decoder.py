@@ -26,8 +26,8 @@ from platformio.project.helpers import load_project_ide_data
 from platformio.commands.device import DeviceMonitorFilter
 
 
-class EspExceptionDecoder(DeviceMonitorFilter):
-    NAME = "esp_exception_decoder"
+class Esp32ExceptionDecoder(DeviceMonitorFilter):
+    NAME = "esp32_exception_decoder"
 
     def __call__(self):
         self.buffer = ""
