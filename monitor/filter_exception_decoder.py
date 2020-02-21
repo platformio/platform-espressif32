@@ -97,6 +97,7 @@ class Esp32ExceptionDecoder(DeviceMonitorFilter):
         try:
             for i, addr in enumerate(match.group(1).split()):
                 output = subprocess.check_output(args + [ addr.encode(enc) ]).decode(enc).strip()
+                output = output.replace("\n", "\n     ") # newlines happen with inlined methods
                 output = self.strip_project_dir(output)
                 trace += "  #%-2d %s in %s\n" % (i, addr, output)
         except subprocess.CalledProcessError as e:
