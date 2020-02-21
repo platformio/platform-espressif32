@@ -17,14 +17,13 @@ import re
 import subprocess
 import sys
 
-from serial.tools import miniterm
-
 from platformio.compat import get_filesystem_encoding, path_to_unicode
-from platformio.project.config import ProjectConfig
 from platformio.project.exception import PlatformioException
 from platformio.project.helpers import load_project_ide_data
 from platformio.commands.device import DeviceMonitorFilter
 
+# By design, __init__ is called inside miniterm and we can't pass context to it.
+# pylint: disable=attribute-defined-outside-init
 
 class Esp32ExceptionDecoder(DeviceMonitorFilter):
     NAME = "esp32_exception_decoder"
@@ -104,7 +103,7 @@ class Esp32ExceptionDecoder(DeviceMonitorFilter):
             sys.stderr.write("%s: failed to call %s: %s\n" %
                 (self.__class__.__name__, self.addr2line_path, e))
         return trace
-    
+
     def strip_project_dir(self, trace):
         while True:
             idx = trace.find(self.project_dir)
