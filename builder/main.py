@@ -131,6 +131,8 @@ env = DefaultEnvironment()
 platform = env.PioPlatform()
 board = env.BoardConfig()
 
+FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
+
 env.Replace(
     __get_board_f_flash=_get_board_f_flash,
     __get_board_flash_mode=_get_board_flash_mode,
@@ -157,6 +159,13 @@ env.Replace(
         "--port", '"$UPLOAD_PORT"'
     ],
     ERASECMD='"$PYTHONEXE" "$OBJCOPY" $ERASEFLAGS erase_flash',
+
+    OTATOOL=join(
+        FRAMEWORK_DIR, "components", "app_update", "otatool.py"),
+    OTATOOLFLAGS=[
+        "--port", '"$UPLOAD_PORT"'
+    ],
+    ERASEOTACMD='"$PYTHONEXE" "$OTATOOL" $OTATOOLFLAGS erase_otadata',
 
     MKSPIFFSTOOL="mkspiffs_${PIOPLATFORM}_" + ("espidf" if "espidf" in env.subst(
         "$PIOFRAMEWORK") else "${PIOFRAMEWORK}"),
@@ -374,6 +383,19 @@ AlwaysBuild(
         env.VerboseAction(env.AutodetectUploadPort,
                           "Looking for serial port..."),
         env.VerboseAction("$ERASECMD", "Erasing...")
+    ]))
+
+# Target: Erase OTA Data
+#
+
+if "erase_otadata" in COMMAND_LINE_TARGETS:
+    env['ENV']['IDF_PATH'] = FRAMEWORK_DIR
+
+AlwaysBuild(
+    env.Alias("erase_otadata", None, [
+        env.VerboseAction(env.AutodetectUploadPort,
+                          "Looking for serial port..."),
+        env.VerboseAction("$ERASEOTACMD", "Erasing OTA data...")
     ]))
 
 #
