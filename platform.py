@@ -27,6 +27,13 @@ class Espressif32Platform(PlatformBase):
         if isdir("ulp"):
             self.packages['toolchain-esp32ulp']['optional'] = False
 
+        build_core = variables.get(
+            "board_build.core", self.board_config(variables.get("board")).get(
+                "build.core", "arduino")).lower()
+        if build_core == 'mbcwb':
+            self.packages["framework-arduinoespressif32"]["optional"] = True
+            self.packages["framework-arduino-mbcwb"]["optional"] = False
+
         return PlatformBase.configure_default_packages(self, variables,
                                                        targets)
 

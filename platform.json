@@ -17,7 +17,8 @@
     "https://dl.bintray.com/platformio/dl-packages/manifest.json",
     "http://dl.platformio.org/packages/manifest.json",
     "https://raw.githubusercontent.com/eerimoq/simba/master/make/platformio/manifest.json",
-    "https://raw.githubusercontent.com/eerimoq/pumbaa/master/make/platformio/manifest.json"
+    "https://raw.githubusercontent.com/eerimoq/pumbaa/master/make/platformio/manifest.json",
+    "https://briki.org/download/resources/manifest.json"
   ],
   "frameworks": {
     "arduino": {
@@ -50,7 +51,12 @@
     "framework-arduinoespressif32": {
       "type": "framework",
       "optional": true,
-      "version": "~3.10004.191002"
+      "version": "~2.10004.191002"
+    },
+    "framework-arduino-mbcwb": {
+      "type": "framework",
+      "optional": true,
+      "version": ">=2.1.1"
     },
     "framework-espidf": {
       "type": "framework",
@@ -70,6 +76,10 @@
     "tool-esptoolpy": {
       "type": "uploader",
       "version": "~1.20600.0"
+    }, 
+    "tool-mbctool": {
+      "type": "uploader",
+      "version": ">=2.0.0"
     },
     "tool-openocd-esp32": {
       "type": "debugger",
