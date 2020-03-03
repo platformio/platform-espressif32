@@ -102,6 +102,9 @@ def embed_files(files, files_type):
         env.AppendUnique(PIOBUILDFILES=[env.File(join("$BUILD_DIR", filename))])
 
 
+def transform_to_asm(target, source, env):
+    return [join("$BUILD_DIR", s.name + ".S") for s in source], source
+
 env.Append(
     BUILDERS=dict(
         TxtToBin=Builder(
@@ -129,14 +132,17 @@ env.Append(
             action=env.VerboseAction(
                 " ".join(
                     [
-                        "cmake",
+                        join(
+                            env.PioPlatform().get_package_dir("tool-cmake") or "",
+                            "bin",
+                            "cmake",
+                        ),
                         "-DDATA_FILE=$SOURCE",
-                        "-DSOURCE_FILE=" + join(
-                            "$BUILD_DIR", "${SOURCE.file}.S"),
+                        "-DSOURCE_FILE=$TARGET",
                         "-DFILE_TYPE=TEXT",
                         "-P",
                         join(
-                            env.PioPlatform().get_package_dir("framework-espidf"),
+                            env.PioPlatform().get_package_dir("framework-espidf") or "",
                             "tools",
                             "cmake",
                             "scripts",
@@ -144,8 +150,9 @@ env.Append(
                         ),
                     ]
                 ),
-                "Generating assembly $TARGET",
+                "Generating assembly for $TARGET",
             ),
+            emitter=transform_to_asm,
             single_source=True
         ),
     )
