@@ -554,7 +554,10 @@ def find_lib_deps(components_map, elf_config, link_args, ignore_components=None)
             or component_config["name"] in ignore_components
         ):
             continue
-        if component_config["nameOnDisk"] in implicit_lib_deps:
+        if (
+            component_config["nameOnDisk"] in implicit_lib_deps
+            and component["lib"] not in result
+        ):
             result.append(component["lib"])
 
     return result
@@ -603,10 +606,14 @@ def build_bootloader():
 
     bootloader_env.MergeFlags(link_args)
     bootloader_env.Append(LINKFLAGS=extra_flags)
+    bootloader_libs = find_lib_deps(components_map, elf_config, link_args)
+
+    bootloader_env.Prepend(__RPATH="-Wl,--start-group ")
+    bootloader_env.Append(_LIBDIRFLAGS=" -Wl,--end-group")
 
     return bootloader_env.Program(
         join("$BUILD_DIR", "bootloader.elf"),
-        find_lib_deps(components_map, elf_config, link_args),
+        bootloader_libs,
     )
 
 
@@ -848,8 +855,7 @@ env.MergeFlags(project_flags)
 env.Prepend(
     CPPPATH=app_includes["plain_includes"],
     LINKFLAGS=extra_flags,
-    CPPDEFINES=["WTFMAN"],
-    LIBS=sorted(libs),
+    LIBS=libs,
     FLASH_EXTRA_IMAGES=[
         ("0x1000", join("$BUILD_DIR", "bootloader.bin")),
         ("0x8000", join("$BUILD_DIR", "partitions.bin")),
