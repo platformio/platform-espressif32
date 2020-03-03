@@ -703,8 +703,6 @@ env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", partition_table)
 # Current build script limitations
 #
 
-env.EnsurePythonVersion(3, 5)
-
 if any(" " in p for p in (FRAMEWORK_DIR, BUILD_DIR)):
     sys.stderr.write("Error: Detected a whitespace character in project paths.\n")
     env.Exit(1)
