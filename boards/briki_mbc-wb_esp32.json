@@ -1,5 +1,8 @@
 {
   "build": {
+    "arduino":{
+      "ldscript": "esp32_out.ld"
+    },
     "core": "mbcwb",
     "extra_flags":  "-DBRIKI_MBC_WB_ESP -DBRIKI_MBC_WB -w",
     "f_cpu": "240000000L",

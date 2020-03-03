@@ -338,10 +338,14 @@ elif upload_protocol == "mbctool":
             "--speed", "1500000",
             "--port", "$UPLOAD_PORT",
             "--upload",
-            "0x1000", join(platform.get_package_dir("framework-arduino-mbcwb"), "tools", "sdk", "bin", "bootloader_qio_80m.bin"),
-            "0x8000", join("$BUILD_DIR","partitions.bin"),
-            "0xe000", join(platform.get_package_dir("framework-arduino-mbcwb"), "tools", "partitions", "boot_app0.bin"),
-            "0x10000", join("$BUILD_DIR","firmware.bin"),
+            "0x1000", join(
+                platform.get_package_dir("framework-arduino-mbcwb"), 
+                "tools", "sdk", "bin", "bootloader_qio_80m.bin"),
+            "0x8000", join("$BUILD_DIR", "partitions.bin"),
+            "0xe000", join(
+                platform.get_package_dir("framework-arduino-mbcwb"), 
+                "tools", "partitions", "boot_app0.bin"),
+            "0x10000", join("$BUILD_DIR", "${PROGNAME}.bin"),
         ],
         UPLOADCMD='"$UPLOADER" $UPLOADERFLAGS'       
     )
@@ -399,6 +403,14 @@ AlwaysBuild(
                           "Looking for serial port..."),
         env.VerboseAction("$ERASECMD", "Erasing...")
     ]))
+
+#
+# Information about obsolete method of specifying linker scripts
+#
+
+if any("-Wl,-T" in f for f in env.get("LINKFLAGS", [])):
+    print("Warning! '-Wl,-T' option for specifying linker scripts is deprecated. "
+          "Please use 'board_build.ldscript' option in your 'platformio.ini' file.")
 
 #
 # Default targets

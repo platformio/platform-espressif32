@@ -51,7 +51,7 @@
     "framework-arduinoespressif32": {
       "type": "framework",
       "optional": true,
-      "version": "~2.10004.191002"
+      "version": "~3.10004.191002"
     },
     "framework-arduino-mbcwb": {
       "type": "framework",
