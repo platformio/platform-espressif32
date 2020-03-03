@@ -29,7 +29,7 @@ class Espressif32Platform(PlatformBase):
             self.packages['toolchain-esp32ulp']['optional'] = False
         if "espidf" in variables.get("pioframework", []):
             for p in self.packages:
-                if p in ("tool-cmake", "tool-ninja"):
+                if p in ("tool-cmake", "tool-ninja", "toolchain-esp32ulp"):
                     self.packages[p]['optional'] = False
                 elif p in ("tool-mconf", "tool-idf") and "windows" in get_systype():
                     self.packages[p]['optional'] = False
