@@ -447,7 +447,7 @@ def prepare_build_envs(config, default_env):
             build_flags = cc.get("fragment")
             if not build_flags.startswith("-D"):
                 build_env.AppendUnique(**build_env.ParseFlags(build_flags))
-        build_env.Append(CPPDEFINES=defines, CPPPATH=includes)
+        build_env.AppendUnique(CPPDEFINES=defines, CPPPATH=includes)
         if sys_includes:
             build_env.Append(CCFLAGS=[("-isystem", inc) for inc in sys_includes])
         build_env.Append(ASFLAGS=build_env.get("CCFLAGS", [])[:])
