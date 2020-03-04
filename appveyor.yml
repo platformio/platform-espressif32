@@ -19,6 +19,9 @@ environment:
     - PLATFORMIO_PROJECT_DIR: "examples/pumbaa-blink"
     - PLATFORMIO_PROJECT_DIR: "examples/simba-blink"
 
+platform:
+  - x64
+    
 install:
 - cmd: git submodule update --init --recursive
 - cmd: SET PATH=C:\Python36\Scripts;%PATH%
