@@ -778,6 +778,14 @@ framework_components_map = get_components_map(
     target_configs, ["STATIC_LIBRARY", "OBJECT_LIBRARY"], [project_target_name]
 )
 
+# Add default include dirs to global CPPPATH so they're visible to all components
+env.Append(
+    CPPPATH=[
+        "$PROJECT_SRC_DIR",
+        "$PROJECT_INCLUDE_DIR"
+    ]
+)
+
 build_components(env, framework_components_map, env.subst("$PROJECT_DIR"))
 
 if not elf_config:
