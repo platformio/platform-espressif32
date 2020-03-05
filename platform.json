@@ -55,7 +55,7 @@
     "framework-espidf": {
       "type": "framework",
       "optional": true,
-      "version": "~3.30300.0"
+      "version": "~3.40000.0"
     },
     "framework-simba": {
       "type": "framework",
@@ -80,6 +80,22 @@
       "type": "uploader",
       "optional": true,
       "version": "~2.230.0"
+    },
+    "tool-cmake": {
+      "optional": true,
+      "version": "~3.16.0"
+    },
+    "tool-ninja": {
+      "optional": true,
+      "version": "^1.7.0"
+    },
+    "tool-mconf": {
+      "optional": true,
+      "version": "~1.4060000.0"
+    },
+    "tool-idf": {
+      "optional": true,
+      "version": "~1.0.1"
     }
   }
 }

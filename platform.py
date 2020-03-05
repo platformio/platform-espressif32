@@ -15,6 +15,7 @@
 from os.path import isdir
 
 from platformio.managers.platform import PlatformBase
+from platformio.util import get_systype
 
 
 class Espressif32Platform(PlatformBase):
@@ -26,6 +27,13 @@ class Espressif32Platform(PlatformBase):
             self.packages['tool-openocd-esp32']['optional'] = False
         if isdir("ulp"):
             self.packages['toolchain-esp32ulp']['optional'] = False
+        if "espidf" in variables.get("pioframework", []):
+            for p in self.packages:
+                if p in ("tool-cmake", "tool-ninja", "toolchain-esp32ulp"):
+                    self.packages[p]['optional'] = False
+                elif p in ("tool-mconf", "tool-idf") and "windows" in get_systype():
+                    self.packages[p]['optional'] = False
+            self.packages['toolchain-xtensa32']['version'] = "~2.80200.0"
 
         return PlatformBase.configure_default_packages(self, variables,
                                                        targets)

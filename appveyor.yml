@@ -7,19 +7,24 @@ environment:
     - PLATFORMIO_PROJECT_DIR: "examples/espidf-arduino-blink"
     - PLATFORMIO_PROJECT_DIR: "examples/espidf-arduino-wifiscan"
     - PLATFORMIO_PROJECT_DIR: "examples/espidf-aws-iot"
-    - PLATFORMIO_PROJECT_DIR: "examples/espidf-ble-adv"
+    - PLATFORMIO_PROJECT_DIR: "examples/espidf-ble-eddystone"
     - PLATFORMIO_PROJECT_DIR: "examples/espidf-coap-server"
     - PLATFORMIO_PROJECT_DIR: "examples/espidf-exceptions"
     - PLATFORMIO_PROJECT_DIR: "examples/espidf-hello-world"
     - PLATFORMIO_PROJECT_DIR: "examples/espidf-http-request"
     - PLATFORMIO_PROJECT_DIR: "examples/espidf-peripherals-uart"
     - PLATFORMIO_PROJECT_DIR: "examples/espidf-storage-sdcard"
+    - PLATFORMIO_PROJECT_DIR: "examples/espidf-ulp-adc"
+    - PLATFORMIO_PROJECT_DIR: "examples/espidf-ulp-pulse"
     - PLATFORMIO_PROJECT_DIR: "examples/pumbaa-blink"
     - PLATFORMIO_PROJECT_DIR: "examples/simba-blink"
 
+platform:
+  - x64
+    
 install:
 - cmd: git submodule update --init --recursive
-- cmd: SET PATH=C:\Python36\Scripts;%PATH%
+- cmd: SET PATH=C:\Python36-x64;C:\Python36-x64\Scripts;%PATH%
 - cmd: pip3 install -U https://github.com/platformio/platformio/archive/develop.zip
 - cmd: platformio platform install file://.
 
