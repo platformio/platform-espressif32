@@ -126,7 +126,14 @@ def create_default_project_files():
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(%s)
 """
-    prj_cmake_tpl = 'idf_component_register(SRCS "%s")'
+    prj_cmake_tpl = """# Warning! This code was automatically generated for projects
+# without default 'CMakeLists.txt' file.
+
+set(app_sources
+%s)
+
+idf_component_register(SRCS ${app_sources})
+"""
 
     if not listdir(join(env.subst("$PROJECT_SRC_DIR"))):
         # create an empty file to make CMake happy during first init
@@ -140,7 +147,7 @@ project(%s)
     project_src_dir = env.subst("$PROJECT_SRC_DIR")
     if not isfile(join(project_src_dir, "CMakeLists.txt")):
         with open(join(project_src_dir, "CMakeLists.txt"), "w") as fp:
-            fp.write(prj_cmake_tpl % " ".join(collect_src_files()))
+            fp.write(prj_cmake_tpl % "".join('\t"%s"\n' % f for f in collect_src_files()))
 
 
 def get_cmake_code_model(src_dir, build_dir, extra_args=None):
@@ -778,14 +785,6 @@ framework_components_map = get_components_map(
     target_configs, ["STATIC_LIBRARY", "OBJECT_LIBRARY"], [project_target_name]
 )
 
-# Add default include dirs to global CPPPATH so they're visible to all components
-env.Append(
-    CPPPATH=[
-        "$PROJECT_SRC_DIR",
-        "$PROJECT_INCLUDE_DIR"
-    ]
-)
-
 build_components(env, framework_components_map, env.subst("$PROJECT_DIR"))
 
 if not elf_config:
@@ -843,13 +842,15 @@ try:
 except:
     print("Warning! Couldn't find the main linker script in the CMake code model.")
 
-
 envsafe = env.Clone()
 if project_target_name != "__idf_main":
     # Manually add dependencies to CPPPATH since ESP-IDF build system doesn't generate
     # this info if the folder with sources is not named 'main'
     # https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/build-system.html#rename-main
     envsafe.AppendUnique(CPPPATH=app_includes["plain_includes"])
+
+# Add default include dirs to global CPPPATH so they're visible to PIOBUILDFILES
+envsafe.Append(CPPPATH=["$PROJECT_INCLUDE_DIR", "$PROJECT_SRC_DIR"])
 
 env.Replace(SRC_FILTER="-<*>")
 env.Append(
