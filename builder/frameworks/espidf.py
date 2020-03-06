@@ -46,6 +46,7 @@ from SCons.Script import (
     DefaultEnvironment,
 )
 
+from platformio.fs import to_unix_path
 from platformio.proc import exec_command, where_is_program
 from platformio.util import get_systype
 
@@ -147,7 +148,8 @@ idf_component_register(SRCS ${app_sources})
     project_src_dir = env.subst("$PROJECT_SRC_DIR")
     if not isfile(join(project_src_dir, "CMakeLists.txt")):
         with open(join(project_src_dir, "CMakeLists.txt"), "w") as fp:
-            fp.write(prj_cmake_tpl % "".join('\t"%s"\n' % f for f in collect_src_files()))
+            fp.write(prj_cmake_tpl % "".join(
+                '\t"%s"\n' % to_unix_path(f) for f in collect_src_files()))
 
 
 def get_cmake_code_model(src_dir, build_dir, extra_args=None):
