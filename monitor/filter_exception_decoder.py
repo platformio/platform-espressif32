@@ -25,16 +25,29 @@ from platformio.commands.device import DeviceMonitorFilter
 # By design, __init__ is called inside miniterm and we can't pass context to it.
 # pylint: disable=attribute-defined-outside-init
 
+
 class Esp32ExceptionDecoder(DeviceMonitorFilter):
     NAME = "esp32_exception_decoder"
 
     def __call__(self):
         self.buffer = ""
-        self.backtrace_re = re.compile(r"^Backtrace: ((0x[0-9a-f]+:0x[0-9a-f]+ ?)+)\s*$")
+        self.backtrace_re = re.compile(
+            r"^Backtrace: ((0x[0-9a-f]+:0x[0-9a-f]+ ?)+)\s*$"
+        )
 
         self.firmware_path = None
         self.addr2line_path = None
         self.enabled = self.setup_paths()
+
+        if self.config.get("env:" + self.environment, "build_type") != "debug":
+            print(
+                """
+Please build project in debug configuration to get more details about an exception.
+See https://docs.platformio.org/page/projectconf/build_configurations.html
+
+"""
+            )
+
         return self
 
     def setup_paths(self):
@@ -43,8 +56,10 @@ class Esp32ExceptionDecoder(DeviceMonitorFilter):
             data = load_project_ide_data(self.project_dir, self.environment)
             self.firmware_path = data["prog_path"]
             if not os.path.isfile(self.firmware_path):
-                sys.stderr.write("%s: firmware at %s does not exist, rebuild the project?\n" %
-                    (self.__class__.__name__, self.firmware_path))
+                sys.stderr.write(
+                    "%s: firmware at %s does not exist, rebuild the project?\n"
+                    % (self.__class__.__name__, self.firmware_path)
+                )
                 return False
 
             cc_path = data.get("cc_path", "")
@@ -54,10 +69,14 @@ class Esp32ExceptionDecoder(DeviceMonitorFilter):
                     self.addr2line_path = path
                     return True
         except PlatformioException as e:
-            sys.stderr.write("%s: disabling, exception while looking for addr2line: %s\n" %
-                (self.__class__.__name__, e))
+            sys.stderr.write(
+                "%s: disabling, exception while looking for addr2line: %s\n"
+                % (self.__class__.__name__, e)
+            )
             return False
-        sys.stderr.write("%s: disabling, failed to find addr2line.\n" % self.__class__.__name__)
+        sys.stderr.write(
+            "%s: disabling, failed to find addr2line.\n" % self.__class__.__name__
+        )
         return False
 
     def rx(self, text):
@@ -76,7 +95,7 @@ class Esp32ExceptionDecoder(DeviceMonitorFilter):
             if self.buffer:
                 line = self.buffer + line
                 self.buffer = ""
-            last = idx+1
+            last = idx + 1
 
             m = self.backtrace_re.match(line)
             if m is None:
@@ -84,24 +103,32 @@ class Esp32ExceptionDecoder(DeviceMonitorFilter):
 
             trace = self.get_backtrace(m)
             if len(trace) != "":
-                text = text[:idx+1] + trace + text[idx+1:]
+                text = text[: idx + 1] + trace + text[idx + 1 :]
                 last += len(trace)
         return text
 
     def get_backtrace(self, match):
         trace = ""
         enc = get_filesystem_encoding()
-        args = ( self.addr2line_path, "-fipC", "-e", self.firmware_path )
-        args = [ a.encode(enc) for a in args ]
+        args = (self.addr2line_path, "-fipC", "-e", self.firmware_path)
+        args = [a.encode(enc) for a in args]
         try:
             for i, addr in enumerate(match.group(1).split()):
-                output = subprocess.check_output(args + [ addr.encode(enc) ]).decode(enc).strip()
-                output = output.replace("\n", "\n     ") # newlines happen with inlined methods
+                output = (
+                    subprocess.check_output(args + [addr.encode(enc)])
+                    .decode(enc)
+                    .strip()
+                )
+                output = output.replace(
+                    "\n", "\n     "
+                )  # newlines happen with inlined methods
                 output = self.strip_project_dir(output)
                 trace += "  #%-2d %s in %s\n" % (i, addr, output)
         except subprocess.CalledProcessError as e:
-            sys.stderr.write("%s: failed to call %s: %s\n" %
-                (self.__class__.__name__, self.addr2line_path, e))
+            sys.stderr.write(
+                "%s: failed to call %s: %s\n"
+                % (self.__class__.__name__, self.addr2line_path, e)
+            )
         return trace
 
     def strip_project_dir(self, trace):
@@ -109,5 +136,5 @@ class Esp32ExceptionDecoder(DeviceMonitorFilter):
             idx = trace.find(self.project_dir)
             if idx == -1:
                 break
-            trace = trace[:idx] + trace[idx+len(self.project_dir)+1:]
+            trace = trace[:idx] + trace[idx + len(self.project_dir) + 1 :]
         return trace
