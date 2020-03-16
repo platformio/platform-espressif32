@@ -119,7 +119,11 @@ def is_proper_idf_project():
 
 
 def collect_src_files():
-    return env.MatchSourceFiles("$PROJECT_SRC_DIR", env.get("SRC_FILTER"))
+    return [
+        f
+        for f in env.MatchSourceFiles("$PROJECT_SRC_DIR", env.get("SRC_FILTER"))
+        if not f.endswith((".h", ".hpp"))
+    ]
 
 
 def create_default_project_files():
@@ -320,7 +324,7 @@ def filter_args(args, allowed, ignore=None):
             result.append(args[i])
             if i + 1 < length and not args[i + 1].startswith("-"):
                 i += 1
-            result.append(args[i])
+                result.append(args[i])
         i += 1
     return result
 
@@ -618,11 +622,13 @@ def build_bootloader():
     bootloader_libs = find_lib_deps(components_map, elf_config, link_args)
 
     bootloader_env.Prepend(__RPATH="-Wl,--start-group ")
-    bootloader_env.Append(_LIBDIRFLAGS=" -Wl,--end-group")
+    bootloader_env.Append(
+        CPPDEFINES=["__BOOTLOADER_BUILD"], _LIBDIRFLAGS=" -Wl,--end-group"
+    )
 
-    return bootloader_env.Program(
-        join("$BUILD_DIR", "bootloader.elf"),
-        bootloader_libs,
+    return bootloader_env.ElfToBin(
+        join("$BUILD_DIR", "bootloader"),
+        bootloader_env.Program(join("$BUILD_DIR", "bootloader.elf"), bootloader_libs),
     )
 
 
@@ -733,6 +739,12 @@ if env.subst("$SRC_FILTER"):
     )
     env.Exit(1)
 
+if isfile(join(env.subst("$PROJECT_SRC_DIR"), "sdkconfig.h")):
+    print(
+        "Warning! Starting with ESP-IDF v4.0, new project structure is required: \n"
+        "https://docs.platformio.org/en/latest/frameworks/espidf.html#project-structure"
+    )
+
 #
 # Initial targets loading
 #
@@ -808,10 +820,7 @@ app_includes = get_app_includes(elf_config)
 # Compile bootloader
 #
 
-env.Depends(
-    "$BUILD_DIR/$PROGNAME$PROGSUFFIX",
-    env.ElfToBin(join("$BUILD_DIR", "bootloader"), build_bootloader()),
-)
+env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", build_bootloader())
 
 #
 # Target: ESP-IDF menuconfig
