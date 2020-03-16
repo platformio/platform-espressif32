@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import copy
 import re
 import sys
 from os.path import isfile, join
@@ -127,6 +128,17 @@ def __fetch_spiffs_size(target, source, env):
     return (target, source)
 
 
+def append_elf_hash(target, source, env):
+    if "__BOOTLOADER_BUILD" not in env["CPPDEFINES"]:
+        if "--elf-sha256-offset" not in env["BUILDERS"]["ElfToBin"].action.cmd_list:
+            action = copy.deepcopy(env["BUILDERS"]["ElfToBin"].action)
+            action.cmd_list = env["BUILDERS"]["ElfToBin"].action.cmd_list.replace(
+                "-o", "--elf-sha256-offset 0xb0 -o")
+            env["BUILDERS"]["ElfToBin"].action = action
+
+    return (target, source)
+
+
 env = DefaultEnvironment()
 platform = env.PioPlatform()
 board = env.BoardConfig()
@@ -180,9 +192,9 @@ env.Append(
                 "--flash_mode", "$BOARD_FLASH_MODE",
                 "--flash_freq", "${__get_board_f_flash(__env__)}",
                 "--flash_size", board.get("upload.flash_size", "detect"),
-                "--elf-sha256-offset", "0xb0",
                 "-o", "$TARGET", "$SOURCES"
             ]), "Building $TARGET"),
+            emitter=append_elf_hash,
             suffix=".bin"
         ),
         DataToBin=Builder(
