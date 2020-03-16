@@ -17,7 +17,7 @@ import re
 import subprocess
 import sys
 
-from platformio.compat import get_filesystem_encoding, path_to_unicode
+from platformio.compat import path_to_unicode, WINDOWS, PY2
 from platformio.project.exception import PlatformioException
 from platformio.project.helpers import load_project_ide_data
 from platformio.commands.device import DeviceMonitorFilter
@@ -109,13 +109,16 @@ See https://docs.platformio.org/page/projectconf/build_configurations.html
 
     def get_backtrace(self, match):
         trace = ""
-        enc = get_filesystem_encoding()
-        args = (self.addr2line_path, "-fipC", "-e", self.firmware_path)
-        args = [a.encode(enc) for a in args]
+        enc = "mbcs" if WINDOWS else "utf-8"
+        args = [self.addr2line_path, u"-fipC", u"-e", self.firmware_path]
+        if PY2:
+            args = [a.encode(enc) for a in args]
         try:
             for i, addr in enumerate(match.group(1).split()):
+                if PY2:
+                    addr = addr.encode(enc)
                 output = (
-                    subprocess.check_output(args + [addr.encode(enc)])
+                    subprocess.check_output(args + [addr])
                     .decode(enc)
                     .strip()
                 )
