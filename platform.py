@@ -41,6 +41,7 @@ class Espressif32Platform(PlatformBase):
         if build_core == "mbcwb":
             self.packages['framework-arduinoespressif32']['optional'] = True
             self.packages['framework-arduino-mbcwb']['optional'] = False
+            self.packages['tool-mbctool']['optional'] = False
 
         return PlatformBase.configure_default_packages(self, variables,
                                                        targets)

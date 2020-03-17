@@ -79,6 +79,7 @@
     }, 
     "tool-mbctool": {
       "type": "uploader",
+      "optional": true,
       "version": ">=2.0.0"
     },
     "tool-openocd-esp32": {
