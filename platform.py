@@ -35,6 +35,13 @@ class Espressif32Platform(PlatformBase):
                     self.packages[p]['optional'] = False
             self.packages['toolchain-xtensa32']['version'] = "~2.80200.0"
 
+        build_core = variables.get(
+            "board_build.core", self.board_config(variables.get("board")).get(
+                "build.core", "arduino")).lower()
+        if build_core == 'mbcwb':
+            self.packages["framework-arduinoespressif32"]["optional"] = True
+            self.packages["framework-arduino-mbcwb"]["optional"] = False
+
         return PlatformBase.configure_default_packages(self, variables,
                                                        targets)
 
