@@ -348,8 +348,8 @@ elif upload_protocol == "mbctool":
             platform.get_package_dir("tool-mbctool") or "", "bin", "mbctool"),
         UPLOADERFLAGS=[
             "--device", "esp",
-            "--speed", "1500000",
-            "--port", "$UPLOAD_PORT",
+            "--speed", "$UPLOAD_SPEED",
+            "--port", '"$UPLOAD_PORT"',
             "--upload",
             "0x1000", join(
                 platform.get_package_dir("framework-arduino-mbcwb"), 
