@@ -20,6 +20,7 @@ Espressif IoT Development Framework for ESP32 MCU
 https://github.com/espressif/esp-idf
 """
 
+import copy
 import json
 import subprocess
 import sys
@@ -718,7 +719,6 @@ partition_table = env.Command(
     ),
 )
 
-
 env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", partition_table)
 
 #
@@ -881,6 +881,15 @@ env.Prepend(
         ("0x8000", join("$BUILD_DIR", "partitions.bin")),
     ],
 )
+
+#
+# To embed firmware checksum a special argument for esptool.py is required
+#
+
+action = copy.deepcopy(env["BUILDERS"]["ElfToBin"].action)
+action.cmd_list = env["BUILDERS"]["ElfToBin"].action.cmd_list.replace(
+    "-o", "--elf-sha256-offset 0xb0 -o")
+env["BUILDERS"]["ElfToBin"].action = action
 
 #
 # Compile ULP sources in 'ulp' folder
