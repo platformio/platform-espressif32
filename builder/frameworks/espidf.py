@@ -1,4 +1,4 @@
-# Copyright 2014-present PlatformIO <contact@platformio.org>
+# Copyright 2020-present PlatformIO <contact@platformio.org>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,885 +20,881 @@ Espressif IoT Development Framework for ESP32 MCU
 https://github.com/espressif/esp-idf
 """
 
-from glob import glob
-from os import listdir, walk
-from os.path import abspath, basename, isdir, isfile, join
-
-from shutil import copy
+import copy
+import json
+import subprocess
 import sys
-from SCons.Script import DefaultEnvironment
+from os import environ, listdir, makedirs, pathsep
+from os.path import (
+    abspath,
+    basename,
+    dirname,
+    getmtime,
+    isabs,
+    isdir,
+    isfile,
+    join,
+    realpath,
+    relpath,
+)
 
+import click
+
+from SCons.Script import (
+    ARGUMENTS,
+    COMMAND_LINE_TARGETS,
+    AlwaysBuild,
+    DefaultEnvironment,
+)
+
+from platformio.fs import to_unix_path
+from platformio.proc import exec_command, where_is_program
+from platformio.util import get_systype
 
 env = DefaultEnvironment()
 platform = env.PioPlatform()
 
-env.SConscript("_bare.py", exports="env")
 env.SConscript("_embed_files.py", exports="env")
-
-ulp_lib = None
-ulp_dir = join(env.subst("$PROJECT_DIR"), "ulp")
-if isdir(ulp_dir) and listdir(ulp_dir):
-    ulp_lib = env.SConscript("ulp.py", exports="env")
 
 FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
 assert FRAMEWORK_DIR and isdir(FRAMEWORK_DIR)
 
 if "arduino" in env.subst("$PIOFRAMEWORK"):
-    ARDUINO_FRAMEWORK_DIR = platform.get_package_dir(
-        "framework-arduinoespressif32")
+    ARDUINO_FRAMEWORK_DIR = platform.get_package_dir("framework-arduinoespressif32")
     assert ARDUINO_FRAMEWORK_DIR and isdir(ARDUINO_FRAMEWORK_DIR)
 
+try:
+    import future
+    import pyparsing
+    import cryptography
+except ImportError:
+    env.Execute(
+        env.VerboseAction(
+            '$PYTHONEXE -m pip install "cryptography>=2.1.4" "future>=0.15.2" "pyparsing>=2.0.3,<2.4.0"',
+            "Installing ESP-IDF's Python dependencies",
+        )
+    )
 
-def get_toolchain_version():
+platform = env.PioPlatform()
+board = env.BoardConfig()
 
-    def get_original_version(version):
-        if version.count(".") != 2:
-            return None
-        _, y = version.split(".")[:2]
-        if int(y) < 100:
-            return None
-        if len(y) % 2 != 0:
-            y = "0" + y
-        parts = [str(int(y[i * 2:i * 2 + 2])) for i in range(int(len(y) / 2))]
-        return ".".join(parts)
+FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
+assert isdir(FRAMEWORK_DIR)
 
-    return get_original_version(
-        platform.get_package_version("toolchain-xtensa32"))
+BUILD_DIR = env.subst("$BUILD_DIR")
+CMAKE_API_REPLY_PATH = join(".cmake", "api", "v1", "reply")
 
 
-def is_set(parameter, configuration):
-    if int(configuration.get(parameter, 0)):
+def is_cmake_reconfigure_required(cmake_api_reply_dir):
+    cmake_cache_file = join(BUILD_DIR, "CMakeCache.txt")
+    cmake_txt_file = join(env.subst("$PROJECT_DIR"), "CMakeLists.txt")
+    cmake_preconf_dir = join(BUILD_DIR, "config")
+    sdkconfig = join(env.subst("$PROJECT_DIR"), "sdkconfig")
+
+    for d in (cmake_api_reply_dir, cmake_preconf_dir):
+        if not isdir(d) or not listdir(d):
+            return True
+    if not isfile(cmake_cache_file):
         return True
+    if not isfile(join(BUILD_DIR, "build.ninja")):
+        return True
+    if isfile(sdkconfig) and getmtime(sdkconfig) > getmtime(cmake_cache_file):
+        return True
+    if any(
+        getmtime(f) > getmtime(cmake_cache_file)
+        for f in (cmake_txt_file, cmake_preconf_dir)
+    ):
+        return True
+
     return False
 
 
-def is_ulp_enabled(sdk_params):
-    ulp_memory = int(sdk_params.get("CONFIG_ULP_COPROC_RESERVE_MEM", 0))
-    ulp_enabled = is_set("CONFIG_ULP_COPROC_ENABLED", sdk_params)
-    return ulp_memory > 0 and ulp_enabled
-
-
-def is_arduino_enabled(sdk_params):
-    arduino_enabled = is_set("CONFIG_ENABLE_ARDUINO_DEPENDS", sdk_params)
-    return arduino_enabled
-
-
-def parse_mk(path):
-    result = {}
-    variable = None
-    multi = False
-    with open(path) as fp:
-        for line in fp.readlines():
-            line = line.strip()
-            if not line or line.startswith("#"):
-                multi = False
-                continue
-            # remove inline comments
-            if " # " in line:
-                line = line[:line.index(" # ")]
-            if not multi and "=" in line:
-                variable, line = line.split("=", 1)
-                if variable.endswith((":", "+")):
-                    variable = variable[:-1]
-                variable = variable.strip()
-                line = line.strip()
-            if not variable or not line:
-                continue
-            multi = line.endswith('\\')
-            if multi:
-                line = line[:-1].strip()
-            if variable not in result:
-                result[variable] = []
-            result[variable].extend([l.strip() for l in line.split()])
-            if not multi:
-                variable = None
-    return result
-
-
-def extract_component_config(path):
-    inc_dirs = []
-    cc_flags = []
-    src_filter = "+<*> -<test*>"  # default src_filter
-    if isfile(join(path, "component.mk")):
-        params = parse_mk(join(path, "component.mk"))
-        if params.get("COMPONENT_PRIV_INCLUDEDIRS"):
-            inc_dirs.extend(params.get("COMPONENT_PRIV_INCLUDEDIRS"))
-        if params.get("CFLAGS"):
-            cc_flags.extend(params.get("CFLAGS"))
-        if params.get("COMPONENT_OBJS"):
-            src_filter = "-<*>"
-            for f in params.get("COMPONENT_OBJS"):
-                src_filter += " +<%s>" % f.replace(".o", ".c")
-        elif params.get("COMPONENT_SRCDIRS"):
-            src_filter = "-<*>"
-            src_dirs = params.get("COMPONENT_SRCDIRS")
-            if "." in src_dirs:
-                src_dirs.remove(".")
-                src_filter += " +<*.[sSc]*>"
-            for f in src_dirs:
-                src_filter += " +<%s/*.[sSc]*>" % f
-        if params.get("COMPONENT_OBJEXCLUDE"):
-            for f in params.get("COMPONENT_OBJEXCLUDE"):
-                src_filter += " -<%s>" % f.replace(".o", ".[sSc]*")
-
-    return {
-        "inc_dirs": inc_dirs,
-        "cc_flags": cc_flags,
-        "src_filter": src_filter
-    }
-
-
-def build_component(path, component_config):
-
-    envsafe = env.Clone()
-    envsafe.Prepend(
-        CPPPATH=[join(path, d) for d in component_config.get("inc_dirs", [])],
-        CCFLAGS=component_config.get("cc_flags", []),
-        CPPDEFINES=component_config.get("cpp_defines", []),
-    )
-
-    component = envsafe.BuildLibrary(
-        join("$BUILD_DIR", "%s" % basename(path)), path,
-        src_filter=component_config.get("src_filter", "+<*> -<test*>"))
-
-    component_sections = env.Command(
-        "${SOURCE}.sections_info", component,
-        env.VerboseAction(
-            "xtensa-esp32-elf-objdump -h $SOURCE > $TARGET", "Generating $TARGET")
-    )
-
-    # Section files are used in linker script generation process
-    env.Depends("$BUILD_DIR/esp32.project.ld", component_sections)
-
-    return component
-
-
-def get_sdk_configuration(config_path):
-    if not isfile(config_path):
-        sys.stderr.write(
-            "Error: Could not find \"sdkconfig.h\" file\n")
-        env.Exit(1)
-
-    config = {}
-    with open(config_path) as fp:
-        for l in fp.readlines():
-            if not l.startswith("#define"):
-                continue
-            values = l.split()
-            config[values[1]] = values[2]
-
-    return config
-
-
-def find_valid_example_file(filename):
-    search_path = join(
-        platform.get_dir(), "examples", "*", "src", filename)
-    files = glob(search_path)
-    if not files:
-        sys.stderr.write(
-            "Error: Could not find default %s file\n" % filename)
-        env.Exit(1)
-    return files[0]
-
-
-def build_lwip_lib(sdk_params):
-    src_dirs = [
-        "apps/dhcpserver",
-        "apps/ping",
-        "lwip/src/api",
-        "lwip/src/apps/sntp",
-        "lwip/src/core",
-        "lwip/src/core/ipv4",
-        "lwip/src/core/ipv6",
-        "lwip/src/netif",
-        "port/esp32",
-        "port/esp32/freertos",
-        "port/esp32/netif",
-        "port/esp32/debug"
-    ]
-
-    # PPP support can be enabled in sdkconfig.h
-    if is_set("CONFIG_PPP_SUPPORT", sdk_params):
-        src_dirs.extend(
-            ["lwip/src/netif/ppp", "lwip/src/netif/ppp/polarssl"])
-
-    src_filter = "-<*>"
-    for d in src_dirs:
-        src_filter += " +<%s>" % d
-
-    config = {
-        "cc_flags": ["-Wno-address"],
-        "src_filter": src_filter
-    }
-
-    return build_component(
-        join(FRAMEWORK_DIR, "components", "lwip"), config)
-
-
-def build_protocomm_lib(sdk_params):
-    src_dirs = [
-        "src/common",
-        "src/security",
-        "proto-c",
-        "src/simple_ble",
-        "src/transports"
-    ]
-
-    src_filter = "-<*>"
-    for d in src_dirs:
-        src_filter += " +<%s>" % d
-
-    if not (is_set("CONFIG_BT_ENABLED", sdk_params) and is_set(
-            "CONFIG_BLUEDROID_ENABLED", sdk_params)):
-        src_filter += " -<src/simple_ble/simple_ble.c>"
-        src_filter += " -<src/transports/protocomm_ble.c>"
-
-    inc_dirs = ["proto-c", join("src", "common"), join("src", "simple_ble")]
-
-    config = {
-        "inc_dirs": inc_dirs,
-        "src_filter": src_filter
-    }
-
-    return build_component(
-        join(FRAMEWORK_DIR, "components", "protocomm"), config)
-
-
-def build_rtos_lib():
-    config = {
-        "cpp_defines": ["_ESP_FREERTOS_INTERNAL"],
-        "inc_dirs": [join("include", "freertos")]
-    }
-
-    return build_component(
-        join(FRAMEWORK_DIR, "components", "freertos"), config)
-
-
-def build_libsodium_lib():
-    defines = ["CONFIGURED", "NATIVE_LITTLE_ENDIAN", "HAVE_WEAK_SYMBOLS",
-               "__STDC_LIMIT_MACROS", "__STDC_CONSTANT_MACROS",
-               "RANDOMBYTES_DEFAULT_IMPLEMENTATION"]
-
-    inc_dirs = [
-        "port",
-        join("port_include", "sodium"),
-        join("libsodium", "src", "libsodium", "include", "sodium")
-    ]
-
-    config = {
-        "cpp_defines": defines,
-        "cc_flags": ["-Wno-type-limits", "-Wno-unknown-pragmas"],
-        "inc_dirs": inc_dirs,
-        "src_filter": "-<*> +<libsodium/src> +<port>"
-    }
-
-    return build_component(
-        join(FRAMEWORK_DIR, "components", "libsodium"), config)
-
-
-def build_wpa_supplicant_lib():
-    defines = ["EMBEDDED_SUPP", "IEEE8021X_EAPOL", "EAP_PEER_METHOD",
-               "EAP_MSCHAPv2", "EAP_TTLS", "EAP_TLS", "EAP_PEAP",
-               "USE_WPA2_TASK", "CONFIG_WPS2", "CONFIG_WPS_PIN",
-               "USE_WPS_TASK", "ESPRESSIF_USE", "ESP32_WORKAROUND",
-               "CONFIG_ECC", "__ets__"]
-
-    config = {
-        "cpp_defines": defines,
-        "cc_flags": ["-Wno-strict-aliasing"]
-    }
-
-    return build_component(
-        join(FRAMEWORK_DIR, "components", "wpa_supplicant"), config)
-
-
-def build_wifi_provisioning_lib():
-    src_filter = "-<*>"
-    for d in ["proto-c", "src"]:
-        src_filter += " +<%s>" % d
-
-    if not (is_set("CONFIG_BT_ENABLED", sdk_params) and is_set(
-            "CONFIG_BLUEDROID_ENABLED", sdk_params)):
-        src_filter += " -<src/scheme_ble.c>"
-
-    inc_dirs = ["src", "proto-c", "../protocomm/proto-c"]
-
-    config = {
-        "inc_dirs": inc_dirs,
-        "src_filter": src_filter
-    }
-
-    return build_component(
-        join(FRAMEWORK_DIR, "components", "wifi_provisioning"), config)
-
-
-def build_heap_lib(sdk_params):
-    src_filter = "+<*> -<test*>"
-    if is_set("CONFIG_HEAP_POISONING_DISABLED", sdk_params):
-        src_filter += " -<multi_heap_poisoning.c>"
-
-    return build_component(
-        join(FRAMEWORK_DIR, "components", "heap"), {"src_filter": src_filter})
-
-
-def build_espidf_bootloader():
-    envsafe = env.Clone()
-    envsafe.Append(CPPDEFINES=[("BOOTLOADER_BUILD", 1)])
-    envsafe.Replace(
-        LIBPATH=[
-            join(FRAMEWORK_DIR, "components", "esp32", "ld"),
-            join(FRAMEWORK_DIR, "components", "esp32", "lib"),
-            join(FRAMEWORK_DIR, "components", "bootloader", "subproject", "main")
-        ],
-
-        LINKFLAGS=[
-            "-nostdlib",
-            "-Wl,-static",
-            "-u", "call_user_start_cpu0",
-            "-Wl,--gc-sections",
-            "-T", "esp32.bootloader.ld",
-            "-T", "esp32.rom.ld",
-            "-T", "esp32.rom.spiram_incompatible_fns.ld",
-            "-T", "esp32.peripherals.ld",
-            "-T", "esp32.bootloader.rom.ld",
-        ]
-    ),
-
-    envsafe.Append(
-        CPPPATH=[
-            join(FRAMEWORK_DIR, "components", "esp32"),
-            join(FRAMEWORK_DIR, "components", "bootloader_support", "include_priv")
-        ]
-    )
-
-    envsafe.Replace(
-        LIBS=[
-            envsafe.BuildLibrary(
-                join("$BUILD_DIR", "bootloader", "bootloader_support"),
-                join(FRAMEWORK_DIR, "components", "bootloader_support"),
-                src_filter="+<*> -<test>"
-            ),
-            envsafe.BuildLibrary(
-                join("$BUILD_DIR", "bootloader", "log"),
-                join(FRAMEWORK_DIR, "components", "log")
-            ),
-            envsafe.BuildLibrary(
-                join("$BUILD_DIR", "bootloader", "spi_flash"),
-                join(FRAMEWORK_DIR, "components", "spi_flash"),
-                src_filter="-<*> +<spi_flash_rom_patch.c>"
-            ),
-            envsafe.BuildLibrary(
-                join("$BUILD_DIR", "bootloader", "micro-ecc"),
-                join(FRAMEWORK_DIR, "components", "micro-ecc"),
-                src_filter="+<*> -<micro-ecc/test>"
-            ),
-            envsafe.BuildLibrary(
-                join("$BUILD_DIR", "bootloader", "soc"),
-                join(FRAMEWORK_DIR, "components", "soc"),
-                src_filter="+<*> -<test> -<esp32/test>"
-            ),
-            "gcc", "stdc++"
-        ]
-    )
-
-    return envsafe.Program(
-        join("$BUILD_DIR", "bootloader.elf"),
-        envsafe.CollectBuildFiles(
-            join("$BUILD_DIR", "bootloader"),
-            join(FRAMEWORK_DIR, "components", "bootloader", "subproject",
-                 "main")
+def is_proper_idf_project():
+    return all(
+        isfile(path)
+        for path in (
+            join(env.subst("$PROJECT_DIR"), "CMakeLists.txt"),
+            join(env.subst("$PROJECT_SRC_DIR"), "CMakeLists.txt"),
         )
     )
 
 
-def generate_section_info(target, source, env):
-    with open(target[0].get_path(), "w") as fp:
-        fp.write("\n".join(s.get_path() + ".sections_info" for s in source))
+def collect_src_files():
+    return [
+        f
+        for f in env.MatchSourceFiles("$PROJECT_SRC_DIR", env.get("SRC_FILTER"))
+        if not f.endswith((".h", ".hpp"))
+    ]
 
-    return None
+
+def create_default_project_files():
+    root_cmake_tpl = """cmake_minimum_required(VERSION 3.16.0)
+include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+project(%s)
+"""
+    prj_cmake_tpl = """# Warning! This code was automatically generated for projects
+# without default 'CMakeLists.txt' file.
+
+set(app_sources
+%s)
+
+idf_component_register(SRCS ${app_sources})
+"""
+
+    if not listdir(join(env.subst("$PROJECT_SRC_DIR"))):
+        # create an empty file to make CMake happy during first init
+        open(join(env.subst("$PROJECT_SRC_DIR"), "empty.c"), "a").close()
+
+    project_dir = env.subst("$PROJECT_DIR")
+    if not isfile(join(project_dir, "CMakeLists.txt")):
+        with open(join(project_dir, "CMakeLists.txt"), "w") as fp:
+            fp.write(root_cmake_tpl % basename(project_dir))
+
+    project_src_dir = env.subst("$PROJECT_SRC_DIR")
+    if not isfile(join(project_src_dir, "CMakeLists.txt")):
+        with open(join(project_src_dir, "CMakeLists.txt"), "w") as fp:
+            fp.write(prj_cmake_tpl % "".join(
+                '\t"%s"\n' % to_unix_path(f) for f in collect_src_files()))
+
+
+def get_cmake_code_model(src_dir, build_dir, extra_args=None):
+    cmake_api_dir = join(build_dir, ".cmake", "api", "v1")
+    cmake_api_query_dir = join(cmake_api_dir, "query")
+    cmake_api_reply_dir = join(cmake_api_dir, "reply")
+    query_file = join(cmake_api_query_dir, "codemodel-v2")
+
+    if not isfile(query_file):
+        makedirs(dirname(query_file))
+        open(query_file, "a").close()  # create an empty file
+
+    if not is_proper_idf_project():
+        create_default_project_files()
+
+    if is_cmake_reconfigure_required(cmake_api_reply_dir):
+        run_cmake(src_dir, build_dir, extra_args)
+
+    if not isdir(cmake_api_reply_dir) or not listdir(cmake_api_reply_dir):
+        sys.stderr.write("Error: Couldn't find CMake API response file\n")
+        env.Exit(1)
+
+    codemodel = {}
+    for target in listdir(cmake_api_reply_dir):
+        if target.startswith("codemodel-v2"):
+            with open(join(cmake_api_reply_dir, target), "r") as fp:
+                codemodel = json.load(fp)
+
+    assert codemodel["version"]["major"] == 2
+    return codemodel
+
+
+def populate_idf_env_vars(idf_env):
+    idf_env["IDF_PATH"] = platform.get_package_dir("framework-espidf")
+
+    additional_packages = [
+        join(platform.get_package_dir("toolchain-xtensa32"), "bin"),
+        join(platform.get_package_dir("toolchain-esp32ulp"), "bin"),
+        platform.get_package_dir("tool-ninja"),
+        join(platform.get_package_dir("tool-cmake"), "bin"),
+        dirname(where_is_program("python")),
+    ]
+
+    if "windows" in get_systype():
+        additional_packages.append(platform.get_package_dir("tool-mconf"))
+
+    idf_env["PATH"] = pathsep.join(additional_packages + [idf_env["PATH"]])
+
+
+def get_target_config(project_configs, target_index, cmake_api_reply_dir):
+    target_json = project_configs.get("targets")[target_index].get("jsonFile", "")
+    target_config_file = join(cmake_api_reply_dir, target_json)
+    if not isfile(target_config_file):
+        sys.stderr.write("Error: Couldn't find target config %s\n" % target_json)
+        env.Exit(1)
+
+    with open(target_config_file) as fp:
+        return json.load(fp)
+
+
+def load_target_configurations(cmake_codemodel, cmake_api_reply_dir):
+    configs = {}
+    project_configs = cmake_codemodel.get("configurations")[0]
+    for config in project_configs.get("projects", []):
+        for target_index in config.get("targetIndexes", []):
+            target_config = get_target_config(
+                project_configs, target_index, cmake_api_reply_dir
+            )
+            configs[target_config["name"]] = target_config
+
+    return configs
+
+
+def build_library(default_env, lib_config, project_src_dir, prepend_dir=None):
+    lib_name = lib_config["nameOnDisk"]
+    lib_path = lib_config["paths"]["build"]
+    if prepend_dir:
+        lib_path = join(prepend_dir, lib_path)
+    lib_objects = compile_source_files(
+        lib_config, default_env, project_src_dir, prepend_dir
+    )
+    return default_env.Library(
+        target=join("$BUILD_DIR", lib_path, lib_name), source=lib_objects
+    )
+
+
+def get_app_includes(app_config):
+    plain_includes = []
+    sys_includes = []
+    cg = app_config["compileGroups"][0]
+    for inc in cg.get("includes", []):
+        inc_path = inc["path"]
+        if inc.get("isSystem", False):
+            sys_includes.append(inc_path)
+        else:
+            plain_includes.append(inc_path)
+
+    return {"plain_includes": plain_includes, "sys_includes": sys_includes}
+
+
+def extract_defines(compile_group):
+    result = []
+    result.extend(
+        [
+            d.get("define").replace('"', '\\"').strip()
+            for d in compile_group.get("defines", [])
+        ]
+    )
+    for f in compile_group.get("compileCommandFragments", []):
+        if f.get("fragment", "").startswith("-D"):
+            result.append(f["fragment"][2:])
+    return result
+
+
+def get_app_defines(app_config):
+    return extract_defines(app_config["compileGroups"][0])
+
+
+def extract_link_args(target_config):
+    link_args = {"LINKFLAGS": [], "LIBS": [], "LIBPATH": [], "__LIB_DEPS": []}
+
+    for f in target_config.get("link", {}).get("commandFragments", []):
+        fragment = f.get("fragment", "").strip()
+        fragment_role = f.get("role", "").strip()
+        if not fragment or not fragment_role:
+            continue
+        args = click.parser.split_arg_string(fragment)
+        if fragment_role == "flags":
+            link_args["LINKFLAGS"].extend(args)
+        elif fragment_role == "libraries":
+            if fragment.startswith("-l"):
+                link_args["LIBS"].extend(args)
+            elif fragment.startswith("-L"):
+                lib_path = fragment.replace("-L", "").strip()
+                if lib_path not in link_args["LIBPATH"]:
+                    link_args["LIBPATH"].append(lib_path)
+            elif fragment.startswith("-") and not fragment.startswith("-l"):
+                # CMake mistakenly marks LINKFLAGS as libraries
+                link_args["LINKFLAGS"].extend(args)
+            elif isfile(fragment) and isabs(fragment):
+                # In case of precompiled archives from framework package
+                lib_path = dirname(fragment)
+                if lib_path not in link_args["LIBPATH"]:
+                    link_args["LIBPATH"].append(dirname(fragment))
+                link_args["LIBS"].extend(
+                    [basename(l) for l in args if l.endswith(".a")]
+                )
+            elif fragment.endswith(".a"):
+                link_args["__LIB_DEPS"].extend(
+                    [basename(l) for l in args if l.endswith(".a")]
+                )
+
+    return link_args
+
+
+def filter_args(args, allowed, ignore=None):
+    if not allowed:
+        return []
+
+    ignore = ignore or []
+    result = []
+    i = 0
+    length = len(args)
+    while i < length:
+        if any(args[i].startswith(f) for f in allowed) and not any(
+            args[i].startswith(f) for f in ignore
+        ):
+            result.append(args[i])
+            if i + 1 < length and not args[i + 1].startswith("-"):
+                i += 1
+                result.append(args[i])
+        i += 1
+    return result
+
+
+def get_app_flags(app_config):
+    app_flags = {}
+    for cg in app_config["compileGroups"]:
+        app_flags[cg["language"]] = []
+        for ccfragment in cg["compileCommandFragments"]:
+            fragment = ccfragment.get("fragment", "")
+            if not fragment.strip() or fragment.startswith("-D"):
+                continue
+            app_flags[cg["language"]].extend(
+                click.parser.split_arg_string(fragment.strip())
+            )
+
+    cflags = app_flags.get("C", [])
+    cxx_flags = app_flags.get("CXX", [])
+    ccflags = set(cflags).intersection(cxx_flags)
+
+    # Flags are sorted because CMake randomly populates build flags in code model
+    return {
+        "ASFLAGS": sorted(app_flags.get("ASM", [])),
+        "CFLAGS": sorted(list(set(cflags) - ccflags)),
+        "CCFLAGS": sorted(list(ccflags)),
+        "CXXFLAGS": sorted(list(set(cxx_flags) - ccflags)),
+    }
 
 
 def find_framework_service_files(search_path):
     result = {}
-    result['lf_files'] = list()
-    result['kconfig_files'] = list()
-    result['kconfig_build_files'] = list()
+    result["lf_files"] = list()
+    result["kconfig_files"] = list()
+    result["kconfig_build_files"] = list()
     for d in listdir(search_path):
         for f in listdir(join(search_path, d)):
             if f == "linker.lf":
-                result['lf_files'].append(join(search_path, d, f))
+                result["lf_files"].append(join(search_path, d, f))
             elif f == "Kconfig.projbuild":
-                result['kconfig_build_files'].append(join(search_path, d, f))
+                result["kconfig_build_files"].append(join(search_path, d, f))
             elif f == "Kconfig":
-                result['kconfig_files'].append(join(search_path, d, f))
+                result["kconfig_files"].append(join(search_path, d, f))
 
-    result['lf_files'].append(
-        join(FRAMEWORK_DIR, "components", "esp32", "ld", "esp32_fragments.lf"))
+    result["lf_files"].append(
+        join(FRAMEWORK_DIR, "components", "esp32", "ld", "esp32_fragments.lf")
+    )
 
     return result
 
 
-def generate_project_ld_script(target, source, env):
-    project_files = find_framework_service_files(
-        join(FRAMEWORK_DIR, "components"))
+def create_custom_libraries_list(orignial_ldgen_libraries_file, project_target_name):
+    if not isfile(orignial_ldgen_libraries_file):
+        sys.stderr.write("Error: Couldn't find the list of framework libraries\n")
+        env.Exit(1)
+
+    pio_libraries_file = orignial_ldgen_libraries_file + "_pio"
+
+    if isfile(pio_libraries_file):
+        return pio_libraries_file
+
+    lib_paths = []
+    with open(orignial_ldgen_libraries_file, "r") as fp:
+        lib_paths = fp.readlines()
+
+    with open(pio_libraries_file, "w") as fp:
+        for lib_path in lib_paths:
+            if "lib%s.a" % project_target_name.replace("__idf_", "") not in lib_path:
+                fp.write(lib_path)
+
+    return pio_libraries_file
+
+
+def generate_project_ld_script(project_target_name):
+    project_files = find_framework_service_files(join(FRAMEWORK_DIR, "components"))
+
+    # Create a new file to avoid automatically generated library entry as files from
+    # this library are built internally by PlatformIO
+    libraries_list = create_custom_libraries_list(
+        join(env.subst("$BUILD_DIR"), "ldgen_libraries"), project_target_name
+    )
 
     args = {
         "script": join(FRAMEWORK_DIR, "tools", "ldgen", "ldgen.py"),
-        "sections": source[0].get_path(),
-        "input": join(
-            FRAMEWORK_DIR, "components", "esp32", "ld", "esp32.project.ld.in"),
-        "sdk_header": join(env.subst("$PROJECT_SRC_DIR"), "sdkconfig.h"),
-        "fragments": " ".join(
-            ["\"%s\"" % f for f in project_files.get("lf_files")]),
-        "output": target[0].get_path(),
+        "config": join(env.subst("$PROJECT_DIR"), "sdkconfig"),
+        "fragments": " ".join(['"%s"' % f for f in project_files.get("lf_files")]),
         "kconfig": join(FRAMEWORK_DIR, "Kconfig"),
-        "kconfigs_projbuild": "COMPONENT_KCONFIGS_PROJBUILD=%s" % "#".join(
-            ["%s" % f for f in project_files.get("kconfig_build_files")]),
-        "kconfig_files": "COMPONENT_KCONFIGS=%s" % "#".join(
-            ["%s" % f for f in project_files.get("kconfig_files")]),
+        "env_file": join("$BUILD_DIR", "config.env"),
+        "libraries_list": libraries_list,
+        "objdump": join(
+            platform.get_package_dir("toolchain-xtensa32"),
+            "bin",
+            env.subst("$CC").replace("-gcc", "-objdump"),
+        ),
     }
 
-    cmd = ('"$PYTHONEXE" "{script}" --sections "{sections}" --input "{input}" '
-        '--config "{sdk_header}" --fragments {fragments} --output "{output}" '
-        '--kconfig "{kconfig}" --env "{kconfigs_projbuild}" '
-        '--env "{kconfig_files}" --env "IDF_CMAKE=n" --env "IFS=#" '
-        '--env "IDF_TARGET=\\\"esp32\\\""').format(**args)
+    cmd = (
+        '"$PYTHONEXE" "{script}" --input $SOURCE '
+        '--config "{config}" --fragments {fragments} --output $TARGET '
+        '--kconfig "{kconfig}" --env-file "{env_file}" '
+        '--libraries-file "{libraries_list}" '
+        '--objdump "{objdump}"'
+    ).format(**args)
 
-    env.Execute(cmd)
-
-
-def build_arduino_framework():
-    core = env.BoardConfig().get("build.core")
-
-    env.Append(
-        CPPDEFINES=[
-            ("ARDUINO", 10805),
-            ("ARDUINO_ARCH_ESP32", 1),
-            ("ARDUINO_BOARD", '\\"%s\\"' % env.BoardConfig().get("name").replace('"', ""))
-        ],
-
-        CPPPATH=[
-            join(ARDUINO_FRAMEWORK_DIR, "cores", core)
-        ]
-    )
-
-    arduino_libs = []
-    if "build.variant" in env.BoardConfig():
-        variant = env.BoardConfig().get("build.variant")
-        env.Append(
-            CPPDEFINES=[
-                ("ARDUINO_VARIANT", '\\"%s\\"' % variant.replace('"', ""))
-            ],
-
-            CPPPATH=[
-                join(ARDUINO_FRAMEWORK_DIR, "variants", variant)
-            ]
-        )
-        arduino_libs.append(env.BuildLibrary(
-            join("$BUILD_DIR", "FrameworkArduinoVariant"),
-            join(ARDUINO_FRAMEWORK_DIR, "variants", variant)
-        ))
-
-    arduino_libs.append(env.BuildLibrary(
-        join("$BUILD_DIR", "FrameworkArduino"),
-        join(ARDUINO_FRAMEWORK_DIR, "cores", core)
-    ))
-
-    env.Append(
-        LIBSOURCE_DIRS=[
-            join(ARDUINO_FRAMEWORK_DIR, "libraries")
-        ],
-
-        LIBS=arduino_libs
+    return env.Command(
+        join("$BUILD_DIR", "esp32.project.ld"),
+        join(FRAMEWORK_DIR, "components", "esp32", "ld", "esp32.project.ld.in"),
+        env.VerboseAction(cmd, "Generating project linker script $TARGET"),
     )
 
 
-def configure_exceptions(sdk_params):
-    # Exceptions might be configured using a special PIO macro or
-    # directly in sdkconfig.h
-    cppdefines = env.Flatten(env.get("CPPDEFINES", []))
-    pio_exceptions = "PIO_FRAMEWORK_ESP_IDF_ENABLE_EXCEPTIONS" in cppdefines
-    config_exceptions = is_set("CONFIG_CXX_EXCEPTIONS", sdk_params)
+def prepare_build_envs(config, default_env):
+    build_envs = []
+    target_compile_groups = config.get("compileGroups")
+    is_build_type_debug = (
+        set(["debug", "sizedata"]) & set(COMMAND_LINE_TARGETS)
+        or default_env.GetProjectOption("build_type") == "debug"
+    )
 
-    if pio_exceptions or config_exceptions:
-        # remove unnecessary flag defined in main.py that disables exceptions
-        try:
-            env['CXXFLAGS'].remove("-fno-exceptions")
-        except ValueError:
-            pass
+    for cg in target_compile_groups:
+        includes = []
+        sys_includes = []
+        for inc in cg.get("includes", []):
+            inc_path = inc["path"]
+            if inc.get("isSystem", False):
+                sys_includes.append(inc_path)
+            else:
+                includes.append(inc_path)
 
-        env.Append(CXXFLAGS=["-fexceptions"])
+        defines = extract_defines(cg)
+        compile_commands = cg.get("compileCommandFragments", [])
+        build_env = default_env.Clone()
+        for cc in compile_commands:
+            build_flags = cc.get("fragment")
+            if not build_flags.startswith("-D"):
+                build_env.AppendUnique(**build_env.ParseFlags(build_flags))
+        build_env.AppendUnique(CPPDEFINES=defines, CPPPATH=includes)
+        if sys_includes:
+            build_env.Append(CCFLAGS=[("-isystem", inc) for inc in sys_includes])
+        build_env.Append(ASFLAGS=build_env.get("CCFLAGS", [])[:])
+        build_env.ProcessUnFlags(default_env.get("BUILD_UNFLAGS"))
+        if is_build_type_debug:
+            build_env.ConfigureDebugFlags()
+        build_envs.append(build_env)
 
-        if pio_exceptions:
-            env.Append(
-                CPPDEFINES=[
-                    ("CONFIG_CXX_EXCEPTIONS", 1),
-                    ("CONFIG_CXX_EXCEPTIONS_EMG_POOL_SIZE", 0)
-                ]
+    return build_envs
+
+
+def compile_source_files(config, default_env, project_src_dir, prepend_dir=None):
+    build_envs = prepare_build_envs(config, default_env)
+    objects = []
+    for source in config.get("sources", []):
+        if source["path"].endswith(".rule"):
+            continue
+        compile_group_idx = source.get("compileGroupIndex")
+        if compile_group_idx is not None:
+            src_path = source.get("path")
+            if not isabs(src_path):
+                # For cases when sources are located near CMakeLists.txt
+                src_path = join(project_src_dir, src_path)
+            local_path = config["paths"]["source"]
+            if not isabs(local_path):
+                local_path = join(project_src_dir, config["paths"]["source"])
+            obj_path = join("$BUILD_DIR", prepend_dir or "", config["paths"]["build"])
+            objects.append(
+                build_envs[compile_group_idx].StaticObject(
+                    target=join(obj_path, relpath(src_path, local_path) + ".o"),
+                    source=realpath(src_path),
+                )
             )
-    else:
-        env.Append(LINKFLAGS=["-u", "__cxx_fatal_exception"])
+
+    return objects
 
 
-env.Prepend(
-    CPPPATH=[
-        join(FRAMEWORK_DIR, "components", "app_trace", "include"),
-        join(FRAMEWORK_DIR, "components", "app_update", "include"),
-        join(FRAMEWORK_DIR, "components", "asio", "asio", "asio", "include"),
-        join(FRAMEWORK_DIR, "components", "asio", "port", "include"),
-        join(FRAMEWORK_DIR, "components", "aws_iot", "include"),
-        join(FRAMEWORK_DIR, "components", "aws_iot",
-             "aws-iot-device-sdk-embedded-C", "include"),
-        join(FRAMEWORK_DIR, "components", "bootloader_support", "include"),
-        join(FRAMEWORK_DIR, "components", "bootloader_support", "include_bootloader"),
-        join(FRAMEWORK_DIR, "components", "bt", "include"),
-        join(FRAMEWORK_DIR, "components", "bt", "bluedroid", "api", "include", "api"),
-        join(FRAMEWORK_DIR, "components", "coap", "port", "include"),
-        join(FRAMEWORK_DIR, "components", "coap", "port", "include", "coap"),
-        join(FRAMEWORK_DIR, "components", "coap", "libcoap", "include"),
-        join(FRAMEWORK_DIR, "components", "coap",
-             "libcoap", "include", "coap"),
-        join(FRAMEWORK_DIR, "components", "console"),
-        join(FRAMEWORK_DIR, "components", "driver", "include"),
-        join(FRAMEWORK_DIR, "components", "efuse", "include"),
-        join(FRAMEWORK_DIR, "components", "efuse", "esp32", "include"),
-        join(FRAMEWORK_DIR, "components", "esp-tls"),
-        join(FRAMEWORK_DIR, "components", "esp_adc_cal", "include"),
-        join(FRAMEWORK_DIR, "components", "esp_event", "include"),
-        join(FRAMEWORK_DIR, "components", "esp_http_client", "include"),
-        join(FRAMEWORK_DIR, "components", "esp_http_server", "include"),
-        join(FRAMEWORK_DIR, "components", "esp_https_server", "include"),
-        join(FRAMEWORK_DIR, "components", "esp_https_ota", "include"),
-        join(FRAMEWORK_DIR, "components", "esp_ringbuf", "include"),
-        join(FRAMEWORK_DIR, "components", "esp32", "include"),
-        join(FRAMEWORK_DIR, "components", "espcoredump", "include"),
-        join(FRAMEWORK_DIR, "components", "ethernet", "include"),
-        join(FRAMEWORK_DIR, "components", "expat", "expat", "lib"),
-        join(FRAMEWORK_DIR, "components", "expat", "port", "include"),
-        join(FRAMEWORK_DIR, "components", "fatfs", "src"),
-        join(FRAMEWORK_DIR, "components", "freemodbus", "modbus", "include"),
-        join(FRAMEWORK_DIR, "components", "freemodbus", "modbus_controller"),
-        join(FRAMEWORK_DIR, "components", "freertos", "include"),
-        join(FRAMEWORK_DIR, "components", "heap", "include"),
-        join(FRAMEWORK_DIR, "components", "jsmn", "include"),
-        join(FRAMEWORK_DIR, "components", "json", "cJSON"),
-        join(FRAMEWORK_DIR, "components", "libsodium", "libsodium", "src",
-             "libsodium", "include"),
-        join(FRAMEWORK_DIR, "components", "libsodium", "port_include"),
-        join(FRAMEWORK_DIR, "components", "log", "include"),
-        join(FRAMEWORK_DIR, "components", "lwip", "include", "apps"),
-        join(FRAMEWORK_DIR, "components", "lwip", "lwip", "src", "include"),
-        join(FRAMEWORK_DIR, "components", "lwip", "port", "esp32", "include"),
-        join(FRAMEWORK_DIR, "components", "lwip", "port", "esp32", "include", "arch"),
-        join(FRAMEWORK_DIR, "components", "include_compat"),
-        join("$PROJECT_SRC_DIR"),
-        join(FRAMEWORK_DIR, "components", "mbedtls", "port", "include"),
-        join(FRAMEWORK_DIR, "components", "mbedtls", "mbedtls", "include"),
-        join(FRAMEWORK_DIR, "components", "mdns", "include"),
-        join(FRAMEWORK_DIR, "components", "micro-ecc", "micro-ecc"),
-        join(FRAMEWORK_DIR, "components", "mqtt", "esp-mqtt", "include"),
-        join(FRAMEWORK_DIR, "components", "nghttp", "nghttp2", "lib", "includes"),
-        join(FRAMEWORK_DIR, "components", "nghttp", "port", "include"),
-        join(FRAMEWORK_DIR, "components", "newlib", "platform_include"),
-        join(FRAMEWORK_DIR, "components", "newlib", "include"),
-        join(FRAMEWORK_DIR, "components", "nvs_flash", "include"),
-        join(FRAMEWORK_DIR, "components", "openssl", "include"),
-        join(FRAMEWORK_DIR, "components", "protobuf-c", "protobuf-c"),
-        join(FRAMEWORK_DIR, "components", "protocomm", "include", "common"),
-        join(FRAMEWORK_DIR, "components", "protocomm", "include", "security"),
-        join(FRAMEWORK_DIR, "components", "protocomm", "include", "transports"),
-        join(FRAMEWORK_DIR, "components", "pthread", "include"),
-        join(FRAMEWORK_DIR, "components", "sdmmc", "include"),
-        join(FRAMEWORK_DIR, "components", "smartconfig_ack", "include"),
-        join(FRAMEWORK_DIR, "components", "soc", "esp32", "include"),
-        join(FRAMEWORK_DIR, "components", "soc", "include"),
-        join(FRAMEWORK_DIR, "components", "spi_flash", "include"),
-        join(FRAMEWORK_DIR, "components", "spiffs", "include"),
-        join(FRAMEWORK_DIR, "components", "tcp_transport", "include"),
-        join(FRAMEWORK_DIR, "components", "tcpip_adapter", "include"),
-        join(FRAMEWORK_DIR, "components", "unity", "include"),
-        join(FRAMEWORK_DIR, "components", "unity", "unity", "src"),
-        join(FRAMEWORK_DIR, "components", "ulp", "include"),
-        join(FRAMEWORK_DIR, "components", "vfs", "include"),
-        join(FRAMEWORK_DIR, "components", "wear_levelling", "include"),
-        join(FRAMEWORK_DIR, "components", "wifi_provisioning", "include"),
-        join(FRAMEWORK_DIR, "components", "wpa_supplicant", "include"),
-        join(FRAMEWORK_DIR, "components", "wpa_supplicant", "port", "include"),
-        join(FRAMEWORK_DIR, "components", "xtensa-debug-module", "include")
-    ],
+def run_tool(cmd):
+    idf_env = environ.copy()
+    populate_idf_env_vars(idf_env)
 
-    LIBPATH=[
-        join(FRAMEWORK_DIR, "components", "esp32"),
-        join(FRAMEWORK_DIR, "components", "esp32", "ld"),
-        join(FRAMEWORK_DIR, "components", "esp32", "ld", "wifi_iram_opt"),
-        join(FRAMEWORK_DIR, "components", "esp32", "lib"),
-        join(FRAMEWORK_DIR, "components", "bt", "lib"),
-        join(FRAMEWORK_DIR, "components", "newlib", "lib"),
-        "$BUILD_DIR"
-    ],
+    result = exec_command(cmd, env=idf_env)
+    if result["returncode"] != 0:
+        sys.stderr.write(result["out"] + "\n")
+        sys.stderr.write(result["err"] + "\n")
+        env.Exit(1)
 
-    LIBS=[
-        "btdm_app", "hal", "coexist", "core", "net80211", "phy", "rtc", "pp",
-        "wpa", "wpa2", "espnow", "wps", "smartconfig", "mesh", "c", "m",
-        "gcc", "stdc++"
-    ]
-)
+    if int(ARGUMENTS.get("PIOVERBOSE", 0)):
+        print(result["out"])
+        print(result["err"])
 
-for root, dirs, _ in walk(join(
-        FRAMEWORK_DIR, "components", "bt", "bluedroid")):
-    for d in dirs:
-        if (d == "include"):
-            env.Prepend(CPPPATH=[join(root, d)])
 
-env.Prepend(
-    CFLAGS=["-Wno-old-style-declaration"],
+def RunMenuconfig(target, source, env):
+    idf_env = environ.copy()
+    populate_idf_env_vars(idf_env)
 
-    CPPDEFINES=[
-        "WITH_POSIX",
-        "UNITY_INCLUDE_CONFIG_H",
-        ("IDF_VER", '\\"%s\\"' %
-         platform.get_package_version("framework-espidf"))
-
-    ],
-
-    CCFLAGS=[
-        "-Werror=all",
-        "-Wno-error=deprecated-declarations",
-        "-Wextra",
-        "-Wno-unused-parameter",
-        "-Wno-sign-compare",
-        "-Wno-error=unused-function"
-    ],
-
-    LIBSOURCE_DIRS=[join(FRAMEWORK_DIR, "libraries")]
-)
-
-env.Append(
-    LINKFLAGS=[
-        "-u", "__cxa_guard_dummy",
-        "-u", "esp_app_desc",
-        "-u", "ld_include_panic_highint_hdl",
-        "-T", "esp32.project.ld",
-        "-T", "esp32.rom.ld",
-        "-T", "esp32.peripherals.ld",
-        "-T", "esp32.rom.libgcc.ld",
-        "-T", "esp32.rom.spiram_incompatible_fns.ld"
-    ],
-
-    FLASH_EXTRA_IMAGES=[
-        ("0x1000", join("$BUILD_DIR", "bootloader.bin")),
-        ("0x8000", join("$BUILD_DIR", "partitions.bin"))
-    ],
-
-    CPPDEFINES=[
-        ("GCC_NOT_5_2_0", "%d" % 1 if get_toolchain_version() != "5.2.0" else 0)
-    ]
-)
-
-cppdefines = env.Flatten(env.get("CPPDEFINES", []))
-
-if "PROJECT_NAME" not in cppdefines:
-    env.Append(
-        CPPDEFINES=[
-            ("PROJECT_NAME", '\\"%s\\"' % basename(env.subst("$PROJECT_DIR")))
-        ]
+    rc = subprocess.call(
+        [
+            join(platform.get_package_dir("tool-cmake"), "bin", "cmake"),
+            "--build",
+            env.subst("$BUILD_DIR"),
+            "--target",
+            "menuconfig",
+        ],
+        env=idf_env,
     )
 
-if "PROJECT_VER" not in cppdefines:
-    env.Append(CPPDEFINES=[("PROJECT_VER", '\\"%s\\"' % "1.0.0")])
+    if rc != 0:
+        sys.stderr.write("Error: Couldn't execute 'menuconfig' target.\n")
+        env.Exit(1)
+
+
+def run_cmake(src_dir, build_dir, extra_args=None):
+    cmd = [
+        join(platform.get_package_dir("tool-cmake") or "", "bin", "cmake"),
+        "-S",
+        src_dir,
+        "-B",
+        build_dir,
+        "-G",
+        "Ninja",
+    ]
+
+    if extra_args:
+        cmd.extend(extra_args)
+
+    run_tool(cmd)
+
+
+def find_lib_deps(components_map, elf_config, link_args, ignore_components=None):
+    ignore_components = ignore_components or []
+    result = [
+        components_map[d["id"]]["lib"]
+        for d in elf_config.get("dependencies", [])
+        if components_map.get(d["id"], {})
+        and not d["id"].startswith(tuple(ignore_components))
+    ]
+
+    implicit_lib_deps = link_args.get("__LIB_DEPS", [])
+    for component in components_map.values():
+        component_config = component["config"]
+        if (
+            component_config["type"] not in ("STATIC_LIBRARY", "OBJECT_LIBRARY")
+            or component_config["name"] in ignore_components
+        ):
+            continue
+        if (
+            component_config["nameOnDisk"] in implicit_lib_deps
+            and component["lib"] not in result
+        ):
+            result.append(component["lib"])
+
+    return result
+
+
+def build_bootloader():
+    bootloader_src_dir = join(FRAMEWORK_DIR, "components", "bootloader", "subproject")
+    code_model = get_cmake_code_model(
+        bootloader_src_dir,
+        join(BUILD_DIR, "bootloader"),
+        [
+            "-DIDF_TARGET=esp32",
+            "-DPYTHON_DEPS_CHECKED=1",
+            "-DIDF_PATH=" + platform.get_package_dir("framework-espidf"),
+            "-DSDKCONFIG=" + join(env.subst("$PROJECT_DIR"), "sdkconfig"),
+            "-DEXTRA_COMPONENT_DIRS=" + join(FRAMEWORK_DIR, "components", "bootloader"),
+        ],
+    )
+
+    if not code_model:
+        sys.stderr.write("Error: Couldn't find code model for bootloader\n")
+        env.Exit(1)
+
+    target_configs = load_target_configurations(
+        code_model, join(BUILD_DIR, "bootloader", CMAKE_API_REPLY_PATH)
+    )
+
+    elf_config = get_project_elf(target_configs)
+    if not elf_config:
+        sys.stderr.write(
+            "Error: Couldn't load the main firmware target of the project\n"
+        )
+        env.Exit(1)
+
+    bootloader_env = env.Clone()
+    components_map = get_components_map(
+        target_configs, ["STATIC_LIBRARY", "OBJECT_LIBRARY"]
+    )
+
+    build_components(bootloader_env, components_map, bootloader_src_dir, "bootloader")
+    link_args = extract_link_args(elf_config)
+    extra_flags = filter_args(link_args["LINKFLAGS"], ["-T", "-u"])
+    link_args["LINKFLAGS"] = sorted(
+        list(set(link_args["LINKFLAGS"]) - set(extra_flags))
+    )
+
+    bootloader_env.MergeFlags(link_args)
+    bootloader_env.Append(LINKFLAGS=extra_flags)
+    bootloader_libs = find_lib_deps(components_map, elf_config, link_args)
+
+    bootloader_env.Prepend(__RPATH="-Wl,--start-group ")
+    bootloader_env.Append(
+        CPPDEFINES=["__BOOTLOADER_BUILD"], _LIBDIRFLAGS=" -Wl,--end-group"
+    )
+
+    return bootloader_env.ElfToBin(
+        join("$BUILD_DIR", "bootloader"),
+        bootloader_env.Program(join("$BUILD_DIR", "bootloader.elf"), bootloader_libs),
+    )
+
+
+def get_targets_by_type(target_configs, target_types, ignore_targets=None):
+    ignore_targets = ignore_targets or []
+    result = []
+    for target_config in target_configs.values():
+        if (
+            target_config["type"] in target_types
+            and target_config["name"] not in ignore_targets
+        ):
+            result.append(target_config)
+
+    return result
+
+
+def get_components_map(target_configs, target_types, ignore_components=None):
+    result = {}
+    for config in get_targets_by_type(target_configs, target_types, ignore_components):
+        result[config["id"]] = {"config": config}
+
+    return result
+
+
+def build_components(env, components_map, project_src_dir, prepend_dir=None):
+    for k, v in components_map.items():
+        components_map[k]["lib"] = build_library(
+            env, v["config"], project_src_dir, prepend_dir
+        )
+
+
+def get_project_elf(target_configs):
+    exec_targets = get_targets_by_type(target_configs, ["EXECUTABLE"])
+    if len(exec_targets) > 1:
+        print(
+            "Warning: Multiple elf targets found. The %s will be used!"
+            % exec_targets[0]["name"]
+        )
+
+    return exec_targets[0]
+
 
 #
-# ESP-IDF doesn't need assembler-with-cpp option
+# Generate final linker script
 #
 
-env.Replace(ASFLAGS=[])
+if not env.BoardConfig().get("build.ldscript", ""):
+    linker_script = env.Command(
+        join("$BUILD_DIR", "esp32_out.ld"),
+        env.BoardConfig().get(
+            "build.esp-idf.ldscript",
+            join(FRAMEWORK_DIR, "components", "esp32", "ld", "esp32.ld"),
+        ),
+        env.VerboseAction(
+            '$CC -I"$BUILD_DIR/config" -C -P -x  c -E $SOURCE -o $TARGET',
+            "Generating LD script $TARGET",
+        ),
+    )
 
-#
-# Handle missing sdkconfig files
-#
-
-
-def process_project_configs(filename):
-    config = join(env.subst("$PROJECT_SRC_DIR"), filename)
-    if not isfile(config):
-        print("Warning! Cannot find %s file. Default "
-              "file will be added to your project!" % filename)
-        copy(find_valid_example_file(filename), config)
-    else:
-        is_new = False
-        with open(config) as fp:
-            for l in fp.readlines():
-                if "CONFIG_APP_COMPILE_TIME_DATE" in l:
-                    is_new = True
-                    break
-
-        if not is_new:
-            print("Warning! Detected an outdated %s file. The old "
-                  "file will be replaced by the new one." % filename)
-
-            new_config = find_valid_example_file(filename)
-            copy(config, join(
-                env.subst("$PROJECT_SRC_DIR"), "%s.bak" % filename))
-            copy(new_config, config)
-
-
-process_project_configs("sdkconfig")
-sdk_config = join(env.subst("$PROJECT_SRC_DIR"), "sdkconfig")
-
-process_project_configs("sdkconfig.h")
-sdk_config_header = join(env.subst("$PROJECT_SRC_DIR"), "sdkconfig.h")
-sdk_params = get_sdk_configuration(sdk_config_header)
-
-configure_exceptions(sdk_params)
+    env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", linker_script)
+    env.Replace(LDSCRIPT_PATH="esp32_out.ld")
 
 #
 # Generate partition table
 #
 
 fwpartitions_dir = join(FRAMEWORK_DIR, "components", "partition_table")
-partitions_csv = env.BoardConfig().get("build.partitions",
-                                       "partitions_singleapp.csv")
+partitions_csv = env.BoardConfig().get("build.partitions", "partitions_singleapp.csv")
 env.Replace(
     PARTITIONS_TABLE_CSV=abspath(
-        join(fwpartitions_dir, partitions_csv) if isfile(
-            join(fwpartitions_dir, partitions_csv)) else partitions_csv))
+        join(fwpartitions_dir, partitions_csv)
+        if isfile(join(fwpartitions_dir, partitions_csv))
+        else partitions_csv
+    )
+)
 
 partition_table = env.Command(
-    join("$BUILD_DIR", "partitions.bin"), "$PARTITIONS_TABLE_CSV",
+    join("$BUILD_DIR", "partitions.bin"),
+    "$PARTITIONS_TABLE_CSV",
     env.VerboseAction(
-        '"$PYTHONEXE" "%s" -q --flash-size "%s" $SOURCE $TARGET' % (join(
-            FRAMEWORK_DIR, "components",
-            "partition_table", "gen_esp32part.py"), env.BoardConfig().get(
-                "upload.flash_size", "detect")),
-        "Generating partitions $TARGET"))
-
+        '"$PYTHONEXE" "%s" -q --flash-size "%s" $SOURCE $TARGET'
+        % (
+            join(FRAMEWORK_DIR, "components", "partition_table", "gen_esp32part.py"),
+            env.BoardConfig().get("upload.flash_size", "detect"),
+        ),
+        "Generating partitions $TARGET",
+    ),
+)
 
 env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", partition_table)
 
 #
-# Generate linker script
+# Current build script limitations
 #
 
-if not env.BoardConfig().get("build.ldscript", ""):
-    linker_script = env.Command(
-        join("$BUILD_DIR", "esp32_out.ld"),
-        env.BoardConfig().get("build.esp-idf.ldscript", join(
-            FRAMEWORK_DIR, "components", "esp32", "ld", "esp32.ld")),
-        env.VerboseAction(
-            '$CC -I"$PROJECTSRC_DIR" -C -P -x  c -E $SOURCE -o $TARGET',
-            "Generating LD script $TARGET"))
+if any(" " in p for p in (FRAMEWORK_DIR, BUILD_DIR)):
+    sys.stderr.write("Error: Detected a whitespace character in project paths.\n")
+    env.Exit(1)
 
-    env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", linker_script)
-    env.Replace(LDSCRIPT_PATH="esp32_out.ld")
+
+if env.subst("$SRC_FILTER"):
+    sys.stderr.write(
+        (
+            "Error: the 'src_filter' option cannot be used with ESP-IDF. Select source "
+            "files to build in the project CMakeLists.txt file.\n"
+        )
+    )
+    env.Exit(1)
+
+if isfile(join(env.subst("$PROJECT_SRC_DIR"), "sdkconfig.h")):
+    print(
+        "Warning! Starting with ESP-IDF v4.0, new project structure is required: \n"
+        "https://docs.platformio.org/en/latest/frameworks/espidf.html#project-structure"
+    )
+
+#
+# Initial targets loading
+#
+
+# By default 'main' folder is used to store source files. In case when a user has
+# default 'src' folder we need to add this as an extra component. If there is no 'main'
+# folder CMake won't generate dependencies properly
+
+extra_components = []
+if env.subst("$PROJECT_SRC_DIR") != join(env.subst("$PROJECT_DIR"), "main"):
+    extra_components = [env.subst("$PROJECT_SRC_DIR")]
+    if "arduino" in env.subst("$PIOFRAMEWORK"):
+        extra_components.append(ARDUINO_FRAMEWORK_DIR)
+
+print("Reading CMake configuration...")
+project_codemodel = get_cmake_code_model(
+    env.subst("$PROJECT_DIR"),
+    BUILD_DIR,
+    ["-DEXTRA_COMPONENT_DIRS:PATH=" + ";".join(extra_components)]
+    if extra_components
+    else [],
+)
+
+if not project_codemodel:
+    sys.stderr.write("Error: Couldn't find code model generated by CMake\n")
+    env.Exit(1)
+
+target_configs = load_target_configurations(
+    project_codemodel, join(BUILD_DIR, CMAKE_API_REPLY_PATH)
+)
+
+if all(t in target_configs for t in ("__idf_src", "__idf_main")):
+    sys.stderr.write(
+        (
+            "Warning! Detected two different targets with project sources. Please use "
+            "either 'src' or specify 'main' folder in 'platformio.ini' file.\n"
+        )
+    )
+    env.Exit(1)
+
+
+project_target_name = "__idf_main" if "__idf_main" in target_configs else "__idf_src"
+if project_target_name not in target_configs:
+    sys.stderr.write("Error: Couldn't find the main target of the project!\n")
+    env.Exit(1)
+
+project_ld_scipt = generate_project_ld_script(project_target_name)
+env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", project_ld_scipt)
+
+elf_config = get_project_elf(target_configs)
+framework_components_map = get_components_map(
+    target_configs, ["STATIC_LIBRARY", "OBJECT_LIBRARY"], [project_target_name]
+)
+
+build_components(env, framework_components_map, env.subst("$PROJECT_DIR"))
+
+if not elf_config:
+    sys.stderr.write("Error: Couldn't load the main firmware target of the project\n")
+    env.Exit(1)
+
+for component_config in framework_components_map.values():
+    env.Depends(project_ld_scipt, component_config["lib"])
+
+project_config = target_configs.get(project_target_name, {})
+project_includes = get_app_includes(project_config)
+project_defines = get_app_defines(project_config)
+project_flags = get_app_flags(project_config)
+link_args = extract_link_args(elf_config)
+
+app_includes = get_app_includes(elf_config)
 
 #
 # Compile bootloader
 #
 
-env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", env.ElfToBin(
-    join("$BUILD_DIR", "bootloader"), build_espidf_bootloader()))
+env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", build_bootloader())
 
 #
-# Target: Build Core Library
+# Target: ESP-IDF menuconfig
 #
 
-libs = []
-
-ignore_dirs = (
-    "bootloader",
-    "esptool_py",
-    "idf_test",
-    "partition_table"
-)
-
-special_src_filter = {
-    "app_trace": "+<*> -<test> -<sys_view> -<gcov>",
-    "asio": "-<*> +<asio/asio/src/asio.cpp>",
-    "aws_iot": "-<*> +<port> +<aws-iot-device-sdk-embedded-C/src>",
-    "esp32": "-<*> +<*.[sSc]*> +<hwcrypto>",
-    "bootloader_support": "+<*> -<test> -<src/bootloader_init.c>",
-    "soc": "+<*> -<test> -<esp32/test>",
-    "spi_flash": "+<*> -<test*> -<sim>",
-    "efuse": "+<*> -<test*>",
-    "unity": "-<*> +<unity/src> +<*.c>"
-}
-
-special_env = (
-    "freertos",
-    "heap",
-    "lwip",
-    "protocomm",
-    "libsodium",
-    "wpa_supplicant",
-    "wifi_provisioning"
-)
-
-for d in listdir(join(FRAMEWORK_DIR, "components")):
-    if d in special_src_filter or d in special_env or d in ignore_dirs:
-        continue
-    component_dir = join(FRAMEWORK_DIR, "components", d)
-    if isdir(component_dir):
-        libs.append(build_component(
-            component_dir, extract_component_config(component_dir)))
-
-
-for component, src_filter in special_src_filter.items():
-    config = {"src_filter": src_filter}
-    libs.append(
-        build_component(
-            join(FRAMEWORK_DIR, "components", component), config))
-
-libs.extend((
-    build_lwip_lib(sdk_params),
-    build_protocomm_lib(sdk_params),
-    build_heap_lib(sdk_params),
-    build_rtos_lib(),
-    build_libsodium_lib(),
-    build_wpa_supplicant_lib(),
-    build_wifi_provisioning_lib()
-))
-
-project_sections = env.Command(
-    join("$BUILD_DIR", "ldgen.section_infos"), libs, generate_section_info)
-
-project_linker_script = env.Command(
-    join("$BUILD_DIR", "esp32.project.ld"),
-    project_sections, generate_project_ld_script,
-    ENV={"PYTHONPATH": join(FRAMEWORK_DIR, "platformio", "package_deps",
-                            "py%d" % sys.version_info.major)})
-
-env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", project_linker_script)
-
-if ulp_lib:
-    if not is_ulp_enabled(sdk_params):
-        print("Warning! ULP is not properly configured."
-              "Add next configuration lines to your sdkconfig.h:")
-        print ("    #define CONFIG_ULP_COPROC_ENABLED 1")
-        print ("    #define CONFIG_ULP_COPROC_RESERVE_MEM 1024")
-
-    libs.append(ulp_lib)
-    env.Append(
-        CPPPATH=[join("$BUILD_DIR", "ulp_app")],
-        LIBPATH=[join("$BUILD_DIR", "ulp_app")],
-        LINKFLAGS=["-T", "ulp_main.ld"]
+AlwaysBuild(
+    env.Alias(
+        "menuconfig", None, [env.VerboseAction(RunMenuconfig, "Running menuconfig...")]
     )
+)
 
 #
-# Process Arduino core
+# Process main parts of the framework
 #
 
-if "arduino" in env.subst("$PIOFRAMEWORK"):
-    if is_arduino_enabled(sdk_params):
-        build_arduino_framework()
-    else:
-        print("Warning! Arduino support is not properly configured. "
-              "Add the next configuration lines to your sdkconfig.h:")
-        print ("    #define CONFIG_ENABLE_ARDUINO_DEPENDS 1")
-        print ("    #define CONFIG_AUTOSTART_ARDUINO 1")
-        print ("    #define CONFIG_ARDUINO_RUNNING_CORE 1")
-        print ("    #define CONFIG_ARDUINO_UDP_RUN_CORE1 1")
-        print ("    #define CONFIG_ARDUINO_EVENT_RUN_CORE1 1")
-        print ("    #define CONFIG_ARDUINO_EVENT_RUNNING_CORE 1")
-        print ("    #define CONFIG_ARDUINO_UDP_RUNNING_CORE 1")
+libs = find_lib_deps(
+    framework_components_map, elf_config, link_args, [project_target_name]
+)
 
-env.Prepend(LIBS=libs)
+# Extra flags which need to be explicitly specified in LINKFLAGS section because SCons
+# cannot merge them correctly
+extra_flags = filter_args(link_args["LINKFLAGS"], ["-T", "-u"])
+link_args["LINKFLAGS"] = sorted(list(set(link_args["LINKFLAGS"]) - set(extra_flags)))
+
+# remove the main linker script flags '-T esp32_out.ld'
+try:
+    ld_index = extra_flags.index("esp32_out.ld")
+    extra_flags.pop(ld_index)
+    extra_flags.pop(ld_index - 1)
+except:
+    print("Warning! Couldn't find the main linker script in the CMake code model.")
+
+envsafe = env.Clone()
+if project_target_name != "__idf_main":
+    # Manually add dependencies to CPPPATH since ESP-IDF build system doesn't generate
+    # this info if the folder with sources is not named 'main'
+    # https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/build-system.html#rename-main
+    envsafe.AppendUnique(CPPPATH=app_includes["plain_includes"])
+
+# Add default include dirs to global CPPPATH so they're visible to PIOBUILDFILES
+envsafe.Append(CPPPATH=["$PROJECT_INCLUDE_DIR", "$PROJECT_SRC_DIR"])
+
+env.Replace(SRC_FILTER="-<*>")
+env.Append(
+    PIOBUILDFILES=compile_source_files(
+        target_configs.get(project_target_name), envsafe, envsafe.subst("$PROJECT_DIR")
+    )
+)
+
+project_flags.update(link_args)
+env.MergeFlags(project_flags)
+env.Prepend(
+    CPPPATH=app_includes["plain_includes"],
+    LINKFLAGS=extra_flags,
+    LIBS=libs,
+    FLASH_EXTRA_IMAGES=[
+        ("0x1000", join("$BUILD_DIR", "bootloader.bin")),
+        ("0x8000", join("$BUILD_DIR", "partitions.bin")),
+    ],
+)
+
+#
+# To embed firmware checksum a special argument for esptool.py is required
+#
+
+action = copy.deepcopy(env["BUILDERS"]["ElfToBin"].action)
+action.cmd_list = env["BUILDERS"]["ElfToBin"].action.cmd_list.replace(
+    "-o", "--elf-sha256-offset 0xb0 -o")
+env["BUILDERS"]["ElfToBin"].action = action
+
+#
+# Compile ULP sources in 'ulp' folder
+#
+
+ulp_dir = join(env.subst("$PROJECT_DIR"), "ulp")
+if isdir(ulp_dir) and listdir(ulp_dir):
+    env.SConscript("ulp.py", exports="env project_config")

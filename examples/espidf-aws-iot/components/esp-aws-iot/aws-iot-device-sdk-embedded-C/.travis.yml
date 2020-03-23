@@ -1,0 +1,66 @@
+language: c
+
+# Get Coverity certificate.
+before_install:
+  - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
+
+# Coverity configuration.
+addons:
+  coverity_scan:
+    project:
+      name: "aws-iot-device-sdk-embedded-C"
+      description: "SDK for connecting to AWS IoT from a device using embedded C. "
+    notification_email: nobody@amazon.com
+    build_command_prepend: "cd tests/integration"
+    build_command: "make app"
+    branch_pattern: master
+
+install:
+  # Remove placeholders.
+  - rm external_libs/CppUTest/*
+  - rm -rf external_libs/mbedTLS
+
+  # Get mbedtls.
+  - git clone https://github.com/ARMmbed/mbedtls.git external_libs/mbedTLS
+
+  # Get CppUTest.
+  - wget -qO- https://github.com/cpputest/cpputest/archive/v3.6.tar.gz | tar xvz -C external_libs/CppUTest --strip-components=1
+
+script:
+  # Verify that the samples build.
+  - cd samples/linux/jobs_sample
+  - make
+  - cd ../shadow_sample
+  - make
+  - cd ../shadow_sample_console_echo
+  - make
+  - cd ../subscribe_publish_library_sample
+  - make
+  - cd ../subscribe_publish_sample
+  - make
+
+  # Set the AWS IoT endpoint.
+  - cd ../../../tests/integration
+  - sed -i 's/^.*#define AWS_IOT_MQTT_HOST.*$/#define AWS_IOT_MQTT_HOST "'"$INTEGRATION_TEST_ENDPOINT"'"/' include/aws_iot_config.h
+
+  # Build the integration tests.
+  - make app
+
+  # Build the unit tests.
+  - cd ../../
+  - make build-cpputest
+  - make all_no_tests
+
+  # Execute unit tests.
+  - ./IotSdkC_tests
+
+  # Import credentials.
+  - echo -e $INTEGRATION_TEST_CLIENT_CERT > certs/cert.pem
+  - echo -e $INTEGRATION_TEST_ROOT_CA > certs/rootCA.crt
+  - echo -e $INTEGRATION_TEST_PRIVATE_KEY > certs/privkey.pem
+
+  # Execute integration tests.
+  - cd tests/integration
+  - ./integration_tests_mbedtls
+  - ./integration_tests_mbedtls_mt
+  

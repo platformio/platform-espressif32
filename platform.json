@@ -12,12 +12,13 @@
     "type": "git",
     "url": "https://github.com/platformio/platform-espressif32.git"
   },
-  "version": "1.11.2",
+  "version": "1.12.0",
   "packageRepositories": [
     "https://dl.bintray.com/platformio/dl-packages/manifest.json",
     "http://dl.platformio.org/packages/manifest.json",
     "https://raw.githubusercontent.com/eerimoq/simba/master/make/platformio/manifest.json",
-    "https://raw.githubusercontent.com/eerimoq/pumbaa/master/make/platformio/manifest.json"
+    "https://raw.githubusercontent.com/eerimoq/pumbaa/master/make/platformio/manifest.json",
+    "https://briki.org/download/resources/manifest.json"
   ],
   "frameworks": {
     "arduino": {
@@ -52,10 +53,15 @@
       "optional": true,
       "version": "~3.10004.191002"
     },
+    "framework-arduino-mbcwb": {
+      "type": "framework",
+      "optional": true,
+      "version": ">=2.1.1"
+    },
     "framework-espidf": {
       "type": "framework",
       "optional": true,
-      "version": "~3.30300.0"
+      "version": "~3.40000.0"
     },
     "framework-simba": {
       "type": "framework",
@@ -70,6 +76,10 @@
     "tool-esptoolpy": {
       "type": "uploader",
       "version": "~1.20600.0"
+    }, 
+    "tool-mbctool": {
+      "optional": true,
+      "version": ">=2.0.0"
     },
     "tool-openocd-esp32": {
       "type": "debugger",
@@ -80,6 +90,22 @@
       "type": "uploader",
       "optional": true,
       "version": "~2.230.0"
+    },
+    "tool-cmake": {
+      "optional": true,
+      "version": "~3.16.0"
+    },
+    "tool-ninja": {
+      "optional": true,
+      "version": "^1.7.0"
+    },
+    "tool-mconf": {
+      "optional": true,
+      "version": "~1.4060000.0"
+    },
+    "tool-idf": {
+      "optional": true,
+      "version": "~1.0.1"
     }
   }
 }
