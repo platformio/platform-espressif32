@@ -67,7 +67,7 @@ class Espressif32Platform(PlatformBase):
 
         # debug tools
         debug = board.manifest.get("debug", {})
-        non_debug_protocols = ["esptool", "espota"]
+        non_debug_protocols = ["esptool", "espota", "mbctool"]
         supported_debug_tools = [
             "esp-prog",
             "iot-bus-jtag",
