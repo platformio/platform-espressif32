@@ -163,9 +163,11 @@ env.Replace(
     PROGSUFFIX=".elf"
 )
 
-# Allow user to override via pre:script
+# Allow user to override program name and/or file system image name via pre:script
 if env.get("PROGNAME", "program") == "program":
     env.Replace(PROGNAME="firmware")
+if env.get("FSIMAGENAME", "fsimagename") == "fsimagename":
+    env.Replace(FSIMAGENAME="spiffs")
 
 env.Append(
     # copy CCFLAGS to ASFLAGS (-x assembler-with-cpp mode)
@@ -212,13 +214,13 @@ if "nobuild" in COMMAND_LINE_TARGETS:
     target_elf = join("$BUILD_DIR", "${PROGNAME}.elf")
     if set(["uploadfs", "uploadfsota"]) & set(COMMAND_LINE_TARGETS):
         fetch_spiffs_size(env)
-        target_firm = join("$BUILD_DIR", "spiffs.bin")
+        target_firm = join("$BUILD_DIR", "${FSIMAGENAME}.bin")
     else:
         target_firm = join("$BUILD_DIR", "${PROGNAME}.bin")
 else:
     if set(["buildfs", "uploadfs", "uploadfsota"]) & set(COMMAND_LINE_TARGETS):
         target_firm = env.DataToBin(
-            join("$BUILD_DIR", "spiffs"), "$PROJECTDATA_DIR")
+            join("$BUILD_DIR", "${FSIMAGENAME}"), "$PROJECTDATA_DIR")
         AlwaysBuild(target_firm)
         AlwaysBuild(env.Alias("buildfs", target_firm))
     else:
