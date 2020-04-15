@@ -18,6 +18,10 @@
     "can"
   ],
   "debug": {
+    "default_tool": "ftdi",
+    "onboard_tools": [
+      "ftdi"
+    ],
     "openocd_board": "esp-wroom-32.cfg"
   },
   "frameworks": [
@@ -29,6 +33,11 @@
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
     "maximum_size": 4194304,
+    "protocols": [
+      "esptool",
+      "espota",
+      "ftdi"
+    ],
     "require_upload_port": true,
     "speed": 460800
   },
