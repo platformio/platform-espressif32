@@ -871,7 +871,8 @@ if project_target_name not in target_configs:
     sys.stderr.write("Error: Couldn't find the main target of the project!\n")
     env.Exit(1)
 
-project_ld_scipt = generate_project_ld_script(sdk_config, ["__idf_src", "__pio_env"])
+project_ld_scipt = generate_project_ld_script(
+    sdk_config, [project_target_name, "__pio_env"])
 env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", project_ld_scipt)
 
 elf_config = get_project_elf(target_configs)
