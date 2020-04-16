@@ -24,7 +24,7 @@ import copy
 import json
 import subprocess
 import sys
-from os import environ, listdir, makedirs, pathsep
+from os import environ, listdir, makedirs, rename, pathsep
 from os.path import (
     abspath,
     basename,
@@ -61,6 +61,14 @@ assert FRAMEWORK_DIR and isdir(FRAMEWORK_DIR)
 
 if "arduino" in env.subst("$PIOFRAMEWORK"):
     ARDUINO_FRAMEWORK_DIR = platform.get_package_dir("framework-arduinoespressif32")
+    # Possible package names in 'package@version' format is not compatible with CMake
+    if "@" in basename(ARDUINO_FRAMEWORK_DIR):
+        new_path = join(
+            dirname(ARDUINO_FRAMEWORK_DIR),
+            basename(ARDUINO_FRAMEWORK_DIR).replace("@", "-"),
+        )
+        rename(ARDUINO_FRAMEWORK_DIR, new_path)
+        ARDUINO_FRAMEWORK_DIR = new_path
     assert ARDUINO_FRAMEWORK_DIR and isdir(ARDUINO_FRAMEWORK_DIR)
 
 try:
