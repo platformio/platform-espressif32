@@ -355,7 +355,19 @@ def get_app_flags(app_config):
     }
 
 
-def find_framework_service_files(search_path):
+def get_sdk_configuration():
+    config_path = join(env.subst("$BUILD_DIR"), "config", "sdkconfig.json")
+    if not isfile(config_path):
+        print("Warning: Could not find \"sdkconfig.json\" file\n")
+
+    try:
+        with open(config_path, "r") as fp:
+            return json.load(fp)
+    except:
+        return {}
+
+
+def find_framework_service_files(search_path, sdk_config):
     result = {}
     result["lf_files"] = list()
     result["kconfig_files"] = list()
@@ -369,9 +381,14 @@ def find_framework_service_files(search_path):
             elif f == "Kconfig":
                 result["kconfig_files"].append(join(search_path, d, f))
 
-    result["lf_files"].append(
-        join(FRAMEWORK_DIR, "components", "esp32", "ld", "esp32_fragments.lf")
-    )
+    result["lf_files"].extend([
+        join(FRAMEWORK_DIR, "components", "esp32", "ld", "esp32_fragments.lf"),
+        join(FRAMEWORK_DIR, "components", "newlib", "newlib.lf")
+    ])
+
+    if sdk_config.get("SPIRAM_CACHE_WORKAROUND", False):
+        result["lf_files"].append(join(
+            FRAMEWORK_DIR, "components", "newlib", "esp32-spiram-rom-functions-c.lf"))
 
     return result
 
@@ -398,8 +415,9 @@ def create_custom_libraries_list(orignial_ldgen_libraries_file, project_target_n
     return pio_libraries_file
 
 
-def generate_project_ld_script(project_target_name):
-    project_files = find_framework_service_files(join(FRAMEWORK_DIR, "components"))
+def generate_project_ld_script(project_target_name, sdk_config):
+    project_files = find_framework_service_files(
+        join(FRAMEWORK_DIR, "components"), sdk_config)
 
     # Create a new file to avoid automatically generated library entry as files from
     # this library are built internally by PlatformIO
@@ -776,6 +794,8 @@ target_configs = load_target_configurations(
     project_codemodel, join(BUILD_DIR, CMAKE_API_REPLY_PATH)
 )
 
+sdk_config = get_sdk_configuration()
+
 if all(t in target_configs for t in ("__idf_src", "__idf_main")):
     sys.stderr.write(
         (
@@ -791,7 +811,7 @@ if project_target_name not in target_configs:
     sys.stderr.write("Error: Couldn't find the main target of the project!\n")
     env.Exit(1)
 
-project_ld_scipt = generate_project_ld_script(project_target_name)
+project_ld_scipt = generate_project_ld_script(project_target_name, sdk_config)
 env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", project_ld_scipt)
 
 elf_config = get_project_elf(target_configs)
