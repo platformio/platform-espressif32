@@ -47,6 +47,7 @@ from SCons.Script import (
     DefaultEnvironment,
 )
 
+from platformio.builder.tools.piolib import ProjectAsLibBuilder
 from platformio.fs import to_unix_path
 from platformio.proc import exec_command, where_is_program
 from platformio.util import get_systype
@@ -91,6 +92,22 @@ assert isdir(FRAMEWORK_DIR)
 
 BUILD_DIR = env.subst("$BUILD_DIR")
 CMAKE_API_REPLY_PATH = join(".cmake", "api", "v1", "reply")
+
+
+def get_project_lib_includes(env):
+    project = ProjectAsLibBuilder(env, "$PROJECT_DIR")
+    project.search_deps_recursive()
+
+    paths = []
+    for lb in env.GetLibBuilders():
+        if not lb.dependent:
+            continue
+        lb.env.PrependUnique(CPPPATH=lb.get_include_dirs())
+        paths.extend(lb.env["CPPPATH"])
+
+    DefaultEnvironment().Replace(__PIO_LIB_BUILDERS=None)
+
+    return paths
 
 
 def is_cmake_reconfigure_required(cmake_api_reply_dir):
@@ -875,13 +892,12 @@ for component_config in framework_components_map.values():
     env.Depends(project_ld_scipt, component_config["lib"])
 
 project_config = target_configs.get(project_target_name, {})
-project_includes = get_app_includes(project_config)
 default_config = target_configs.get(default_config_name, {})
 project_defines = get_app_defines(project_config)
 project_flags = get_app_flags(project_config, default_config)
 link_args = extract_link_args(elf_config)
-
 app_includes = get_app_includes(elf_config)
+project_lib_includes = get_project_lib_includes(env)
 
 #
 # Compile bootloader
@@ -951,8 +967,11 @@ if "__test" not in COMMAND_LINE_TARGETS or env.GetProjectOption(
         # https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/build-system.html#rename-main
         project_env.AppendUnique(CPPPATH=app_includes["plain_includes"])
 
-# Add default include dirs to global CPPPATH so they're visible to PIOBUILDFILES
-envsafe.Append(CPPPATH=["$PROJECT_INCLUDE_DIR", "$PROJECT_SRC_DIR"])
+    # Add include dirs from PlatformIO build system to project CPPPATH so
+    # they're visible to PIOBUILDFILES
+    project_env.Append(
+        CPPPATH=["$PROJECT_INCLUDE_DIR", "$PROJECT_SRC_DIR"] + project_lib_includes
+    )
 
     env.Append(
         PIOBUILDFILES=compile_source_files(
