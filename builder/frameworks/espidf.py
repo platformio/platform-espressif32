@@ -343,13 +343,13 @@ def get_app_flags(app_config, default_config):
         flags = {}
         for cg in config["compileGroups"]:
             flags[cg["language"]] = []
-        for ccfragment in cg["compileCommandFragments"]:
-            fragment = ccfragment.get("fragment", "")
-            if not fragment.strip() or fragment.startswith("-D"):
-                continue
+            for ccfragment in cg["compileCommandFragments"]:
+                fragment = ccfragment.get("fragment", "")
+                if not fragment.strip() or fragment.startswith("-D"):
+                    continue
                 flags[cg["language"]].extend(
-                click.parser.split_arg_string(fragment.strip())
-            )
+                    click.parser.split_arg_string(fragment.strip())
+                )
 
         return flags
 
@@ -391,7 +391,7 @@ def find_framework_service_files(search_path, sdk_config):
                 result["kconfig_files"].append(join(search_path, d, f))
 
     result["lf_files"].extend([
-        join(FRAMEWORK_DIR, "components", "esp32", "ld", "esp32_fragments.lf"),
+            join(FRAMEWORK_DIR, "components", "esp32", "ld", "esp32_fragments.lf"),
         join(FRAMEWORK_DIR, "components", "newlib", "newlib.lf")
     ])
 
@@ -794,13 +794,12 @@ if any(" " in p for p in (FRAMEWORK_DIR, BUILD_DIR)):
 
 
 if env.subst("$SRC_FILTER"):
-    sys.stderr.write(
+    print(
         (
-            "Error: the 'src_filter' option cannot be used with ESP-IDF. Select source "
+            "Warning: the 'src_filter' option cannot be used with ESP-IDF. Select source "
             "files to build in the project CMakeLists.txt file.\n"
         )
     )
-    env.Exit(1)
 
 if isfile(join(env.subst("$PROJECT_SRC_DIR"), "sdkconfig.h")):
     print(
@@ -921,22 +920,47 @@ try:
 except:
     print("Warning! Couldn't find the main linker script in the CMake code model.")
 
-envsafe = env.Clone()
-if project_target_name != "__idf_main":
-    # Manually add dependencies to CPPPATH since ESP-IDF build system doesn't generate
-    # this info if the folder with sources is not named 'main'
-    # https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/build-system.html#rename-main
-    envsafe.AppendUnique(CPPPATH=app_includes["plain_includes"])
+#
+# Process project sources
+#
+
+# Remove project source files from following build stages as they're
+# built as part of the framework
+def _skip_prj_source_files(node):
+    if (
+        node.srcnode()
+        .get_path()
+        .lower()
+        .startswith(env.subst("$PROJECT_SRC_DIR").lower())
+    ):
+        return None
+    return node
+
+
+env.AddBuildMiddleware(_skip_prj_source_files)
+
+# Project files should be compiled only when a special
+# option is enabled when running 'test' command
+if "__test" not in COMMAND_LINE_TARGETS or env.GetProjectOption(
+    "test_build_project_src"
+):
+    project_env = env.Clone()
+    if project_target_name != "__idf_main":
+        # Manually add dependencies to CPPPATH since ESP-IDF build system doesn't generate
+        # this info if the folder with sources is not named 'main'
+        # https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/build-system.html#rename-main
+        project_env.AppendUnique(CPPPATH=app_includes["plain_includes"])
 
 # Add default include dirs to global CPPPATH so they're visible to PIOBUILDFILES
 envsafe.Append(CPPPATH=["$PROJECT_INCLUDE_DIR", "$PROJECT_SRC_DIR"])
 
-env.Replace(SRC_FILTER="-<*>")
-env.Append(
-    PIOBUILDFILES=compile_source_files(
-        target_configs.get(project_target_name), envsafe, envsafe.subst("$PROJECT_DIR")
+    env.Append(
+        PIOBUILDFILES=compile_source_files(
+            target_configs.get(project_target_name),
+            project_env,
+            project_env.subst("$PROJECT_DIR"),
+        )
     )
-)
 
 project_flags.update(link_args)
 env.MergeFlags(project_flags)
