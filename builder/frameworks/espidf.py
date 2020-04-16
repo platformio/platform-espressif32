@@ -338,35 +338,36 @@ def filter_args(args, allowed, ignore=None):
     return result
 
 
-def get_app_flags(app_config):
-    app_flags = {}
-    for cg in app_config["compileGroups"]:
-        app_flags[cg["language"]] = []
+def get_app_flags(app_config, default_config):
+    def _extract_flags(config):
+        flags = {}
+        for cg in config["compileGroups"]:
+            flags[cg["language"]] = []
         for ccfragment in cg["compileCommandFragments"]:
             fragment = ccfragment.get("fragment", "")
             if not fragment.strip() or fragment.startswith("-D"):
                 continue
-            app_flags[cg["language"]].extend(
+                flags[cg["language"]].extend(
                 click.parser.split_arg_string(fragment.strip())
             )
 
-    cflags = app_flags.get("C", [])
-    cxx_flags = app_flags.get("CXX", [])
-    ccflags = set(cflags).intersection(cxx_flags)
+        return flags
+
+    app_flags = _extract_flags(app_config)
+    default_flags = _extract_flags(default_config)
 
     # Flags are sorted because CMake randomly populates build flags in code model
     return {
-        "ASFLAGS": sorted(app_flags.get("ASM", [])),
-        "CFLAGS": sorted(list(set(cflags) - ccflags)),
-        "CCFLAGS": sorted(list(ccflags)),
-        "CXXFLAGS": sorted(list(set(cxx_flags) - ccflags)),
+        "ASFLAGS": sorted(app_flags.get("ASM", default_flags.get("ASM"))),
+        "CFLAGS": sorted(app_flags.get("C", default_flags.get("C"))),
+        "CXXFLAGS": sorted(app_flags.get("CXX", default_flags.get("CXX"))),
     }
 
 
 def get_sdk_configuration():
     config_path = join(env.subst("$BUILD_DIR"), "config", "sdkconfig.json")
     if not isfile(config_path):
-        print("Warning: Could not find \"sdkconfig.json\" file\n")
+        print('Warning: Could not find "sdkconfig.json" file\n')
 
     try:
         with open(config_path, "r") as fp:
@@ -401,36 +402,41 @@ def find_framework_service_files(search_path, sdk_config):
     return result
 
 
-def create_custom_libraries_list(orignial_ldgen_libraries_file, project_target_name):
-    if not isfile(orignial_ldgen_libraries_file):
+def create_custom_libraries_list(ldgen_libraries_file, ignore_targets):
+    if not isfile(ldgen_libraries_file):
         sys.stderr.write("Error: Couldn't find the list of framework libraries\n")
         env.Exit(1)
 
-    pio_libraries_file = orignial_ldgen_libraries_file + "_pio"
+    pio_libraries_file = ldgen_libraries_file + "_pio"
 
     if isfile(pio_libraries_file):
         return pio_libraries_file
 
     lib_paths = []
-    with open(orignial_ldgen_libraries_file, "r") as fp:
+    with open(ldgen_libraries_file, "r") as fp:
         lib_paths = fp.readlines()
 
     with open(pio_libraries_file, "w") as fp:
         for lib_path in lib_paths:
-            if "lib%s.a" % project_target_name.replace("__idf_", "") not in lib_path:
+            if all(
+                "lib%s.a" % t.replace("__idf_", "") not in lib_path
+                for t in ignore_targets
+            ):
                 fp.write(lib_path)
 
     return pio_libraries_file
 
 
-def generate_project_ld_script(project_target_name, sdk_config):
+def generate_project_ld_script(sdk_config, ignore_targets=None):
+    ignore_targets = ignore_targets or []
     project_files = find_framework_service_files(
-        join(FRAMEWORK_DIR, "components"), sdk_config)
+        join(FRAMEWORK_DIR, "components"), sdk_config
+    )
 
     # Create a new file to avoid automatically generated library entry as files from
     # this library are built internally by PlatformIO
     libraries_list = create_custom_libraries_list(
-        join(env.subst("$BUILD_DIR"), "ldgen_libraries"), project_target_name
+        join(env.subst("$BUILD_DIR"), "ldgen_libraries"), ignore_targets
     )
 
     args = {
@@ -698,6 +704,37 @@ def get_project_elf(target_configs):
     return exec_targets[0]
 
 
+def generate_default_component():
+    # Used to force CMake generate build environments for all supported languages
+
+    prj_cmake_tpl = """# Warning! Do not delete this auto-generated file.
+file(GLOB component_sources *.c* *.S)
+idf_component_register(SRCS ${component_sources})
+"""
+    dummy_component_path = join(BUILD_DIR, "__pio_env")
+    if not isdir(dummy_component_path):
+        makedirs(dummy_component_path)
+
+    for ext in (".cpp", ".c", ".S"):
+        dummy_file = join(dummy_component_path, "__dummy" + ext)
+        if not isfile(dummy_file):
+            open(dummy_file, "a").close()
+
+    component_cmake = join(dummy_component_path, "CMakeLists.txt")
+    if not isfile(component_cmake):
+        with open(component_cmake, "w") as fp:
+            fp.write(prj_cmake_tpl)
+
+    return dummy_component_path
+
+
+def find_default_component(target_configs):
+    for config in target_configs:
+        if "__pio_env" in config:
+            return config
+    return ""
+
+
 #
 # Generate final linker script
 #
@@ -778,10 +815,9 @@ if isfile(join(env.subst("$PROJECT_SRC_DIR"), "sdkconfig.h")):
 # By default 'main' folder is used to store source files. In case when a user has
 # default 'src' folder we need to add this as an extra component. If there is no 'main'
 # folder CMake won't generate dependencies properly
-
-extra_components = []
+extra_components = [generate_default_component()]
 if env.subst("$PROJECT_SRC_DIR") != join(env.subst("$PROJECT_DIR"), "main"):
-    extra_components = [env.subst("$PROJECT_SRC_DIR")]
+    extra_components.append(env.subst("$PROJECT_SRC_DIR"))
     if "arduino" in env.subst("$PIOFRAMEWORK"):
         extra_components.append(ARDUINO_FRAMEWORK_DIR)
 
@@ -819,12 +855,15 @@ if project_target_name not in target_configs:
     sys.stderr.write("Error: Couldn't find the main target of the project!\n")
     env.Exit(1)
 
-project_ld_scipt = generate_project_ld_script(project_target_name, sdk_config)
+project_ld_scipt = generate_project_ld_script(sdk_config, ["__idf_src", "__pio_env"])
 env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", project_ld_scipt)
 
 elf_config = get_project_elf(target_configs)
+default_config_name = find_default_component(target_configs)
 framework_components_map = get_components_map(
-    target_configs, ["STATIC_LIBRARY", "OBJECT_LIBRARY"], [project_target_name]
+    target_configs,
+    ["STATIC_LIBRARY", "OBJECT_LIBRARY"],
+    [project_target_name, default_config_name],
 )
 
 build_components(env, framework_components_map, env.subst("$PROJECT_DIR"))
@@ -838,8 +877,9 @@ for component_config in framework_components_map.values():
 
 project_config = target_configs.get(project_target_name, {})
 project_includes = get_app_includes(project_config)
+default_config = target_configs.get(default_config_name, {})
 project_defines = get_app_defines(project_config)
-project_flags = get_app_flags(project_config)
+project_flags = get_app_flags(project_config, default_config)
 link_args = extract_link_args(elf_config)
 
 app_includes = get_app_includes(elf_config)
