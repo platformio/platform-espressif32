@@ -19,9 +19,6 @@
   ],
   "debug": {
     "default_tool": "ftdi",
-    "onboard_tools": [
-      "ftdi"
-    ],
     "openocd_board": "esp-wroom-32.cfg"
   },
   "frameworks": [
