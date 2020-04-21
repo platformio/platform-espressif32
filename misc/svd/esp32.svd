@@ -1,16 +1,26 @@
-<device xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" schemaVersion="1.0" xsi:noNamespaceSchemaLocation="CMSIS-SVD_Schema_1.0.xsd">
-    <name>Espressif</name>
-    <version>1.0</version>
-    <width>32</width>
+<?xml version="1.0" encoding="utf-8"?>
+<device xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" schemaVersion="1.2" xsi:noNamespaceSchemaLocation="CMSIS-SVD.xsd">
+    <vendor>Espressif Systems CO. Ltd.</vendor>
+    <vendorID>ESPRESSIF</vendorID>
+    <name>ESP32</name>
+    <series>ESP</series>
+    <version>1.2</version>
+    <description>Xtensa LC6 Dualcore</description>
     <cpu>
-        <name>Xtensa LX6</name>
-        <revision>1</revision>
+        <name>other</name>
+        <revision>r1p0</revision>
         <endian>little</endian>
         <mpuPresent>false</mpuPresent>
         <fpuPresent>true</fpuPresent>
         <nvicPrioBits>3</nvicPrioBits>
         <vendorSystickConfig>false</vendorSystickConfig>
     </cpu>
+    <headerSystemFilename>system_esp32</headerSystemFilename>
+    <addressUnitBits>8</addressUnitBits>                            <!-- byte addressable memory -->
+    <width>32</width>                                               <!-- bus width is 32 bits -->    <size>32</size>                                                 <!-- this is the default size (number of bits) of all peripherals and register that do not define "size" themselves -->
+    <access>read-write</access>                                     <!-- default access permission for all subsequent registers -->
+    <resetValue>0x00000000</resetValue>                             <!-- by default all bits of the registers are initialized to 0 on reset -->
+    <resetMask>0xFFFFFFFF</resetMask>                               <!-- by default all 32Bits of the registers are used -->
     <peripherals>
         <peripheral>
             <name>AES</name>
