@@ -18,7 +18,8 @@
     "can"
   ],
   "debug": {
-    "openocd_board": "esp-wroom-32.cfg"
+    "openocd_board": "esp-wroom-32.cfg",
+    "svd_path": "esp32.svd"
   },
   "frameworks": [
     "arduino"
