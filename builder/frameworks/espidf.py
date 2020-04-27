@@ -152,23 +152,30 @@ def collect_src_files():
     ]
 
 
+def normalize_path(path):
+    project_dir = env.subst("$PROJECT_DIR")
+    if project_dir in path:
+        path = path.replace(project_dir, "${CMAKE_SOURCE_DIR}")
+    return to_unix_path(path)
+
+
 def create_default_project_files():
     root_cmake_tpl = """cmake_minimum_required(VERSION 3.16.0)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(%s)
 """
-    prj_cmake_tpl = """# Warning! This code was automatically generated for projects
+    prj_cmake_tpl = """# This file was automatically generated for projects
 # without default 'CMakeLists.txt' file.
 
-set(app_sources
-%s)
+FILE(GLOB_RECURSE app_sources %s/*.*)
 
 idf_component_register(SRCS ${app_sources})
 """
 
     if not listdir(join(env.subst("$PROJECT_SRC_DIR"))):
-        # create an empty file to make CMake happy during first init
-        open(join(env.subst("$PROJECT_SRC_DIR"), "empty.c"), "a").close()
+        # create a default main file to make CMake happy during first init
+        with open(join(env.subst("$PROJECT_SRC_DIR"), "main.c"), "w") as fp:
+            fp.write("void app_main() {}")
 
     project_dir = env.subst("$PROJECT_DIR")
     if not isfile(join(project_dir, "CMakeLists.txt")):
@@ -178,8 +185,10 @@ idf_component_register(SRCS ${app_sources})
     project_src_dir = env.subst("$PROJECT_SRC_DIR")
     if not isfile(join(project_src_dir, "CMakeLists.txt")):
         with open(join(project_src_dir, "CMakeLists.txt"), "w") as fp:
-            fp.write(prj_cmake_tpl % "".join(
-                '\t"%s"\n' % to_unix_path(f) for f in collect_src_files()))
+            fp.write(
+                prj_cmake_tpl
+                % normalize_path(env.subst("$PROJECT_SRC_DIR"))
+            )
 
 
 def get_cmake_code_model(src_dir, build_dir, extra_args=None):
