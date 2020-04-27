@@ -112,7 +112,10 @@ def get_project_lib_includes(env):
 
 def is_cmake_reconfigure_required(cmake_api_reply_dir):
     cmake_cache_file = join(BUILD_DIR, "CMakeCache.txt")
-    cmake_txt_file = join(env.subst("$PROJECT_DIR"), "CMakeLists.txt")
+    cmake_txt_files = [
+        join(env.subst("$PROJECT_DIR"), "CMakeLists.txt"),
+        join(env.subst("$PROJECT_SRC_DIR"), "CMakeLists.txt")
+    ]
     cmake_preconf_dir = join(BUILD_DIR, "config")
     sdkconfig = join(env.subst("$PROJECT_DIR"), "sdkconfig")
 
@@ -127,7 +130,7 @@ def is_cmake_reconfigure_required(cmake_api_reply_dir):
         return True
     if any(
         getmtime(f) > getmtime(cmake_cache_file)
-        for f in (cmake_txt_file, cmake_preconf_dir)
+        for f in cmake_txt_files + [cmake_preconf_dir]
     ):
         return True
 
@@ -996,6 +999,7 @@ project_flags.update(link_args)
 env.MergeFlags(project_flags)
 env.Prepend(
     CPPPATH=app_includes["plain_includes"],
+    CPPDEFINES=project_defines,
     LINKFLAGS=extra_flags,
     LIBS=libs,
     FLASH_EXTRA_IMAGES=[
