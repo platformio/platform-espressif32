@@ -874,7 +874,7 @@ if project_target_name not in target_configs:
     sys.stderr.write("Error: Couldn't find the main target of the project!\n")
     env.Exit(1)
 
-if all(t in target_configs for t in (project_target_name, "__idf_main")):
+if project_target_name != "__idf_main" and "__idf_main" in target_configs:
     sys.stderr.write(
         (
             "Warning! Detected two different targets with project sources. Please use "
