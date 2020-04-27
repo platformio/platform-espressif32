@@ -865,19 +865,20 @@ target_configs = load_target_configurations(
 
 sdk_config = get_sdk_configuration()
 
-if all(t in target_configs for t in ("__idf_src", "__idf_main")):
+
+project_target_name = "__idf_%s" % basename(env.subst("$PROJECT_SRC_DIR"))
+if project_target_name not in target_configs:
+    sys.stderr.write("Error: Couldn't find the main target of the project!\n")
+    env.Exit(1)
+
+if all(t in target_configs for t in (project_target_name, "__idf_main")):
     sys.stderr.write(
         (
             "Warning! Detected two different targets with project sources. Please use "
-            "either 'src' or specify 'main' folder in 'platformio.ini' file.\n"
+            "either %s or specify 'main' folder in 'platformio.ini' file.\n"
+            % project_target_name
         )
     )
-    env.Exit(1)
-
-
-project_target_name = "__idf_main" if "__idf_main" in target_configs else "__idf_src"
-if project_target_name not in target_configs:
-    sys.stderr.write("Error: Couldn't find the main target of the project!\n")
     env.Exit(1)
 
 project_ld_scipt = generate_project_ld_script(
