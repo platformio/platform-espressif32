@@ -12,13 +12,12 @@
     "type": "git",
     "url": "https://github.com/platformio/platform-espressif32.git"
   },
-  "version": "1.12.0",
+  "version": "1.12.1",
   "packageRepositories": [
     "https://dl.bintray.com/platformio/dl-packages/manifest.json",
     "http://dl.platformio.org/packages/manifest.json",
     "https://raw.githubusercontent.com/eerimoq/simba/master/make/platformio/manifest.json",
-    "https://raw.githubusercontent.com/eerimoq/pumbaa/master/make/platformio/manifest.json",
-    "https://briki.org/download/resources/manifest.json"
+    "https://raw.githubusercontent.com/eerimoq/pumbaa/master/make/platformio/manifest.json"
   ],
   "frameworks": {
     "arduino": {
@@ -76,7 +75,7 @@
     "tool-esptoolpy": {
       "type": "uploader",
       "version": "~1.20600.0"
-    }, 
+    },
     "tool-mbctool": {
       "optional": true,
       "version": ">=2.0.0"

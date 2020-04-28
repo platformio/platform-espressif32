@@ -160,6 +160,8 @@ env.Replace(
 
     MKSPIFFSTOOL="mkspiffs_${PIOPLATFORM}_" + ("espidf" if "espidf" in env.subst(
         "$PIOFRAMEWORK") else "${PIOFRAMEWORK}"),
+    ESP32_SPIFFS_IMAGE_NAME=env.get("ESP32_SPIFFS_IMAGE_NAME", "spiffs"),
+
     PROGSUFFIX=".elf"
 )
 
@@ -212,13 +214,13 @@ if "nobuild" in COMMAND_LINE_TARGETS:
     target_elf = join("$BUILD_DIR", "${PROGNAME}.elf")
     if set(["uploadfs", "uploadfsota"]) & set(COMMAND_LINE_TARGETS):
         fetch_spiffs_size(env)
-        target_firm = join("$BUILD_DIR", "spiffs.bin")
+        target_firm = join("$BUILD_DIR", "${ESP32_SPIFFS_IMAGE_NAME}.bin")
     else:
         target_firm = join("$BUILD_DIR", "${PROGNAME}.bin")
 else:
     if set(["buildfs", "uploadfs", "uploadfsota"]) & set(COMMAND_LINE_TARGETS):
         target_firm = env.DataToBin(
-            join("$BUILD_DIR", "spiffs"), "$PROJECTDATA_DIR")
+            join("$BUILD_DIR", "${ESP32_SPIFFS_IMAGE_NAME}"), "$PROJECTDATA_DIR")
         AlwaysBuild(target_firm)
         AlwaysBuild(env.Alias("buildfs", target_firm))
     else:
@@ -339,15 +341,15 @@ elif upload_protocol == "mbctool":
             "--port", '"$UPLOAD_PORT"',
             "--upload",
             "0x1000", join(
-                platform.get_package_dir("framework-arduino-mbcwb"), 
+                platform.get_package_dir("framework-arduino-mbcwb"),
                 "tools", "sdk", "bin", "bootloader_qio_80m.bin"),
             "0x8000", join("$BUILD_DIR", "partitions.bin"),
             "0xe000", join(
-                platform.get_package_dir("framework-arduino-mbcwb"), 
+                platform.get_package_dir("framework-arduino-mbcwb"),
                 "tools", "partitions", "boot_app0.bin"),
             "0x10000", join("$BUILD_DIR", "${PROGNAME}.bin"),
         ],
-        UPLOADCMD='"$UPLOADER" $UPLOADERFLAGS'       
+        UPLOADCMD='"$UPLOADER" $UPLOADERFLAGS'
     )
     upload_actions = [
         env.VerboseAction(env.AutodetectUploadPort,

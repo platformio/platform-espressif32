@@ -24,7 +24,7 @@ import copy
 import json
 import subprocess
 import sys
-from os import environ, listdir, makedirs, pathsep
+from os import environ, listdir, makedirs, rename, pathsep
 from os.path import (
     abspath,
     basename,
@@ -47,6 +47,7 @@ from SCons.Script import (
     DefaultEnvironment,
 )
 
+from platformio.builder.tools.piolib import ProjectAsLibBuilder
 from platformio.fs import to_unix_path
 from platformio.proc import exec_command, where_is_program
 from platformio.util import get_systype
@@ -61,6 +62,14 @@ assert FRAMEWORK_DIR and isdir(FRAMEWORK_DIR)
 
 if "arduino" in env.subst("$PIOFRAMEWORK"):
     ARDUINO_FRAMEWORK_DIR = platform.get_package_dir("framework-arduinoespressif32")
+    # Possible package names in 'package@version' format is not compatible with CMake
+    if "@" in basename(ARDUINO_FRAMEWORK_DIR):
+        new_path = join(
+            dirname(ARDUINO_FRAMEWORK_DIR),
+            basename(ARDUINO_FRAMEWORK_DIR).replace("@", "-"),
+        )
+        rename(ARDUINO_FRAMEWORK_DIR, new_path)
+        ARDUINO_FRAMEWORK_DIR = new_path
     assert ARDUINO_FRAMEWORK_DIR and isdir(ARDUINO_FRAMEWORK_DIR)
 
 try:
@@ -85,9 +94,28 @@ BUILD_DIR = env.subst("$BUILD_DIR")
 CMAKE_API_REPLY_PATH = join(".cmake", "api", "v1", "reply")
 
 
+def get_project_lib_includes(env):
+    project = ProjectAsLibBuilder(env, "$PROJECT_DIR")
+    project.search_deps_recursive()
+
+    paths = []
+    for lb in env.GetLibBuilders():
+        if not lb.dependent:
+            continue
+        lb.env.PrependUnique(CPPPATH=lb.get_include_dirs())
+        paths.extend(lb.env["CPPPATH"])
+
+    DefaultEnvironment().Replace(__PIO_LIB_BUILDERS=None)
+
+    return paths
+
+
 def is_cmake_reconfigure_required(cmake_api_reply_dir):
     cmake_cache_file = join(BUILD_DIR, "CMakeCache.txt")
-    cmake_txt_file = join(env.subst("$PROJECT_DIR"), "CMakeLists.txt")
+    cmake_txt_files = [
+        join(env.subst("$PROJECT_DIR"), "CMakeLists.txt"),
+        join(env.subst("$PROJECT_SRC_DIR"), "CMakeLists.txt")
+    ]
     cmake_preconf_dir = join(BUILD_DIR, "config")
     sdkconfig = join(env.subst("$PROJECT_DIR"), "sdkconfig")
 
@@ -102,7 +130,7 @@ def is_cmake_reconfigure_required(cmake_api_reply_dir):
         return True
     if any(
         getmtime(f) > getmtime(cmake_cache_file)
-        for f in (cmake_txt_file, cmake_preconf_dir)
+        for f in cmake_txt_files + [cmake_preconf_dir]
     ):
         return True
 
@@ -127,23 +155,30 @@ def collect_src_files():
     ]
 
 
+def normalize_path(path):
+    project_dir = env.subst("$PROJECT_DIR")
+    if project_dir in path:
+        path = path.replace(project_dir, "${CMAKE_SOURCE_DIR}")
+    return to_unix_path(path)
+
+
 def create_default_project_files():
     root_cmake_tpl = """cmake_minimum_required(VERSION 3.16.0)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(%s)
 """
-    prj_cmake_tpl = """# Warning! This code was automatically generated for projects
+    prj_cmake_tpl = """# This file was automatically generated for projects
 # without default 'CMakeLists.txt' file.
 
-set(app_sources
-%s)
+FILE(GLOB_RECURSE app_sources %s/*.*)
 
 idf_component_register(SRCS ${app_sources})
 """
 
     if not listdir(join(env.subst("$PROJECT_SRC_DIR"))):
-        # create an empty file to make CMake happy during first init
-        open(join(env.subst("$PROJECT_SRC_DIR"), "empty.c"), "a").close()
+        # create a default main file to make CMake happy during first init
+        with open(join(env.subst("$PROJECT_SRC_DIR"), "main.c"), "w") as fp:
+            fp.write("void app_main() {}")
 
     project_dir = env.subst("$PROJECT_DIR")
     if not isfile(join(project_dir, "CMakeLists.txt")):
@@ -153,8 +188,10 @@ idf_component_register(SRCS ${app_sources})
     project_src_dir = env.subst("$PROJECT_SRC_DIR")
     if not isfile(join(project_src_dir, "CMakeLists.txt")):
         with open(join(project_src_dir, "CMakeLists.txt"), "w") as fp:
-            fp.write(prj_cmake_tpl % "".join(
-                '\t"%s"\n' % to_unix_path(f) for f in collect_src_files()))
+            fp.write(
+                prj_cmake_tpl
+                % normalize_path(env.subst("$PROJECT_SRC_DIR"))
+            )
 
 
 def get_cmake_code_model(src_dir, build_dir, extra_args=None):
@@ -330,32 +367,45 @@ def filter_args(args, allowed, ignore=None):
     return result
 
 
-def get_app_flags(app_config):
-    app_flags = {}
-    for cg in app_config["compileGroups"]:
-        app_flags[cg["language"]] = []
-        for ccfragment in cg["compileCommandFragments"]:
-            fragment = ccfragment.get("fragment", "")
-            if not fragment.strip() or fragment.startswith("-D"):
-                continue
-            app_flags[cg["language"]].extend(
-                click.parser.split_arg_string(fragment.strip())
-            )
+def get_app_flags(app_config, default_config):
+    def _extract_flags(config):
+        flags = {}
+        for cg in config["compileGroups"]:
+            flags[cg["language"]] = []
+            for ccfragment in cg["compileCommandFragments"]:
+                fragment = ccfragment.get("fragment", "")
+                if not fragment.strip() or fragment.startswith("-D"):
+                    continue
+                flags[cg["language"]].extend(
+                    click.parser.split_arg_string(fragment.strip())
+                )
 
-    cflags = app_flags.get("C", [])
-    cxx_flags = app_flags.get("CXX", [])
-    ccflags = set(cflags).intersection(cxx_flags)
+        return flags
+
+    app_flags = _extract_flags(app_config)
+    default_flags = _extract_flags(default_config)
 
     # Flags are sorted because CMake randomly populates build flags in code model
     return {
-        "ASFLAGS": sorted(app_flags.get("ASM", [])),
-        "CFLAGS": sorted(list(set(cflags) - ccflags)),
-        "CCFLAGS": sorted(list(ccflags)),
-        "CXXFLAGS": sorted(list(set(cxx_flags) - ccflags)),
+        "ASFLAGS": sorted(app_flags.get("ASM", default_flags.get("ASM"))),
+        "CFLAGS": sorted(app_flags.get("C", default_flags.get("C"))),
+        "CXXFLAGS": sorted(app_flags.get("CXX", default_flags.get("CXX"))),
     }
 
 
-def find_framework_service_files(search_path):
+def get_sdk_configuration():
+    config_path = join(env.subst("$BUILD_DIR"), "config", "sdkconfig.json")
+    if not isfile(config_path):
+        print('Warning: Could not find "sdkconfig.json" file\n')
+
+    try:
+        with open(config_path, "r") as fp:
+            return json.load(fp)
+    except:
+        return {}
+
+
+def find_framework_service_files(search_path, sdk_config):
     result = {}
     result["lf_files"] = list()
     result["kconfig_files"] = list()
@@ -369,42 +419,53 @@ def find_framework_service_files(search_path):
             elif f == "Kconfig":
                 result["kconfig_files"].append(join(search_path, d, f))
 
-    result["lf_files"].append(
-        join(FRAMEWORK_DIR, "components", "esp32", "ld", "esp32_fragments.lf")
-    )
+    result["lf_files"].extend([
+            join(FRAMEWORK_DIR, "components", "esp32", "ld", "esp32_fragments.lf"),
+        join(FRAMEWORK_DIR, "components", "newlib", "newlib.lf")
+    ])
+
+    if sdk_config.get("SPIRAM_CACHE_WORKAROUND", False):
+        result["lf_files"].append(join(
+            FRAMEWORK_DIR, "components", "newlib", "esp32-spiram-rom-functions-c.lf"))
 
     return result
 
 
-def create_custom_libraries_list(orignial_ldgen_libraries_file, project_target_name):
-    if not isfile(orignial_ldgen_libraries_file):
+def create_custom_libraries_list(ldgen_libraries_file, ignore_targets):
+    if not isfile(ldgen_libraries_file):
         sys.stderr.write("Error: Couldn't find the list of framework libraries\n")
         env.Exit(1)
 
-    pio_libraries_file = orignial_ldgen_libraries_file + "_pio"
+    pio_libraries_file = ldgen_libraries_file + "_pio"
 
     if isfile(pio_libraries_file):
         return pio_libraries_file
 
     lib_paths = []
-    with open(orignial_ldgen_libraries_file, "r") as fp:
+    with open(ldgen_libraries_file, "r") as fp:
         lib_paths = fp.readlines()
 
     with open(pio_libraries_file, "w") as fp:
         for lib_path in lib_paths:
-            if "lib%s.a" % project_target_name.replace("__idf_", "") not in lib_path:
+            if all(
+                "lib%s.a" % t.replace("__idf_", "") not in lib_path
+                for t in ignore_targets
+            ):
                 fp.write(lib_path)
 
     return pio_libraries_file
 
 
-def generate_project_ld_script(project_target_name):
-    project_files = find_framework_service_files(join(FRAMEWORK_DIR, "components"))
+def generate_project_ld_script(sdk_config, ignore_targets=None):
+    ignore_targets = ignore_targets or []
+    project_files = find_framework_service_files(
+        join(FRAMEWORK_DIR, "components"), sdk_config
+    )
 
     # Create a new file to avoid automatically generated library entry as files from
     # this library are built internally by PlatformIO
     libraries_list = create_custom_libraries_list(
-        join(env.subst("$BUILD_DIR"), "ldgen_libraries"), project_target_name
+        join(env.subst("$BUILD_DIR"), "ldgen_libraries"), ignore_targets
     )
 
     args = {
@@ -672,6 +733,37 @@ def get_project_elf(target_configs):
     return exec_targets[0]
 
 
+def generate_default_component():
+    # Used to force CMake generate build environments for all supported languages
+
+    prj_cmake_tpl = """# Warning! Do not delete this auto-generated file.
+file(GLOB component_sources *.c* *.S)
+idf_component_register(SRCS ${component_sources})
+"""
+    dummy_component_path = join(BUILD_DIR, "__pio_env")
+    if not isdir(dummy_component_path):
+        makedirs(dummy_component_path)
+
+    for ext in (".cpp", ".c", ".S"):
+        dummy_file = join(dummy_component_path, "__dummy" + ext)
+        if not isfile(dummy_file):
+            open(dummy_file, "a").close()
+
+    component_cmake = join(dummy_component_path, "CMakeLists.txt")
+    if not isfile(component_cmake):
+        with open(component_cmake, "w") as fp:
+            fp.write(prj_cmake_tpl)
+
+    return dummy_component_path
+
+
+def find_default_component(target_configs):
+    for config in target_configs:
+        if "__pio_env" in config:
+            return config
+    return ""
+
+
 #
 # Generate final linker script
 #
@@ -731,13 +823,12 @@ if any(" " in p for p in (FRAMEWORK_DIR, BUILD_DIR)):
 
 
 if env.subst("$SRC_FILTER"):
-    sys.stderr.write(
+    print(
         (
-            "Error: the 'src_filter' option cannot be used with ESP-IDF. Select source "
+            "Warning: the 'src_filter' option cannot be used with ESP-IDF. Select source "
             "files to build in the project CMakeLists.txt file.\n"
         )
     )
-    env.Exit(1)
 
 if isfile(join(env.subst("$PROJECT_SRC_DIR"), "sdkconfig.h")):
     print(
@@ -752,10 +843,9 @@ if isfile(join(env.subst("$PROJECT_SRC_DIR"), "sdkconfig.h")):
 # By default 'main' folder is used to store source files. In case when a user has
 # default 'src' folder we need to add this as an extra component. If there is no 'main'
 # folder CMake won't generate dependencies properly
-
-extra_components = []
+extra_components = [generate_default_component()]
 if env.subst("$PROJECT_SRC_DIR") != join(env.subst("$PROJECT_DIR"), "main"):
-    extra_components = [env.subst("$PROJECT_SRC_DIR")]
+    extra_components.append(env.subst("$PROJECT_SRC_DIR"))
     if "arduino" in env.subst("$PIOFRAMEWORK"):
         extra_components.append(ARDUINO_FRAMEWORK_DIR)
 
@@ -776,27 +866,34 @@ target_configs = load_target_configurations(
     project_codemodel, join(BUILD_DIR, CMAKE_API_REPLY_PATH)
 )
 
-if all(t in target_configs for t in ("__idf_src", "__idf_main")):
-    sys.stderr.write(
-        (
-            "Warning! Detected two different targets with project sources. Please use "
-            "either 'src' or specify 'main' folder in 'platformio.ini' file.\n"
-        )
-    )
-    env.Exit(1)
+sdk_config = get_sdk_configuration()
 
 
-project_target_name = "__idf_main" if "__idf_main" in target_configs else "__idf_src"
+project_target_name = "__idf_%s" % basename(env.subst("$PROJECT_SRC_DIR"))
 if project_target_name not in target_configs:
     sys.stderr.write("Error: Couldn't find the main target of the project!\n")
     env.Exit(1)
 
-project_ld_scipt = generate_project_ld_script(project_target_name)
+if project_target_name != "__idf_main" and "__idf_main" in target_configs:
+    sys.stderr.write(
+        (
+            "Warning! Detected two different targets with project sources. Please use "
+            "either %s or specify 'main' folder in 'platformio.ini' file.\n"
+            % project_target_name
+        )
+    )
+    env.Exit(1)
+
+project_ld_scipt = generate_project_ld_script(
+    sdk_config, [project_target_name, "__pio_env"])
 env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", project_ld_scipt)
 
 elf_config = get_project_elf(target_configs)
+default_config_name = find_default_component(target_configs)
 framework_components_map = get_components_map(
-    target_configs, ["STATIC_LIBRARY", "OBJECT_LIBRARY"], [project_target_name]
+    target_configs,
+    ["STATIC_LIBRARY", "OBJECT_LIBRARY"],
+    [project_target_name, default_config_name],
 )
 
 build_components(env, framework_components_map, env.subst("$PROJECT_DIR"))
@@ -809,12 +906,12 @@ for component_config in framework_components_map.values():
     env.Depends(project_ld_scipt, component_config["lib"])
 
 project_config = target_configs.get(project_target_name, {})
-project_includes = get_app_includes(project_config)
+default_config = target_configs.get(default_config_name, {})
 project_defines = get_app_defines(project_config)
-project_flags = get_app_flags(project_config)
+project_flags = get_app_flags(project_config, default_config)
 link_args = extract_link_args(elf_config)
-
 app_includes = get_app_includes(elf_config)
+project_lib_includes = get_project_lib_includes(env)
 
 #
 # Compile bootloader
@@ -853,27 +950,56 @@ try:
 except:
     print("Warning! Couldn't find the main linker script in the CMake code model.")
 
-envsafe = env.Clone()
-if project_target_name != "__idf_main":
-    # Manually add dependencies to CPPPATH since ESP-IDF build system doesn't generate
-    # this info if the folder with sources is not named 'main'
-    # https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/build-system.html#rename-main
-    envsafe.AppendUnique(CPPPATH=app_includes["plain_includes"])
+#
+# Process project sources
+#
 
-# Add default include dirs to global CPPPATH so they're visible to PIOBUILDFILES
-envsafe.Append(CPPPATH=["$PROJECT_INCLUDE_DIR", "$PROJECT_SRC_DIR"])
+# Remove project source files from following build stages as they're
+# built as part of the framework
+def _skip_prj_source_files(node):
+    if (
+        node.srcnode()
+        .get_path()
+        .lower()
+        .startswith(env.subst("$PROJECT_SRC_DIR").lower())
+    ):
+        return None
+    return node
 
-env.Replace(SRC_FILTER="-<*>")
-env.Append(
-    PIOBUILDFILES=compile_source_files(
-        target_configs.get(project_target_name), envsafe, envsafe.subst("$PROJECT_DIR")
+
+env.AddBuildMiddleware(_skip_prj_source_files)
+
+# Project files should be compiled only when a special
+# option is enabled when running 'test' command
+if "__test" not in COMMAND_LINE_TARGETS or env.GetProjectOption(
+    "test_build_project_src"
+):
+    project_env = env.Clone()
+    if project_target_name != "__idf_main":
+        # Manually add dependencies to CPPPATH since ESP-IDF build system doesn't generate
+        # this info if the folder with sources is not named 'main'
+        # https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/build-system.html#rename-main
+        project_env.AppendUnique(CPPPATH=app_includes["plain_includes"])
+
+    # Add include dirs from PlatformIO build system to project CPPPATH so
+    # they're visible to PIOBUILDFILES
+    project_env.Append(
+        CPPPATH=["$PROJECT_INCLUDE_DIR", "$PROJECT_SRC_DIR"] + project_lib_includes
     )
-)
+
+    env.Append(
+        PIOBUILDFILES=compile_source_files(
+            target_configs.get(project_target_name),
+            project_env,
+            project_env.subst("$PROJECT_DIR"),
+        )
+    )
 
 project_flags.update(link_args)
 env.MergeFlags(project_flags)
 env.Prepend(
     CPPPATH=app_includes["plain_includes"],
+    CPPDEFINES=project_defines,
     LINKFLAGS=extra_flags,
     LIBS=libs,
     FLASH_EXTRA_IMAGES=[
