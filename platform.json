@@ -65,7 +65,7 @@
     "framework-espidf": {
       "type": "framework",
       "optional": true,
-      "version": "~3.40000.0"
+      "version": "~3.40001.0"
     },
     "framework-simba": {
       "type": "framework",
