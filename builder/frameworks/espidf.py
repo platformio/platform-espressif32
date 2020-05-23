@@ -411,13 +411,16 @@ def find_framework_service_files(search_path, sdk_config):
     result["kconfig_files"] = list()
     result["kconfig_build_files"] = list()
     for d in listdir(search_path):
-        for f in listdir(join(search_path, d)):
+        path = join(search_path, d)
+        if not isdir(path):
+            continue
+        for f in listdir(path):
             if f == "linker.lf":
-                result["lf_files"].append(join(search_path, d, f))
+                result["lf_files"].append(join(path, f))
             elif f == "Kconfig.projbuild":
-                result["kconfig_build_files"].append(join(search_path, d, f))
+                result["kconfig_build_files"].append(join(path, f))
             elif f == "Kconfig":
-                result["kconfig_files"].append(join(search_path, d, f))
+                result["kconfig_files"].append(join(path, f))
 
     result["lf_files"].extend([
             join(FRAMEWORK_DIR, "components", "esp32", "ld", "esp32_fragments.lf"),
