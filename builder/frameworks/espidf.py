@@ -411,13 +411,16 @@ def find_framework_service_files(search_path, sdk_config):
     result["kconfig_files"] = list()
     result["kconfig_build_files"] = list()
     for d in listdir(search_path):
-        for f in listdir(join(search_path, d)):
+        path = join(search_path, d)
+        if not isdir(path):
+            continue
+        for f in listdir(path):
             if f == "linker.lf":
-                result["lf_files"].append(join(search_path, d, f))
+                result["lf_files"].append(join(path, f))
             elif f == "Kconfig.projbuild":
-                result["kconfig_build_files"].append(join(search_path, d, f))
+                result["kconfig_build_files"].append(join(path, f))
             elif f == "Kconfig":
-                result["kconfig_files"].append(join(search_path, d, f))
+                result["kconfig_files"].append(join(path, f))
 
     result["lf_files"].extend([
             join(FRAMEWORK_DIR, "components", "esp32", "ld", "esp32_fragments.lf"),
@@ -768,10 +771,10 @@ def find_default_component(target_configs):
 # Generate final linker script
 #
 
-if not env.BoardConfig().get("build.ldscript", ""):
+if not board.get("build.ldscript", ""):
     linker_script = env.Command(
         join("$BUILD_DIR", "esp32_out.ld"),
-        env.BoardConfig().get(
+        board.get(
             "build.esp-idf.ldscript",
             join(FRAMEWORK_DIR, "components", "esp32", "ld", "esp32.ld"),
         ),
@@ -789,7 +792,7 @@ if not env.BoardConfig().get("build.ldscript", ""):
 #
 
 fwpartitions_dir = join(FRAMEWORK_DIR, "components", "partition_table")
-partitions_csv = env.BoardConfig().get("build.partitions", "partitions_singleapp.csv")
+partitions_csv = board.get("build.partitions", "partitions_singleapp.csv")
 env.Replace(
     PARTITIONS_TABLE_CSV=abspath(
         join(fwpartitions_dir, partitions_csv)
@@ -805,7 +808,7 @@ partition_table = env.Command(
         '"$PYTHONEXE" "%s" -q --flash-size "%s" $SOURCE $TARGET'
         % (
             join(FRAMEWORK_DIR, "components", "partition_table", "gen_esp32part.py"),
-            env.BoardConfig().get("upload.flash_size", "detect"),
+            board.get("upload.flash_size", "detect"),
         ),
         "Generating partitions $TARGET",
     ),
@@ -853,9 +856,8 @@ print("Reading CMake configuration...")
 project_codemodel = get_cmake_code_model(
     env.subst("$PROJECT_DIR"),
     BUILD_DIR,
-    ["-DEXTRA_COMPONENT_DIRS:PATH=" + ";".join(extra_components)]
-    if extra_components
-    else [],
+    ["-DEXTRA_COMPONENT_DIRS:PATH=" + ";".join(extra_components)] +
+    click.parser.split_arg_string(board.get("build.cmake_extra_args", ""))
 )
 
 if not project_codemodel:

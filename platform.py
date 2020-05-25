@@ -21,6 +21,13 @@ from platformio.util import get_systype
 class Espressif32Platform(PlatformBase):
 
     def configure_default_packages(self, variables, targets):
+        if not variables.get("board"):
+            return PlatformBase.configure_default_packages(
+                self, variables, targets)
+
+        board_config = self.board_config(variables.get("board"))
+        mcu = variables.get("board_build.mcu", board_config.get(
+            "build.mcu", "esp32"))
         if "buildfs" in targets:
             self.packages['tool-mkspiffs']['optional'] = False
         if variables.get("upload_protocol"):
@@ -29,15 +36,19 @@ class Espressif32Platform(PlatformBase):
             self.packages['toolchain-esp32ulp']['optional'] = False
         if "espidf" in variables.get("pioframework", []):
             for p in self.packages:
-                if p in ("tool-cmake", "tool-ninja", "toolchain-esp32ulp"):
-                    self.packages[p]['optional'] = False
+                if p in ("tool-cmake", "tool-ninja", "toolchain-%sulp" % mcu):
+                    self.packages[p]["optional"] = False
                 elif p in ("tool-mconf", "tool-idf") and "windows" in get_systype():
                     self.packages[p]['optional'] = False
             self.packages['toolchain-xtensa32']['version'] = "~2.80200.0"
+        # ESP32-S2 toolchain is identical for both Arduino and ESP-IDF
+        if mcu == "esp32s2":
+            self.packages.pop("toolchain-xtensa32", None)
+            self.packages['toolchain-xtensa32s2']['optional'] = False
+            self.packages['tool-esptoolpy']['version'] = "~1.30000.0"
 
         build_core = variables.get(
-            "board_build.core", self.board_config(variables.get("board")).get(
-                "build.core", "arduino")).lower()
+            "board_build.core", board_config.get("build.core", "arduino")).lower()
         if build_core == "mbcwb":
             self.packages['framework-arduinoespressif32']['optional'] = True
             self.packages['framework-arduino-mbcwb']['optional'] = False

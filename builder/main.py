@@ -130,20 +130,21 @@ def __fetch_spiffs_size(target, source, env):
 env = DefaultEnvironment()
 platform = env.PioPlatform()
 board = env.BoardConfig()
+mcu = board.get("build.mcu", "esp32")
 
 env.Replace(
     __get_board_f_flash=_get_board_f_flash,
     __get_board_flash_mode=_get_board_flash_mode,
 
-    AR="xtensa-esp32-elf-ar",
-    AS="xtensa-esp32-elf-as",
-    CC="xtensa-esp32-elf-gcc",
-    CXX="xtensa-esp32-elf-g++",
-    GDB="xtensa-esp32-elf-gdb",
+    AR="xtensa-%s-elf-ar" % mcu,
+    AS="xtensa-%s-elf-as" % mcu,
+    CC="xtensa-%s-elf-gcc" % mcu,
+    CXX="xtensa-%s-elf-g++" % mcu,
+    GDB="xtensa-%s-elf-gdb" % mcu,
     OBJCOPY=join(
         platform.get_package_dir("tool-esptoolpy") or "", "esptool.py"),
-    RANLIB="xtensa-esp32-elf-ranlib",
-    SIZETOOL="xtensa-esp32-elf-size",
+    RANLIB="xtensa-%s-elf-ranlib" % mcu,
+    SIZETOOL="xtensa-%s-elf-size" % mcu,
 
     ARFLAGS=["rc"],
 
@@ -153,7 +154,7 @@ env.Replace(
     SIZEPRINTCMD="$SIZETOOL -B -d $SOURCES",
 
     ERASEFLAGS=[
-        "--chip", "esp32",
+        "--chip", mcu,
         "--port", '"$UPLOAD_PORT"'
     ],
     ERASECMD='"$PYTHONEXE" "$OBJCOPY" $ERASEFLAGS erase_flash',
@@ -177,7 +178,7 @@ env.Append(
         ElfToBin=Builder(
             action=env.VerboseAction(" ".join([
                 '"$PYTHONEXE" "$OBJCOPY"',
-                "--chip", "esp32",
+                "--chip", mcu,
                 "elf2image",
                 "--flash_mode", "$BOARD_FLASH_MODE",
                 "--flash_freq", "${__get_board_f_flash(__env__)}",
@@ -293,7 +294,7 @@ elif upload_protocol == "esptool":
         UPLOADER=join(
             platform.get_package_dir("tool-esptoolpy") or "", "esptool.py"),
         UPLOADERFLAGS=[
-            "--chip", "esp32",
+            "--chip", mcu,
             "--port", '"$UPLOAD_PORT"',
             "--baud", "$UPLOAD_SPEED",
             "--before", "default_reset",
@@ -311,7 +312,7 @@ elif upload_protocol == "esptool":
     if "uploadfs" in COMMAND_LINE_TARGETS:
         env.Replace(
             UPLOADERFLAGS=[
-                "--chip", "esp32",
+                "--chip", mcu,
                 "--port", '"$UPLOAD_PORT"',
                 "--baud", "$UPLOAD_SPEED",
                 "--before", "default_reset",
