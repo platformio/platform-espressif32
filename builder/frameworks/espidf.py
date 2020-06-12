@@ -194,7 +194,7 @@ idf_component_register(SRCS ${app_sources})
             )
 
 
-def get_cmake_code_model(src_dir, build_dir, extra_args=None):
+def get_cmake_code_model(env, src_dir, build_dir, extra_args=None):
     cmake_api_dir = join(build_dir, ".cmake", "api", "v1")
     cmake_api_query_dir = join(cmake_api_dir, "query")
     cmake_api_reply_dir = join(cmake_api_dir, "reply")
@@ -208,6 +208,7 @@ def get_cmake_code_model(src_dir, build_dir, extra_args=None):
         create_default_project_files()
 
     if is_cmake_reconfigure_required(cmake_api_reply_dir):
+        env.ConfigureProjectLibBuilder()
         run_cmake(src_dir, build_dir, extra_args)
 
     if not isdir(cmake_api_reply_dir) or not listdir(cmake_api_reply_dir):
@@ -644,6 +645,7 @@ def find_lib_deps(components_map, elf_config, link_args, ignore_components=None)
 def build_bootloader():
     bootloader_src_dir = join(FRAMEWORK_DIR, "components", "bootloader", "subproject")
     code_model = get_cmake_code_model(
+        env,
         bootloader_src_dir,
         join(BUILD_DIR, "bootloader"),
         [
@@ -854,6 +856,7 @@ if env.subst("$PROJECT_SRC_DIR") != join(env.subst("$PROJECT_DIR"), "main"):
 
 print("Reading CMake configuration...")
 project_codemodel = get_cmake_code_model(
+    env,
     env.subst("$PROJECT_DIR"),
     BUILD_DIR,
     ["-DEXTRA_COMPONENT_DIRS:PATH=" + ";".join(extra_components)] +
