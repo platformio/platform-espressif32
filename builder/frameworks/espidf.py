@@ -925,11 +925,8 @@ env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", build_bootloader())
 # Target: ESP-IDF menuconfig
 #
 
-AlwaysBuild(
-    env.Alias(
-        "menuconfig", None, [env.VerboseAction(RunMenuconfig, "Running menuconfig...")]
-    )
-)
+env.AddPlatformTarget("menuconfig", None, [env.VerboseAction(
+    RunMenuconfig, "Running menuconfig...")], "Run Menuconfig")
 
 #
 # Process main parts of the framework
