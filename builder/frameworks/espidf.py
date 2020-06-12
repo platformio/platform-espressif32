@@ -808,7 +808,7 @@ partition_table = env.Command(
         '"$PYTHONEXE" "%s" -q --flash-size "%s" $SOURCE $TARGET'
         % (
             join(FRAMEWORK_DIR, "components", "partition_table", "gen_esp32part.py"),
-            board.get("upload.flash_size", "detect"),
+            board.get("upload.flash_size", "4MB"),
         ),
         "Generating partitions $TARGET",
     ),
