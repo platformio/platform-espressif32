@@ -26,15 +26,24 @@
     },
     "espidf": {
       "package": "framework-espidf",
-      "script": "builder/frameworks/espidf.py"
+      "script": "builder/frameworks/espidf.py",
+      "description": "ESP-IDF is the official development framework for the ESP32 and ESP32-S Series SoCs.",
+      "url": "https://docs.espressif.com/projects/esp-idf/en/latest/esp32/",
+      "title": "Espressif IoT Development Framework"
     },
     "simba": {
       "package": "framework-simba",
-      "script": "builder/frameworks/simba.py"
+      "script": "builder/frameworks/simba.py",
+      "description": "Simba is an RTOS and build framework with aims to make embedded programming easy and portable",
+      "url": "http://simba-os.readthedocs.org",
+      "title": "Simba"
     },
     "pumbaa": {
       "package": "framework-pumbaa",
-      "script": "builder/frameworks/pumbaa.py"
+      "script": "builder/frameworks/pumbaa.py",
+      "description": "Pumbaa is Python on top of Simba. The implementation is a port of MicroPython, designed for embedded devices with limited amount of RAM and code memory",
+      "url": "http://pumbaa.readthedocs.org/",
+      "title": "Pumbaa"
     }
   },
   "packages": {
