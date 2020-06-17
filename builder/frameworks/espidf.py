@@ -808,7 +808,7 @@ partition_table = env.Command(
         '"$PYTHONEXE" "%s" -q --flash-size "%s" $SOURCE $TARGET'
         % (
             join(FRAMEWORK_DIR, "components", "partition_table", "gen_esp32part.py"),
-            board.get("upload.flash_size", "detect"),
+            board.get("upload.flash_size", "4MB"),
         ),
         "Generating partitions $TARGET",
     ),
@@ -925,11 +925,8 @@ env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", build_bootloader())
 # Target: ESP-IDF menuconfig
 #
 
-AlwaysBuild(
-    env.Alias(
-        "menuconfig", None, [env.VerboseAction(RunMenuconfig, "Running menuconfig...")]
-    )
-)
+env.AddPlatformTarget("menuconfig", None, [env.VerboseAction(
+    RunMenuconfig, "Running menuconfig...")], "Run Menuconfig")
 
 #
 # Process main parts of the framework
