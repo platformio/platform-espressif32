@@ -16,7 +16,8 @@
     "https://dl.bintray.com/platformio/dl-packages/manifest.json",
     "http://dl.platformio.org/packages/manifest.json",
     "https://raw.githubusercontent.com/eerimoq/simba/master/make/platformio/manifest.json",
-    "https://raw.githubusercontent.com/eerimoq/pumbaa/master/make/platformio/manifest.json"
+    "https://raw.githubusercontent.com/eerimoq/pumbaa/master/make/platformio/manifest.json",
+    "https://raw.githubusercontent.com/FastEmbedded/FEmbed-tools/master/manifest.json"
   ],
   "frameworks": {
     "arduino": {
@@ -118,6 +119,10 @@
     "tool-idf": {
       "optional": true,
       "version": "~1.0.1"
+    },
+    "tool-kconfig": {
+      "type": "kconfig",
+      "version": "13.1.1"
     }
   }
 }

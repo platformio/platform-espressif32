@@ -36,6 +36,7 @@ from os.path import (
     join,
     realpath,
     relpath,
+    expandvars
 )
 
 import click
@@ -578,17 +579,44 @@ def run_tool(cmd):
         print(result["err"])
 
 
+###################################################
+# Check all components have Kconfig
+###################################################
+def check_kconfig(idf_env):
+    components_with_kconfig = []
+    components_with_kconfig_projbuild = []
+    idf_path = join(expandvars("$IDF_PATH"), "components")
+    for src in listdir(idf_path):
+        if isfile(join(idf_path,  src, "Kconfig")):
+            components_with_kconfig.append(join(idf_path, src, "Kconfig"))
+        if isfile(join(idf_path,  src, "Kconfig.projbuild")):
+            components_with_kconfig_projbuild.append(join(idf_path, src, "Kconfig.projbuild"))
+
+    # process user add libs
+    for lib_dir in env['LIBSOURCE_DIRS']:
+        if not isdir(env.subst(lib_dir)): continue
+        for lib in listdir(env.subst(lib_dir)):
+            if isfile(join(env.subst(lib_dir), lib, "Kconfig")):
+                components_with_kconfig.append(join(env.subst(lib_dir), lib, "Kconfig"))
+            if isfile(join(env.subst(lib_dir), lib, "Kconfig.projbuild")):
+                components_with_kconfig_projbuild.append(join(env.subst(lib_dir), lib, "Kconfig.projbuild"))
+
+    idf_env["COMPONENT_KCONFIGS"] = " ".join(components_with_kconfig)
+    idf_env["COMPONENT_KCONFIGS_PROJBUILD"] = " ".join(components_with_kconfig_projbuild)
+    idf_env["KCONFIG_CONFIG"] = "sdkconfig"
+    idf_env["IDF_CMAKE"] = "y"
+    idf_env["IDF_TARGET"] = "esp32"
+
 def RunMenuconfig(target, source, env):
     idf_env = environ.copy()
     populate_idf_env_vars(idf_env)
 
+    check_kconfig(idf_env)
     rc = subprocess.call(
         [
-            join(platform.get_package_dir("tool-cmake"), "bin", "cmake"),
-            "--build",
-            env.subst("$BUILD_DIR"),
-            "--target",
-            "menuconfig",
+            "python", 
+            join(platform.get_package_dir("tool-kconfig"), "guiconfig.py"),
+            expandvars(join("$IDF_PATH", "Kconfig"))
         ],
         env=idf_env,
     )
