@@ -195,11 +195,11 @@ static uint32_t _aws_iot_mqtt_get_free_message_handler_index(AWS_IoT_Client *pCl
  * @warning pTopicName and pApplicationHandlerData need to be static in memory.
  *
  * @param pClient Reference to the IoT Client
- * @param pTopicName Topic Name to publish to. pTopicName needs to be static in memory since 
+ * @param pTopicName Topic Name to publish to. pTopicName needs to be static in memory since
  *     no malloc are performed by the SDK
  * @param topicNameLen Length of the topic name
  * @param pApplicationHandler_t Reference to the handler function for this subscription
- * @param pApplicationHandlerData Point to data passed to the callback. 
+ * @param pApplicationHandlerData Point to data passed to the callback.
  *    pApplicationHandlerData also needs to be static in memory  since no malloc are performed by the SDK
  *
  * @return An IoT Error Type defining successful/failed subscription
@@ -273,26 +273,6 @@ static IoT_Error_t _aws_iot_mqtt_internal_subscribe(AWS_IoT_Client *pClient, con
 	FUNC_EXIT_RC(SUCCESS);
 }
 
-/**
- * @brief Subscribe to an MQTT topic.
- *
- * Called to send a subscribe message to the broker requesting a subscription
- * to an MQTT topic. This is the outer function which does the validations and
- * calls the internal subscribe above to perform the actual operation.
- * It is also responsible for client state changes
- * @note Call is blocking.  The call returns after the receipt of the SUBACK control packet.
- * @warning pTopicName and pApplicationHandlerData need to be static in memory.
- *
- * @param pClient Reference to the IoT Client
- * @param pTopicName Topic Name to publish to. pTopicName needs to be static in memory since 
- *     no malloc are performed by the SDK
- * @param topicNameLen Length of the topic name
- * @param pApplicationHandler_t Reference to the handler function for this subscription
- * @param pApplicationHandlerData Point to data passed to the callback. 
- *    pApplicationHandlerData also needs to be static in memory  since no malloc are performed by the SDK
- *
- * @return An IoT Error Type defining successful/failed subscription
- */
 IoT_Error_t aws_iot_mqtt_subscribe(AWS_IoT_Client *pClient, const char *pTopicName, uint16_t topicNameLen,
 								   QoS qos, pApplicationHandler_t pApplicationHandler, void *pApplicationHandlerData) {
 	ClientState clientState;
@@ -361,6 +341,12 @@ static IoT_Error_t _aws_iot_mqtt_internal_resubscribe(AWS_IoT_Client *pClient) {
 			continue;
 		}
 
+		/* Do not attempt to subscribe to topics which have already been subscribed
+		 to in the previous re-subscribe attempts. */
+		if(pClient->clientData.messageHandlers[itr].resubscribed == 1) {
+			continue;
+		}
+
 		init_timer(&timer);
 		countdown_ms(&timer, pClient->clientData.commandTimeoutMs);
 
@@ -391,26 +377,18 @@ static IoT_Error_t _aws_iot_mqtt_internal_resubscribe(AWS_IoT_Client *pClient) {
 		if(SUCCESS != rc) {
 			FUNC_EXIT_RC(rc);
 		}
+
+		/* Record that this topic has been subscribed to, so that we do not
+		 * attempt to subscribe again to the same topic. */
+		pClient->clientData.messageHandlers[itr].resubscribed = 1;
 	}
 
 	FUNC_EXIT_RC(SUCCESS);
 }
 
-/**
- * @brief Subscribe to an MQTT topic.
- *
- * Called to send a subscribe message to the broker requesting a subscription
- * to an MQTT topic.
- * This is the outer function which does the validations and calls the internal resubscribe above
- * to perform the actual operation. It is also responsible for client state changes
- * @note Call is blocking.  The call returns after the receipt of the SUBACK control packet.
- *
- * @param pClient Reference to the IoT Client
- *
- * @return An IoT Error Type defining successful/failed subscription
- */
 IoT_Error_t aws_iot_mqtt_resubscribe(AWS_IoT_Client *pClient) {
 	IoT_Error_t rc, resubRc;
+	ClientState currentState = aws_iot_mqtt_get_client_state(pClient);
 
 	FUNC_ENTRY;
 
@@ -422,22 +400,31 @@ IoT_Error_t aws_iot_mqtt_resubscribe(AWS_IoT_Client *pClient) {
 		FUNC_EXIT_RC(NETWORK_DISCONNECTED_ERROR);
 	}
 
-	if(CLIENT_STATE_CONNECTED_IDLE != aws_iot_mqtt_get_client_state(pClient)) {
-		FUNC_EXIT_RC(MQTT_CLIENT_NOT_IDLE_ERROR);
+	/* At this point, the client state should be either CLIENT_STATE_CONNECTED_IDLE
+	 or CLIENT_STATE_CONNECTED_RESUBSCRIBE_IN_PROGRESS. The former means that it
+	 is the first re-subscribe attempt while the latter means that it is second
+	 or subsequent re-subscribe attempt. */
+	if((CLIENT_STATE_CONNECTED_IDLE != currentState) && (CLIENT_STATE_CONNECTED_RESUBSCRIBE_IN_PROGRESS != currentState)) {
+		FUNC_EXIT_RC(MQTT_UNEXPECTED_CLIENT_STATE_ERROR);
 	}
 
-	rc = aws_iot_mqtt_set_client_state(pClient, CLIENT_STATE_CONNECTED_IDLE,
-									   CLIENT_STATE_CONNECTED_RESUBSCRIBE_IN_PROGRESS);
-	if(SUCCESS != rc) {
-		FUNC_EXIT_RC(rc);
+	/* If it is the first re-subscribe attempt (i.e. client state is CLIENT_STATE_CONNECTED_IDLE),
+	 set the client state to CLIENT_STATE_CONNECTED_RESUBSCRIBE_IN_PROGRESS. */
+	if(CLIENT_STATE_CONNECTED_IDLE == currentState) {
+		rc = aws_iot_mqtt_set_client_state(pClient, CLIENT_STATE_CONNECTED_IDLE, CLIENT_STATE_CONNECTED_RESUBSCRIBE_IN_PROGRESS);
+
+		if(SUCCESS != rc) {
+			FUNC_EXIT_RC(rc);
+		}
 	}
 
 	resubRc = _aws_iot_mqtt_internal_resubscribe(pClient);
 
-	rc = aws_iot_mqtt_set_client_state(pClient, CLIENT_STATE_CONNECTED_RESUBSCRIBE_IN_PROGRESS,
-									   CLIENT_STATE_CONNECTED_IDLE);
-	if(SUCCESS == resubRc && SUCCESS != rc) {
-		resubRc = rc;
+	/* It is possible that the subscribe operation fails, do not change the state
+	 in that case so that the subscribe is attempted again in the next iteration
+	 of yield. */
+	if(SUCCESS == resubRc) {
+		resubRc = aws_iot_mqtt_set_client_state(pClient, CLIENT_STATE_CONNECTED_RESUBSCRIBE_IN_PROGRESS, CLIENT_STATE_CONNECTED_IDLE);
 	}
 
 	FUNC_EXIT_RC(resubRc);
@@ -446,4 +433,3 @@ IoT_Error_t aws_iot_mqtt_resubscribe(AWS_IoT_Client *pClient) {
 #ifdef __cplusplus
 }
 #endif
-

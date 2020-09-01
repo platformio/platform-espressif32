@@ -431,13 +431,13 @@ static IoT_Error_t UpdateValueIfNoObject(const char *pJsonString, jsonStruct_t *
 
 bool isJsonKeyMatchingAndUpdateValue(const char *pJsonDocument, void *pJsonHandler, int32_t tokenCount,
 									 jsonStruct_t *pDataStruct, uint32_t *pDataLength, int32_t *pDataPosition) {
-	int32_t i;
+	int32_t i, metadataEnd;
 	uint32_t dataLength;
 	jsmntok_t dataToken;
 
 	IOT_UNUSED(pJsonHandler);
 
-	for(i = 1; i < tokenCount; i++) {
+	for(i = 1; i < tokenCount; ) {
 		if(jsoneq(pJsonDocument, &(jsonTokenStruct[i]), pDataStruct->pKey) == 0) {
 			dataToken = jsonTokenStruct[i + 1];
 			dataLength = (uint32_t) (dataToken.end - dataToken.start);
@@ -446,7 +446,32 @@ bool isJsonKeyMatchingAndUpdateValue(const char *pJsonDocument, void *pJsonHandl
 			*pDataLength = dataLength;
 			return true;
 		} else if(jsoneq(pJsonDocument, &(jsonTokenStruct[i]), "metadata") == 0) {
-			return false;
+			/* Sanity check: must not be at the last key in the json object. */
+			if(i >= tokenCount-2)
+			{
+				return false;
+			}
+
+			/* Record where the metadata object ends. */
+			metadataEnd = jsonTokenStruct[i+1].end;
+
+			/* Skip past the "metadata" key and jsmn object element. */
+			i+= 2;
+
+			/* Skip past every key inside "metadata". Keys inside "metadata" have
+			 * have an end character before the end of the metadata object.
+			 */
+			while(jsonTokenStruct[i].end < metadataEnd)
+			{
+				i++;
+			}
+		}
+		else
+		{
+			/* Only increment the loop counter if the current object doesn't
+			 * match AND isn't "metadata".
+			 */
+			i++;
 		}
 	}
 	return false;
@@ -495,7 +520,7 @@ bool extractClientToken(const char *pJsonDocument, size_t jsonSize, char *pExtra
 	for(i = 1; i < tokenCount; i++) {
 		if(jsoneq(pJsonDocument, &jsonTokenStruct[i], SHADOW_CLIENT_TOKEN_STRING) == 0) {
 			ClientJsonToken = jsonTokenStruct[i + 1];
-			length = (uint8_t) (ClientJsonToken.end - ClientJsonToken.start);
+			length = (size_t) (ClientJsonToken.end - ClientJsonToken.start);
             if (clientTokenSize >= length + 1)
             {
                 strncpy( pExtractedClientToken, pJsonDocument + ClientJsonToken.start, length);

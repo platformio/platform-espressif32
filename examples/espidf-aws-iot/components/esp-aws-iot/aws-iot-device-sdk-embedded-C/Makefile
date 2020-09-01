@@ -31,7 +31,7 @@ IOT_CLIENT_DIR = .
 APP_DIR = $(IOT_CLIENT_DIR)/tests/unit
 APP_NAME = aws_iot_sdk_unit_tests
 APP_SRC_FILES = $(shell find $(APP_DIR)/src -name '*.cpp')
-APP_SRC_FILES = $(shell find $(APP_DIR)/src -name '*.c')
+APP_SRC_FILES += $(shell find $(APP_DIR)/src -name '*.c')
 APP_INCLUDE_DIRS = -I $(APP_DIR)/include
 
 CPPUTEST_DIR = $(IOT_CLIENT_DIR)/external_libs/CppUTest

@@ -49,7 +49,7 @@ extern "C" {
 
 #include "aws_iot_mqtt_client_interface.h"
 
-/* Enum order should match the packet ids array defined in MQTTFormat.c */
+/** Types of MQTT messages */
 typedef enum msgTypes {
 	UNKNOWN = -1,
 	CONNECT = 1,
@@ -69,10 +69,10 @@ typedef enum msgTypes {
 } MessageTypes;
 
 /* Macros for parsing header fields from incoming MQTT frame. */
-#define MQTT_HEADER_FIELD_TYPE(_byte)	((_byte >> 4) & 0x0F)
-#define MQTT_HEADER_FIELD_DUP(_byte)	((_byte & (1 << 3)) >> 3)
-#define MQTT_HEADER_FIELD_QOS(_byte)	((_byte & (3 << 1)) >> 1)
-#define MQTT_HEADER_FIELD_RETAIN(_byte)	((_byte & (1 << 0)) >> 0)
+#define MQTT_HEADER_FIELD_TYPE(_byte)	((_byte >> 4) & 0x0F) /**< Message type */
+#define MQTT_HEADER_FIELD_DUP(_byte)	((_byte & (1 << 3)) >> 3) /**< DUP flag */
+#define MQTT_HEADER_FIELD_QOS(_byte)	((_byte & (3 << 1)) >> 1) /**< QoS */
+#define MQTT_HEADER_FIELD_RETAIN(_byte)	((_byte & (1 << 0)) >> 0) /**< Retain flag */
 
 /**
  * Bitfields for the MQTT header byte.

@@ -247,6 +247,14 @@ void setTLSRxBufferForPingresp(void) {
 	RxIndex = 0;
 }
 
+void setTLSRxBufferForError(IoT_Error_t error) {
+	RxBuffer.mockedError = error;
+}
+
+void setTLSTxBufferForError(IoT_Error_t error) {
+	TxBuffer.mockedError = error;
+}
+
 void ResetTLSBuffer(void) {
 	size_t i;
 	RxBuffer.len = 0;

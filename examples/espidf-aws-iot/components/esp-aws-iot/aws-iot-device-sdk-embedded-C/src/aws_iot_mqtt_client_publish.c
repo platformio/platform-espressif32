@@ -242,23 +242,6 @@ static IoT_Error_t _aws_iot_mqtt_internal_publish(AWS_IoT_Client *pClient, const
 	FUNC_EXIT_RC(SUCCESS);
 }
 
-/**
- * @brief Publish an MQTT message on a topic
- *
- * Called to publish an MQTT message on a topic.
- * @note Call is blocking.  In the case of a QoS 0 message the function returns
- * after the message was successfully passed to the TLS layer.  In the case of QoS 1
- * the function returns after the receipt of the PUBACK control packet.
- * This is the outer function which does the validations and calls the internal publish above
- * to perform the actual operation. It is also responsible for client state changes
- *
- * @param pClient Reference to the IoT Client
- * @param pTopicName Topic Name to publish to
- * @param topicNameLen Length of the topic name
- * @param pParams Pointer to Publish Message parameters
- *
- * @return An IoT Error Type defining successful/failed publish
- */
 IoT_Error_t aws_iot_mqtt_publish(AWS_IoT_Client *pClient, const char *pTopicName, uint16_t topicNameLen,
 								 IoT_Publish_Message_Params *pParams) {
 	IoT_Error_t rc, pubRc;
@@ -303,7 +286,7 @@ IoT_Error_t aws_iot_mqtt_publish(AWS_IoT_Client *pClient, const char *pTopicName
   * @param pTopicName returned String - the MQTT topic in the publish
   * @param topicNameLen returned uint16_t - the length of the MQTT topic in the publish
   * @param payload returned byte buffer - the MQTT publish payload
-  * @param payloadlen returned size_t - the length of the MQTT payload
+  * @param payloadLen returned size_t - the length of the MQTT payload
   * @param pRxBuf the raw buffer data, of the correct length determined by the remaining length field
   * @param rxBufLen the length in bytes of the data in the supplied buffer
   *

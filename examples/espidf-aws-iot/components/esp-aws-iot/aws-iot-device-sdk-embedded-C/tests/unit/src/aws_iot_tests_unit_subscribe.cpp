@@ -65,9 +65,9 @@ TEST_GROUP_C_WRAPPER(SubscribeTests, subscribeMalformedResponse)
 /* C:16 - Subscribe, multiple topics, messages on each topic */
 TEST_GROUP_C_WRAPPER(SubscribeTests, SubscribeToMultipleTopicsSuccess)
 /* C:17 - Subscribe, max topics, messages on each topic */
-TEST_GROUP_C_WRAPPER(SubscribeTests, SubcribeToMaxAllowedTopicsSuccess)
+TEST_GROUP_C_WRAPPER(SubscribeTests, SubscribeToMaxAllowedTopicsSuccess)
 /* C:18 - Subscribe, max topics, another subscribe */
-TEST_GROUP_C_WRAPPER(SubscribeTests, SubcribeToMaxPlusOneAllowedTopicsFailure)
+TEST_GROUP_C_WRAPPER(SubscribeTests, SubscribeToMaxPlusOneAllowedTopicsFailure)
 
 /* C:19 - Subscribe, '#' not last character in topic name, Failure */
 TEST_GROUP_C_WRAPPER(SubscribeTests, subscribeTopicWithHashkeyAllSubTopicSuccess)

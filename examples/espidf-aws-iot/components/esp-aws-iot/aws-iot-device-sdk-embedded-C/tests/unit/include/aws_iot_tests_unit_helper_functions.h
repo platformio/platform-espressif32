@@ -68,6 +68,10 @@ void setTLSRxBufferForUnsuback(void);
 
 void setTLSRxBufferForPingresp(void);
 
+void setTLSRxBufferForError(IoT_Error_t error);
+
+void setTLSTxBufferForError(IoT_Error_t error);
+
 void setTLSRxBufferForConnackAndSuback(IoT_Client_Connect_Params *conParams, unsigned char sessionPresent,
 											  char *topicName, size_t topicNameLen, QoS qos);
 
