@@ -68,7 +68,13 @@
       "type": "toolchain",
       "optional": true,
       "owner": "platformio",
-      "version": "~1.22851.190618"
+      "version": "~1.22851.0"
+    },
+    "toolchain-esp32s2ulp": {
+      "type": "toolchain",
+      "optional": true,
+      "owner": "platformio",
+      "version": "~1.22851.0"
     },
     "framework-arduinoespressif32": {
       "type": "framework",
@@ -86,7 +92,7 @@
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~3.40001.0"
+      "version": "~3.40100.0"
     },
     "framework-simba": {
       "type": "framework",

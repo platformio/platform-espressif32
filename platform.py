@@ -26,25 +26,29 @@ class Espressif32Platform(PlatformBase):
                 self, variables, targets)
 
         board_config = self.board_config(variables.get("board"))
-        mcu = variables.get("board_build.mcu", board_config.get(
-            "build.mcu", "esp32"))
+        mcu = variables.get("board_build.mcu", board_config.get("build.mcu", "esp32"))
+        frameworks = variables.get("pioframework", [])
         if "buildfs" in targets:
             self.packages['tool-mkspiffs']['optional'] = False
         if variables.get("upload_protocol"):
             self.packages['tool-openocd-esp32']['optional'] = False
         if isdir("ulp"):
             self.packages['toolchain-esp32ulp']['optional'] = False
-        if "espidf" in variables.get("pioframework", []):
+        if "espidf" in frameworks:
             for p in self.packages:
                 if p in ("tool-cmake", "tool-ninja", "toolchain-%sulp" % mcu):
                     self.packages[p]["optional"] = False
                 elif p in ("tool-mconf", "tool-idf") and "windows" in get_systype():
                     self.packages[p]['optional'] = False
             self.packages['toolchain-xtensa32']['version'] = "~2.80200.0"
+            if "arduino" in frameworks:
+                # Arduino component is not compatible with ESP-IDF >=4.1
+                self.packages['framework-espidf']['version'] = "~3.40001.0"
         # ESP32-S2 toolchain is identical for both Arduino and ESP-IDF
         if mcu == "esp32s2":
             self.packages.pop("toolchain-xtensa32", None)
             self.packages['toolchain-xtensa32s2']['optional'] = False
+            self.packages['toolchain-esp32s2ulp']['optional'] = False
             self.packages['tool-esptoolpy']['version'] = "~1.30000.0"
 
         build_core = variables.get(
