@@ -90,7 +90,7 @@ if "windows" in get_systype():
     if "esp-windows-curses" not in {pkg.key for pkg in pkg_resources.working_set}:
         env.Execute(
             env.VerboseAction(
-                '$PYTHONEXE -m pip install "file://%s/tools/kconfig_new/esp-windows-curses"'
+                '$PYTHONEXE -m pip install "file://%s/tools/kconfig_new/esp-windows-curses" windows-curses'
                 % FRAMEWORK_DIR,
                 "Installing windows-curses package",
             )
