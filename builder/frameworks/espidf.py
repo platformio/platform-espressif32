@@ -626,26 +626,6 @@ def RunMenuconfig(target, source, env):
         env.Exit(1)
 
 
-def ReconfigureProject(target, source, env):
-    idf_env = os.environ.copy()
-    populate_idf_env_vars(idf_env)
-
-    rc = subprocess.call(
-        [
-            os.path.join(platform.get_package_dir("tool-cmake"), "bin", "cmake"),
-            "--build",
-            BUILD_DIR,
-            "--target",
-            "reconfigure",
-        ],
-        env=idf_env,
-    )
-
-    if rc != 0:
-        sys.stderr.write("Error: Couldn't execute 'reconfigure' target.\n")
-        env.Exit(1)
-
-
 def run_cmake(src_dir, build_dir, extra_args=None):
     cmd = [
         os.path.join(platform.get_package_dir("tool-cmake") or "", "bin", "cmake"),
@@ -1009,15 +989,6 @@ env.AddPlatformTarget(
     [env.VerboseAction(RunMenuconfig, "Running menuconfig...")],
     "Run Menuconfig",
 )
-
-
-env.AddPlatformTarget(
-    "reconfigure",
-    None,
-    [env.VerboseAction(ReconfigureProject, "Reconfiguring project...")],
-    "Reconfigure Project",
-)
-
 
 #
 # Process main parts of the framework
