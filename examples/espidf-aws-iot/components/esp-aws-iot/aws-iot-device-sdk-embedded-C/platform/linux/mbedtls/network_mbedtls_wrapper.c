@@ -19,6 +19,8 @@ extern "C" {
 
 #include <stdbool.h>
 #include <string.h>
+#include "aws_iot_config.h"
+
 #include <timer_platform.h>
 #include <network_interface.h>
 
@@ -276,6 +278,10 @@ IoT_Error_t iot_tls_connect(Network *pNetwork, TLSConnectParams *params) {
 #endif
 
 	mbedtls_ssl_conf_read_timeout(&(tlsDataParams->conf), IOT_SSL_READ_TIMEOUT);
+
+#ifdef IOT_SSL_SOCKET_NON_BLOCKING
+	mbedtls_net_set_nonblock(&(tlsDataParams->server_fd));
+#endif
 
 	return (IoT_Error_t) ret;
 }

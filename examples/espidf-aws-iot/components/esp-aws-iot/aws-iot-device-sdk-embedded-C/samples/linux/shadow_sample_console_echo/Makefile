@@ -31,18 +31,19 @@ IOT_SRC_FILES += $(shell find $(PLATFORM_COMMON_DIR)/ -name '*.c')
 #TLS - mbedtls
 MBEDTLS_DIR = $(IOT_CLIENT_DIR)/external_libs/mbedTLS
 TLS_LIB_DIR = $(MBEDTLS_DIR)/library
+CRYPTO_LIB_DIR = $(MBEDTLS_DIR)/library
 TLS_INCLUDE_DIR = -I $(MBEDTLS_DIR)/include
 EXTERNAL_LIBS += -L$(TLS_LIB_DIR)
 LD_FLAG += -Wl,-rpath,$(TLS_LIB_DIR)
-LD_FLAG += -ldl $(TLS_LIB_DIR)/libmbedtls.a $(TLS_LIB_DIR)/libmbedcrypto.a $(TLS_LIB_DIR)/libmbedx509.a
+LD_FLAG += -ldl $(TLS_LIB_DIR)/libmbedtls.a $(CRYPTO_LIB_DIR)/libmbedcrypto.a $(TLS_LIB_DIR)/libmbedx509.a
 
 
 #Aggregate all include and src directories
-INCLUDE_ALL_DIRS += $(IOT_INCLUDE_DIRS) 
-INCLUDE_ALL_DIRS += $(MQTT_INCLUDE_DIR) 
+INCLUDE_ALL_DIRS += $(IOT_INCLUDE_DIRS)
+INCLUDE_ALL_DIRS += $(MQTT_INCLUDE_DIR)
 INCLUDE_ALL_DIRS += $(TLS_INCLUDE_DIR)
 INCLUDE_ALL_DIRS += $(APP_INCLUDE_DIRS)
- 
+
 SRC_FILES += $(MQTT_SRC_FILES)
 SRC_FILES += $(APP_SRC_FILES)
 SRC_FILES += $(IOT_SRC_FILES)
@@ -53,7 +54,7 @@ LOG_FLAGS += -DENABLE_IOT_INFO
 LOG_FLAGS += -DENABLE_IOT_WARN
 LOG_FLAGS += -DENABLE_IOT_ERROR
 
-COMPILER_FLAGS += -g 
+COMPILER_FLAGS += -g
 COMPILER_FLAGS += $(LOG_FLAGS)
 
 #If the processor is big endian uncomment the compiler flag

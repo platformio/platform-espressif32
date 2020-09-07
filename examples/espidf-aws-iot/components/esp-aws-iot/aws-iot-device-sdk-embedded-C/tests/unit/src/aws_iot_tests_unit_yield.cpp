@@ -52,3 +52,6 @@ TEST_GROUP_C_WRAPPER(YieldTests, disconnectAutoReconnectSuccess)
 TEST_GROUP_C_WRAPPER(YieldTests, disconnectManualAutoReconnect)
 /* G:12 - Yield, resubscribe to all topics on reconnect */
 TEST_GROUP_C_WRAPPER(YieldTests, resubscribeSuccessfulReconnect)
+
+/* G:13 - Delayed Ping response. */
+TEST_GROUP_C_WRAPPER(YieldTests, delayedPingResponse)

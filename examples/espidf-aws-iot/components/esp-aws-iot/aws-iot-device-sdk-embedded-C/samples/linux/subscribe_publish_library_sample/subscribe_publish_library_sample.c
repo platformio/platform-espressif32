@@ -42,24 +42,24 @@
 /**
  * @brief Default cert location
  */
-char certDirectory[PATH_MAX + 1] = "../../../certs";
+static char certDirectory[PATH_MAX + 1] = "../../../certs";
 
 /**
  * @brief Default MQTT HOST URL is pulled from the aws_iot_config.h
  */
-char HostAddress[HOST_ADDRESS_SIZE] = AWS_IOT_MQTT_HOST;
+static char HostAddress[HOST_ADDRESS_SIZE] = AWS_IOT_MQTT_HOST;
 
 /**
  * @brief Default MQTT port is pulled from the aws_iot_config.h
  */
-uint32_t port = AWS_IOT_MQTT_PORT;
+static uint32_t port = AWS_IOT_MQTT_PORT;
 
 /**
  * @brief This parameter will avoid infinite loop of publish and exit the program after certain number of publishes
  */
 uint32_t publishCount = 0;
 
-void iot_subscribe_callback_handler(AWS_IoT_Client *pClient, char *topicName, uint16_t topicNameLen,
+static void iot_subscribe_callback_handler(AWS_IoT_Client *pClient, char *topicName, uint16_t topicNameLen,
 									IoT_Publish_Message_Params *params, void *pData) {
 	IOT_UNUSED(pData);
 	IOT_UNUSED(pClient);
@@ -67,7 +67,7 @@ void iot_subscribe_callback_handler(AWS_IoT_Client *pClient, char *topicName, ui
 	IOT_INFO("%.*s\t%.*s", topicNameLen, topicName, (int) params->payloadLen, (char *) params->payload);
 }
 
-void disconnectCallbackHandler(AWS_IoT_Client *pClient, void *data) {
+static void disconnectCallbackHandler(AWS_IoT_Client *pClient, void *data) {
 	IOT_WARN("MQTT Disconnect");
 	IoT_Error_t rc = FAILURE;
 
@@ -90,7 +90,7 @@ void disconnectCallbackHandler(AWS_IoT_Client *pClient, void *data) {
 	}
 }
 
-void parseInputArgsForConnectParams(int argc, char **argv) {
+static void parseInputArgsForConnectParams(int argc, char **argv) {
 	int opt;
 
 	while(-1 != (opt = getopt(argc, argv, "h:p:c:x:"))) {

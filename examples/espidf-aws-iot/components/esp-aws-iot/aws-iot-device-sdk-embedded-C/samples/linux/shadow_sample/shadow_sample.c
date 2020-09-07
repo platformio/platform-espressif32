@@ -77,7 +77,7 @@ static void simulateRoomTemperature(float *pRoomTemperature) {
 	*pRoomTemperature += deltaChange;
 }
 
-void ShadowUpdateStatusCallback(const char *pThingName, ShadowActions_t action, Shadow_Ack_Status_t status,
+static void ShadowUpdateStatusCallback(const char *pThingName, ShadowActions_t action, Shadow_Ack_Status_t status,
 								const char *pReceivedJsonDocument, void *pContextData) {
 	IOT_UNUSED(pThingName);
 	IOT_UNUSED(action);
@@ -93,7 +93,7 @@ void ShadowUpdateStatusCallback(const char *pThingName, ShadowActions_t action, 
 	}
 }
 
-void windowActuate_Callback(const char *pJsonString, uint32_t JsonStringDataLen, jsonStruct_t *pContext) {
+static void windowActuate_Callback(const char *pJsonString, uint32_t JsonStringDataLen, jsonStruct_t *pContext) {
 	IOT_UNUSED(pJsonString);
 	IOT_UNUSED(JsonStringDataLen);
 
@@ -102,7 +102,7 @@ void windowActuate_Callback(const char *pJsonString, uint32_t JsonStringDataLen,
 	}
 }
 
-void parseInputArgsForConnectParams(int argc, char **argv) {
+static void parseInputArgsForConnectParams(int argc, char **argv) {
 	int opt;
 
 	while(-1 != (opt = getopt(argc, argv, "h:p:c:n:"))) {
@@ -113,7 +113,7 @@ void parseInputArgsForConnectParams(int argc, char **argv) {
 				break;
 			case 'p':
 				port = atoi(optarg);
-				IOT_DEBUG("arg %s", optarg);
+				IOT_DEBUG("port %s", optarg);
 				break;
 			case 'c':
 				strncpy(certDirectory, optarg, PATH_MAX + 1);
@@ -142,11 +142,9 @@ void parseInputArgsForConnectParams(int argc, char **argv) {
 
 int main(int argc, char **argv) {
 	IoT_Error_t rc = FAILURE;
-	int32_t i = 0;
 
 	char JsonDocumentBuffer[MAX_LENGTH_OF_UPDATE_JSON_BUFFER];
 	size_t sizeOfJsonDocumentBuffer = sizeof(JsonDocumentBuffer) / sizeof(JsonDocumentBuffer[0]);
-	char *pJsonStringToUpdate;
 	float temperature = 0.0;
 
 	bool windowOpen = false;
@@ -171,23 +169,24 @@ int main(int argc, char **argv) {
 
 	IOT_INFO("\nAWS IoT SDK Version %d.%d.%d-%s\n", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_TAG);
 
-	getcwd(CurrentWD, sizeof(CurrentWD));
-	snprintf(rootCA, PATH_MAX + 1, "%s/%s/%s", CurrentWD, certDirectory, AWS_IOT_ROOT_CA_FILENAME);
-	snprintf(clientCRT, PATH_MAX + 1, "%s/%s/%s", CurrentWD, certDirectory, AWS_IOT_CERTIFICATE_FILENAME);
-	snprintf(clientKey, PATH_MAX + 1, "%s/%s/%s", CurrentWD, certDirectory, AWS_IOT_PRIVATE_KEY_FILENAME);
-
 	IOT_DEBUG("rootCA %s", rootCA);
 	IOT_DEBUG("clientCRT %s", clientCRT);
 	IOT_DEBUG("clientKey %s", clientKey);
 
 	parseInputArgsForConnectParams(argc, argv);
 
+	// generate the paths of the credentials
+	getcwd(CurrentWD, sizeof(CurrentWD));
+	snprintf(rootCA, PATH_MAX + 1, "%s/%s/%s", CurrentWD, certDirectory, AWS_IOT_ROOT_CA_FILENAME);
+	snprintf(clientCRT, PATH_MAX + 1, "%s/%s/%s", CurrentWD, certDirectory, AWS_IOT_CERTIFICATE_FILENAME);
+	snprintf(clientKey, PATH_MAX + 1, "%s/%s/%s", CurrentWD, certDirectory, AWS_IOT_PRIVATE_KEY_FILENAME);
+
 	// initialize the mqtt client
 	AWS_IoT_Client mqttClient;
 
 	ShadowInitParameters_t sp = ShadowInitParametersDefault;
-	sp.pHost = AWS_IOT_MQTT_HOST;
-	sp.port = AWS_IOT_MQTT_PORT;
+	sp.pHost = HostAddress;
+	sp.port = port;
 	sp.pClientCRT = clientCRT;
 	sp.pClientKey = clientKey;
 	sp.pRootCA = rootCA;

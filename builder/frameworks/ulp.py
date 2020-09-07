@@ -13,14 +13,13 @@
 # limitations under the License.
 
 import os
-import sys
 
-from SCons.Script import COMMAND_LINE_TARGETS, Import, Return
+from SCons.Script import Import
 
 from platformio.util import get_systype
 from platformio.proc import where_is_program
 
-Import("env project_config")
+Import("env project_config idf_variant")
 
 ulp_env = env.Clone()
 platform = ulp_env.PioPlatform()
@@ -79,7 +78,7 @@ def generate_ulp_config(target_config):
             "components",
             "ulp",
             "cmake",
-            "toolchain-ulp.cmake",
+            "toolchain-%s-ulp.cmake" % idf_variant,
         ),
         '-DULP_S_SOURCES="%s"' % ";".join(ulp_sources),
         "-DULP_APP_NAME=ulp_main",
@@ -87,7 +86,7 @@ def generate_ulp_config(target_config):
         '-DCOMPONENT_INCLUDES="%s"' % ";".join(get_component_includes(target_config)),
         "-DIDF_PATH=" + FRAMEWORK_DIR,
         "-DSDKCONFIG=" + os.path.join(BUILD_DIR, "config", "sdkconfig.h"),
-        "-DPYTHON=python",
+        "-DPYTHON=" + env.subst("$PYTHONEXE"),
         "-GNinja",
         "-B",
         ULP_BUILD_DIR,

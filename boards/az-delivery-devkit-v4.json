@@ -26,7 +26,7 @@
   ],
   "name": "AZ-Delivery ESP-32 Dev Kit C V4",
   "upload": {
-    "flash_size": "16MB",
+    "flash_size": "4MB",
     "maximum_ram_size": 532480,
     "maximum_size": 16777216,
     "require_upload_port": true,

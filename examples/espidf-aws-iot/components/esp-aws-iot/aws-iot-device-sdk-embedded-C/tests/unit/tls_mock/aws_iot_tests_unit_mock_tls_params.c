@@ -35,8 +35,8 @@ size_t lastPublishMessageTopicLen;
 char LastPublishMessagePayload[TLSMaxBufferSize];
 size_t lastPublishMessagePayloadLen;
 
-TlsBuffer RxBuffer = {.pBuffer = RxBuf,.len = 512, .NoMsgFlag=1, .expiry_time = {0, 0}, .BufMaxSize = TLSMaxBufferSize};
-TlsBuffer TxBuffer = {.pBuffer = TxBuf,.len = 512, .NoMsgFlag=1, .expiry_time = {0, 0}, .BufMaxSize = TLSMaxBufferSize};
+TlsBuffer RxBuffer = {.pBuffer = RxBuf,.len = 512, .NoMsgFlag=1, .expiry_time = {0, 0}, .BufMaxSize = TLSMaxBufferSize, .mockedError = SUCCESS};
+TlsBuffer TxBuffer = {.pBuffer = TxBuf,.len = 512, .NoMsgFlag=1, .expiry_time = {0, 0}, .BufMaxSize = TLSMaxBufferSize, .mockedError = SUCCESS};
 
 size_t RxIndex = 0;
 

@@ -111,8 +111,18 @@ IoT_Error_t iot_tls_write(Network *pNetwork, unsigned char *pMsg, size_t len, Ti
 	uint8_t firstPacketByte;
 	size_t mqttPacketLength;
 	size_t variableHeaderStart;
+	IoT_Error_t status = SUCCESS;
 	IOT_UNUSED(pNetwork);
 	IOT_UNUSED(timer);
+
+	if(TxBuffer.mockedError != SUCCESS ) {
+		status = TxBuffer.mockedError;
+
+		/* Clear the error before returning. */
+		TxBuffer.mockedError = SUCCESS;
+
+		return status;
+	}
 
 	for(i = 0; (i < len) && left_ms(timer) > 0; i++) {
 		TxBuffer.pBuffer[i] = pMsg[i];
@@ -151,7 +161,7 @@ IoT_Error_t iot_tls_write(Network *pNetwork, unsigned char *pMsg, size_t len, Ti
 		LastPublishMessagePayload[lastPublishMessagePayloadLen] = 0;
 	}
 
-	return SUCCESS;
+	return status;
 }
 
 static unsigned char isTimerExpired(struct timeval target_time) {
@@ -171,8 +181,19 @@ static unsigned char isTimerExpired(struct timeval target_time) {
 }
 
 IoT_Error_t iot_tls_read(Network *pNetwork, unsigned char *pMsg, size_t len, Timer *pTimer, size_t *read_len) {
+	IoT_Error_t status = SUCCESS;
+
 	IOT_UNUSED(pNetwork);
 	IOT_UNUSED(pTimer);
+
+	if(RxBuffer.mockedError != SUCCESS) {
+		status = RxBuffer.mockedError;
+
+		/* Clear the error before returning. */
+		RxBuffer.mockedError = SUCCESS;
+
+		return status;
+	}
 
 	if(RxIndex > TLSMaxBufferSize - 1) {
 		RxIndex = TLSMaxBufferSize - 1;
@@ -188,7 +209,7 @@ IoT_Error_t iot_tls_read(Network *pNetwork, unsigned char *pMsg, size_t len, Tim
 		*read_len = len;
 	}
 
-	return SUCCESS;
+	return status;
 }
 
 IoT_Error_t iot_tls_disconnect(Network *pNetwork) {

@@ -450,3 +450,44 @@ TEST_C(YieldTests, resubscribeSuccessfulReconnect) {
 
 	IOT_DEBUG("-->Success - G:12 - Yield, resubscribe to all topics on reconnect \n");
 }
+
+/* G:13 - Delayed Ping response. */
+TEST_C(YieldTests, delayedPingResponse)
+{
+	IoT_Error_t rc = FAILURE;
+
+	IOT_DEBUG("-->Running Yield Tests - G:13 - Delayed Ping response. \n");
+
+	ResetTLSBuffer();
+
+	/* Sleep for keep alive interval to allow the first ping to be sent out. */
+	sleep(iotClient.clientData.keepAliveInterval);
+	rc = aws_iot_mqtt_yield(&iotClient, 100);
+	CHECK_EQUAL_C_INT(SUCCESS, rc);
+	CHECK_EQUAL_C_INT(true, isLastTLSTxMessagePingreq());
+
+	/* Sleep for half of the keep alive interval to simulate a delayed ping
+	 * response. */
+	sleep(iotClient.clientData.keepAliveInterval / 2);
+
+	/* Receive the delayed ping response. */
+	ResetTLSBuffer();
+	setTLSRxBufferForPingresp();
+	rc = aws_iot_mqtt_yield(&iotClient, 100);
+	CHECK_EQUAL_C_INT(SUCCESS, rc);
+
+	/* Sleep for half of the keep alive interval - at this time a ping request
+	 * must be sent out because a full keep alive interval has passed since we
+	 * last sent a ping request. This ensures that the timer which tracks when
+	 * to send a ping request does not incorrectly get reset upon receipt of a
+	 * ping response. +1 is done to ensure that we don't hit boundry condition
+	 * where timer does not expire because the time elasped is exactly equal to
+	 * the keep alive interval (as opposed to more than that). */
+	sleep(iotClient.clientData.keepAliveInterval / 2 + 1);
+	ResetTLSBuffer();
+	rc = aws_iot_mqtt_yield(&iotClient, 100);
+	CHECK_EQUAL_C_INT(SUCCESS, rc);
+	CHECK_EQUAL_C_INT(true, isLastTLSTxMessagePingreq());
+
+	IOT_DEBUG("-->Success - G:13 - Delayed Ping response. \n");
+}

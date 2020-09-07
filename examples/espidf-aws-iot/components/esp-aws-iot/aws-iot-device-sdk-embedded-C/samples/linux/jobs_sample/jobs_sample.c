@@ -15,16 +15,16 @@
 
 /**
  *
- * This example takes the parameters from the aws_iot_config.h file and establishes 
- * a connection to the AWS IoT MQTT Platform. It performs several operations to 
+ * This example takes the parameters from the aws_iot_config.h file and establishes
+ * a connection to the AWS IoT MQTT Platform. It performs several operations to
  * demonstrate the basic capabilities of the AWS IoT Jobs platform.
  *
- * If all the certs are correct, you should see the list of pending Job Executions 
- * printed out by the iot_get_pending_callback_handler. If there are any existing pending 
+ * If all the certs are correct, you should see the list of pending Job Executions
+ * printed out by the iot_get_pending_callback_handler. If there are any existing pending
  * job executions each will be processed one at a time in the iot_next_job_callback_handler.
  * After all of the pending jobs have been processed the program will wait for
  * notifications for new pending jobs and process them one at a time as they come in.
- * 
+ *
  * In the main body you can see how each callback is registered for each corresponding
  * Jobs topic.
  *
@@ -46,23 +46,23 @@
 /**
  * @brief Default cert location
  */
-char certDirectory[PATH_MAX + 1] = "../../../certs";
+static char certDirectory[PATH_MAX + 1] = "../../../certs";
 
 /**
  * @brief Default MQTT HOST URL is pulled from the aws_iot_config.h
  */
-char HostAddress[255] = AWS_IOT_MQTT_HOST;
+static char HostAddress[255] = AWS_IOT_MQTT_HOST;
 
 /**
  * @brief Default MQTT port is pulled from the aws_iot_config.h
  */
-uint32_t port = AWS_IOT_MQTT_PORT;
+static uint32_t port = AWS_IOT_MQTT_PORT;
 
 static jsmn_parser jsonParser;
 static jsmntok_t jsonTokenStruct[MAX_JSON_TOKEN_EXPECTED];
 static int32_t tokenCount;
 
-void iot_get_pending_callback_handler(AWS_IoT_Client *pClient, char *topicName, uint16_t topicNameLen,
+static void iot_get_pending_callback_handler(AWS_IoT_Client *pClient, char *topicName, uint16_t topicNameLen,
 									IoT_Publish_Message_Params *params, void *pData) {
 	IOT_UNUSED(pData);
 	IOT_UNUSED(pClient);
@@ -91,7 +91,7 @@ void iot_get_pending_callback_handler(AWS_IoT_Client *pClient, char *topicName, 
 
 	if (jobs) {
 		IOT_INFO("inProgressJobs: %.*s", jobs->end - jobs->start, (char *)params->payload + jobs->start);
-	}	
+	}
 
 	jobs = findToken("queuedJobs", params->payload, jsonTokenStruct);
 
@@ -100,7 +100,7 @@ void iot_get_pending_callback_handler(AWS_IoT_Client *pClient, char *topicName, 
 	}
 }
 
-void iot_next_job_callback_handler(AWS_IoT_Client *pClient, char *topicName, uint16_t topicNameLen,
+static void iot_next_job_callback_handler(AWS_IoT_Client *pClient, char *topicName, uint16_t topicNameLen,
 									IoT_Publish_Message_Params *params, void *pData) {
 	char topicToPublishUpdate[MAX_JOB_TOPIC_LENGTH_BYTES];
 	char messageBuffer[200];
@@ -142,7 +142,7 @@ void iot_next_job_callback_handler(AWS_IoT_Client *pClient, char *topicName, uin
 			char jobId[MAX_SIZE_OF_JOB_ID + 1];
 			AwsIotJobExecutionUpdateRequest updateRequest;
 
-			rc = parseStringValue(jobId, MAX_SIZE_OF_JOB_ID + 1, params->payload, tok);			
+			rc = parseStringValue(jobId, MAX_SIZE_OF_JOB_ID + 1, params->payload, tok);
 			if(SUCCESS != rc) {
 				IOT_ERROR("parseStringValue returned error : %d ", rc);
 				return;
@@ -172,15 +172,19 @@ void iot_next_job_callback_handler(AWS_IoT_Client *pClient, char *topicName, uin
 			updateRequest.includeJobDocument = false;
 			updateRequest.clientToken = NULL;
 
-			rc = aws_iot_jobs_send_update(pClient, QOS0, AWS_IOT_MY_THING_NAME, jobId, &updateRequest, 
+			rc = aws_iot_jobs_send_update(pClient, QOS0, AWS_IOT_MY_THING_NAME, jobId, &updateRequest,
 					topicToPublishUpdate, sizeof(topicToPublishUpdate), messageBuffer, sizeof(messageBuffer));
+			if(SUCCESS != rc) {
+				IOT_ERROR("aws_iot_jobs_send_update returned error : %d ", rc);
+				return;
+			}
 		}
 	} else {
-		IOT_INFO("execution property not found, nothing to do");		
+		IOT_INFO("execution property not found, nothing to do");
 	}
 }
 
-void iot_update_accepted_callback_handler(AWS_IoT_Client *pClient, char *topicName, uint16_t topicNameLen,
+static void iot_update_accepted_callback_handler(AWS_IoT_Client *pClient, char *topicName, uint16_t topicNameLen,
 									IoT_Publish_Message_Params *params, void *pData) {
 	IOT_UNUSED(pData);
 	IOT_UNUSED(pClient);
@@ -189,7 +193,7 @@ void iot_update_accepted_callback_handler(AWS_IoT_Client *pClient, char *topicNa
 	IOT_INFO("payload: %.*s", (int) params->payloadLen, (char *)params->payload);
 }
 
-void iot_update_rejected_callback_handler(AWS_IoT_Client *pClient, char *topicName, uint16_t topicNameLen,
+static void iot_update_rejected_callback_handler(AWS_IoT_Client *pClient, char *topicName, uint16_t topicNameLen,
 									IoT_Publish_Message_Params *params, void *pData) {
 	IOT_UNUSED(pData);
 	IOT_UNUSED(pClient);
@@ -200,7 +204,7 @@ void iot_update_rejected_callback_handler(AWS_IoT_Client *pClient, char *topicNa
 	/* Do error handling here for when the update was rejected */
 }
 
-void disconnectCallbackHandler(AWS_IoT_Client *pClient, void *data) {
+static void disconnectCallbackHandler(AWS_IoT_Client *pClient, void *data) {
 	IOT_WARN("MQTT Disconnect");
 	IoT_Error_t rc = FAILURE;
 
@@ -229,8 +233,6 @@ int main(int argc, char **argv) {
 	char clientKey[PATH_MAX + 1];
 	char CurrentWD[PATH_MAX + 1];
 	char cPayload[100];
-
-	int32_t i = 0;
 
 	IoT_Error_t rc = FAILURE;
 
@@ -351,6 +353,10 @@ int main(int argc, char **argv) {
 	paramsQOS0.payloadLen = strlen(cPayload);
 
 	rc = aws_iot_jobs_send_query(&client, QOS0, AWS_IOT_MY_THING_NAME, NULL, NULL, topicToPublishGetPending, sizeof(topicToPublishGetPending), NULL, 0, JOB_GET_PENDING_TOPIC);
+	if(SUCCESS != rc) {
+		IOT_ERROR("Error calling aws_iot_jobs_send_query: %d ", rc);
+		return rc;
+	}
 
 	AwsIotDescribeJobExecutionRequest describeRequest;
 	describeRequest.executionNumber = 0;

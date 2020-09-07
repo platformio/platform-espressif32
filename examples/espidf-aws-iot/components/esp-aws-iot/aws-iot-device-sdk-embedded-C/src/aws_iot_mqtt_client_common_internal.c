@@ -43,13 +43,15 @@ extern "C" {
 #include <aws_iot_mqtt_client.h>
 #include "aws_iot_mqtt_client_common_internal.h"
 
-/* Max length of packet header */
+/** Max length of packet header */
 #define MAX_NO_OF_REMAINING_LENGTH_BYTES 4
 
 /**
- * Encodes the message length according to the MQTT algorithm
+ * @brief Encodes the message length according to the MQTT algorithm
+ *
  * @param buf the buffer into which the encoded data is written
  * @param length the length to be encoded
+ *
  * @return the number of bytes written to buffer
  */
 size_t aws_iot_mqtt_internal_write_len_to_buffer(unsigned char *buf, uint32_t length) {
@@ -71,10 +73,13 @@ size_t aws_iot_mqtt_internal_write_len_to_buffer(unsigned char *buf, uint32_t le
 }
 
 /**
- * Decodes the message length according to the MQTT algorithm
- * @param the buffer containing the message
- * @param value the decoded length returned
- * @return the number of bytes read from the socket
+ * @brief Decodes the message length according to the MQTT algorithm
+ *
+ * @param buf the buffer containing the message
+ * @param decodedLen value the decoded length returned
+ * @param readBytesLen output parameter for the number of bytes read from the socket
+ *
+ * @return IoT_Error_t indicating decode status
  */
 IoT_Error_t aws_iot_mqtt_internal_decode_remaining_length_from_buffer(unsigned char *buf, uint32_t *decodedLen,
 																	  uint32_t *readBytesLen) {
@@ -102,6 +107,13 @@ IoT_Error_t aws_iot_mqtt_internal_decode_remaining_length_from_buffer(unsigned c
 	FUNC_EXIT_RC(SUCCESS);
 }
 
+/**
+ * @brief Calculates the length of the "remaining length" encoding
+ *
+ * @param rem_len "remaining length" to encode
+ *
+ * @return length of the remaining length encoding
+ */
 uint32_t aws_iot_mqtt_internal_get_final_packet_length_from_remaining_length(uint32_t rem_len) {
 	rem_len += 1; /* header byte */
 	/* now remaining_length field (MQTT 3.1.1 - 2.2.3)*/
@@ -118,7 +130,8 @@ uint32_t aws_iot_mqtt_internal_get_final_packet_length_from_remaining_length(uin
 }
 
 /**
- * Calculates uint16 packet id from two bytes read from the input buffer
+ * @brief Calculates uint16 packet id from two bytes read from the input buffer
+ *
  * Checks Endianness at runtime
  *
  * @param pptr pointer to the input buffer - incremented by the number of bytes used & returned
@@ -136,7 +149,8 @@ uint16_t aws_iot_mqtt_internal_read_uint16_t(unsigned char **pptr) {
 }
 
 /**
- * Writes an integer as 2 bytes to an output buffer.
+ * @brief Writes an integer as 2 bytes to an output buffer.
+ *
  * @param pptr pointer to the output buffer - incremented by the number of bytes used & returned
  * @param anInt the integer to write
  */
@@ -148,7 +162,8 @@ void aws_iot_mqtt_internal_write_uint_16(unsigned char **pptr, uint16_t anInt) {
 }
 
 /**
- * Reads one character from the input buffer.
+ * @brief Reads one character from the input buffer.
+ *
  * @param pptr pointer to the input buffer - incremented by the number of bytes used & returned
  * @return the character read
  */
@@ -159,7 +174,8 @@ unsigned char aws_iot_mqtt_internal_read_char(unsigned char **pptr) {
 }
 
 /**
- * Writes one character to an output buffer.
+ * @brief Writes one character to an output buffer.
+ *
  * @param pptr pointer to the output buffer - incremented by the number of bytes used & returned
  * @param c the character to write
  */
@@ -168,6 +184,13 @@ void aws_iot_mqtt_internal_write_char(unsigned char **pptr, unsigned char c) {
 	(*pptr)++;
 }
 
+/**
+ * @brief Writes a UTF-8 string into an MQTT packet
+ *
+ * @param pptr Where the string should be written
+ * @param string The string to write
+ * @param stringLen Length to write
+ */
 void aws_iot_mqtt_internal_write_utf8_string(unsigned char **pptr, const char *string, uint16_t stringLen) {
 	/* Nothing that calls this function will have a stringLen with a size larger than 2 bytes (MQTT 3.1.1 - 1.5.3) */
 	aws_iot_mqtt_internal_write_uint_16(pptr, stringLen);
@@ -178,10 +201,19 @@ void aws_iot_mqtt_internal_write_utf8_string(unsigned char **pptr, const char *s
 }
 
 /**
- * Initialize the MQTTHeader structure. Used to ensure that Header bits are
- * always initialized using the proper mappings. No Endianness issues here since
- * the individual fields are all less than a byte. Also generates no warnings since
- * all fields are initialized using hex constants
+ * @brief Initialize the MQTTHeader structure.
+ *
+ * Used to ensure that Header bits are always initialized using the proper mappings.
+ * No Endianness issues here since the individual fields are all less than a byte.
+ * Also generates no warnings since all fields are initialized using hex constants.
+ *
+ * @param pHeader Header to initialize
+ * @param message_type MQTT packet type
+ * @param qos Quality of service for packet
+ * @param dup DUP flag of a publish
+ * @param retained RETAIN flag of a publish
+ *
+ * @return Returns SUCCESS unless an invalid packet type is given.
  */
 IoT_Error_t aws_iot_mqtt_internal_init_header(MQTTHeader *pHeader, MessageTypes message_type,
 											  QoS qos, uint8_t dup, uint8_t retained) {
@@ -264,10 +296,19 @@ IoT_Error_t aws_iot_mqtt_internal_init_header(MQTTHeader *pHeader, MessageTypes 
 	FUNC_EXIT_RC(SUCCESS);
 }
 
+/**
+ * @brief Send an MQTT packet on the network
+ *
+ * @param pClient MQTT client which holds packet
+ * @param length Length of packet to send
+ * @param pTimer Amount of time allowed to send packet
+ *
+ * @return IoT_Error_t of send status
+ */
 IoT_Error_t aws_iot_mqtt_internal_send_packet(AWS_IoT_Client *pClient, size_t length, Timer *pTimer) {
 
 	size_t sentLen, sent;
-	IoT_Error_t rc;
+	IoT_Error_t rc = FAILURE;
 
 	FUNC_ENTRY;
 
@@ -344,7 +385,7 @@ static IoT_Error_t _aws_iot_mqtt_internal_readWrapper( AWS_IoT_Client *pClient, 
         rc = SUCCESS;
     }
 
- 
+
 
     return rc;
 }
@@ -404,8 +445,8 @@ static IoT_Error_t _aws_iot_mqtt_internal_read_packet(AWS_IoT_Client *pClient, T
 	rc = _aws_iot_mqtt_internal_decode_packet_remaining_len(pClient, &offset, &rem_len, pTimer);
 	if(SUCCESS != rc) {
 		return rc;
-	} 
-     
+	}
+
 	/* if the buffer is too short then the message will be dropped silently */
 	if((rem_len + offset) >= pClient->clientData.readBufSize) {
 		bytes_to_be_read = pClient->clientData.readBufSize;
@@ -529,12 +570,13 @@ static IoT_Error_t _aws_iot_mqtt_internal_deliver_message(AWS_IoT_Client *pClien
 	FUNC_EXIT_RC(rc);
 }
 
-static IoT_Error_t _aws_iot_mqtt_internal_handle_publish(AWS_IoT_Client *pClient, Timer *pTimer) {
+static IoT_Error_t _aws_iot_mqtt_internal_handle_publish(AWS_IoT_Client *pClient) {
 	char *topicName;
 	uint16_t topicNameLen;
 	uint32_t len;
 	IoT_Error_t rc;
 	IoT_Publish_Message_Params msg;
+	Timer sendTimer;
 
 	FUNC_ENTRY;
 
@@ -552,25 +594,29 @@ static IoT_Error_t _aws_iot_mqtt_internal_handle_publish(AWS_IoT_Client *pClient
 		FUNC_EXIT_RC(rc);
 	}
 
+	/* Send acknowledgement of QoS 1 message. */
+	if(QOS1 == msg.qos) {
+		/* Initialize timer for sending PUBACK. */
+		init_timer(&sendTimer);
+		countdown_ms(&sendTimer, pClient->clientData.commandTimeoutMs);
+
+		/* Generate and send a PUBACK. Warn if the PUBACK isn't sent; the server
+		will send the PUBLISH again in that case. */
+		rc = aws_iot_mqtt_internal_serialize_ack(pClient->clientData.writeBuf,
+			pClient->clientData.writeBufSize, PUBACK, 0, msg.id, &len);
+
+		if(SUCCESS == rc) {
+			rc = aws_iot_mqtt_internal_send_packet(pClient, len, &sendTimer);
+
+			if(SUCCESS != rc) {
+				IOT_WARN("Failed to send PUBACK");
+			}
+		} else {
+			IOT_WARN("Failed to generate PUBACK");
+		}
+	}
+
 	rc = _aws_iot_mqtt_internal_deliver_message(pClient, topicName, topicNameLen, &msg);
-	if(SUCCESS != rc) {
-		FUNC_EXIT_RC(rc);
-	}
-
-	if(QOS0 == msg.qos) {
-		/* No further processing required for QoS0 */
-		FUNC_EXIT_RC(SUCCESS);
-	}
-
-	/* Message assumed to be QoS1 since we do not support QoS2 at this time */
-	rc = aws_iot_mqtt_internal_serialize_ack(pClient->clientData.writeBuf, pClient->clientData.writeBufSize,
-											 PUBACK, 0, msg.id, &len);
-
-	if(SUCCESS != rc) {
-		FUNC_EXIT_RC(rc);
-	}
-
-	rc = aws_iot_mqtt_internal_send_packet(pClient, len, pTimer);
 	if(SUCCESS != rc) {
 		FUNC_EXIT_RC(rc);
 	}
@@ -578,6 +624,15 @@ static IoT_Error_t _aws_iot_mqtt_internal_handle_publish(AWS_IoT_Client *pClient
 	FUNC_EXIT_RC(SUCCESS);
 }
 
+/**
+ * @brief Read an MQTT packet from the network
+ *
+ * @param pClient MQTT client
+ * @param pTimer Amount of time allowed to read packet
+ * @param pPacketType Output parameter for packet read from network
+ *
+ * @return IoT_Error_t of read status
+ */
 IoT_Error_t aws_iot_mqtt_internal_cycle_read(AWS_IoT_Client *pClient, Timer *pTimer, uint8_t *pPacketType) {
 	IoT_Error_t rc;
 
@@ -621,7 +676,7 @@ IoT_Error_t aws_iot_mqtt_internal_cycle_read(AWS_IoT_Client *pClient, Timer *pTi
 			/* SDK is blocking, these responses will be forwarded to calling function to process */
 			break;
 		case PUBLISH: {
-			rc = _aws_iot_mqtt_internal_handle_publish(pClient, pTimer);
+			rc = _aws_iot_mqtt_internal_handle_publish(pClient);
 			break;
 		}
 		case PUBREC:
@@ -629,8 +684,8 @@ IoT_Error_t aws_iot_mqtt_internal_cycle_read(AWS_IoT_Client *pClient, Timer *pTi
 			/* QoS2 not supported at this time */
 			break;
 		case PINGRESP: {
-			pClient->clientStatus.isPingOutstanding = 0;
-			countdown_sec(&pClient->pingTimer, pClient->clientData.keepAliveInterval);
+			/* There is no outstanding ping request anymore. */
+			pClient->clientStatus.isPingOutstanding = false;
 			break;
 		}
 		default: {
@@ -644,12 +699,29 @@ IoT_Error_t aws_iot_mqtt_internal_cycle_read(AWS_IoT_Client *pClient, Timer *pTi
 	return rc;
 }
 
+/**
+ * @brief Flush incoming data from the MQTT client
+ *
+ * @param pClient Client with data to flush
+ *
+ * @return Always returns SUCCESS
+ */
 IoT_Error_t aws_iot_mqtt_internal_flushBuffers( AWS_IoT_Client *pClient ) {
     pClient->clientData.readBufIndex = 0;
     return SUCCESS;
 }
 
-/* only used in single-threaded mode where one command at a time is in process */
+/**
+ * @brief Wait until a packet is read from the network
+ *
+ * Only used in single-threaded mode where one command at a time is in process
+ *
+ * @param pClient MQTT client
+ * @param packetType MQTT packet to read
+ * @param pTimer Amount of time allowed to read packet
+ *
+ * @return IoT_Error_t of read status
+ */
 IoT_Error_t aws_iot_mqtt_internal_wait_for_read(AWS_IoT_Client *pClient, uint8_t packetType, Timer *pTimer) {
 	IoT_Error_t rc;
 	uint8_t read_packet_type;
@@ -676,10 +748,10 @@ IoT_Error_t aws_iot_mqtt_internal_wait_for_read(AWS_IoT_Client *pClient, uint8_t
 
 /**
   * Serializes a 0-length packet into the supplied buffer, ready for writing to a socket
-  * @param buf the buffer into which the packet will be serialized
-  * @param buflen the length in bytes of the supplied buffer, to avoid overruns
-  * @param packettype the message type
-  * @param serialized length
+  * @param pTxBuf the buffer into which the packet will be serialized
+  * @param txBufLen the length in bytes of the supplied buffer, to avoid overruns
+  * @param packetType the message type
+  * @param pSerializedLength length
   * @return IoT_Error_t indicating function execution status
   */
 IoT_Error_t aws_iot_mqtt_internal_serialize_zero(unsigned char *pTxBuf, size_t txBufLen, MessageTypes packetType,

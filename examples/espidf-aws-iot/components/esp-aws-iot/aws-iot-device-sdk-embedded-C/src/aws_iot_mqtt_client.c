@@ -43,11 +43,15 @@ extern "C" {
 
 #include "aws_iot_log.h"
 #include "aws_iot_mqtt_client_interface.h"
+#include "aws_iot_mqtt_client_common_internal.h"
 #include "aws_iot_version.h"
 
 #if !DISABLE_METRICS
+/** Length of metrics username */
 #define SDK_METRICS_LEN 25
+/** Metrics username for AWS IoT */
 #define SDK_METRICS_TEMPLATE "?SDK=C&Version=%d.%d.%d"
+/** Buffer for metrics username */
 static char pUsernameTemp[SDK_METRICS_LEN] = {0};
 #endif
 
@@ -69,6 +73,14 @@ ClientState aws_iot_mqtt_get_client_state(AWS_IoT_Client *pClient) {
 }
 
 #ifdef _ENABLE_THREAD_SUPPORT_
+/**
+ * @brief Lock a mutex in the MQTT client
+ *
+ * @param pClient MQTT client
+ * @param pMutex Mutex to lock
+ *
+ * @return IoT_Error_t of mutex operation
+ */
 IoT_Error_t aws_iot_mqtt_client_lock_mutex(AWS_IoT_Client *pClient, IoT_Mutex_t *pMutex) {
 	FUNC_ENTRY;
 	IoT_Error_t threadRc = FAILURE;
@@ -91,6 +103,14 @@ IoT_Error_t aws_iot_mqtt_client_lock_mutex(AWS_IoT_Client *pClient, IoT_Mutex_t 
 	FUNC_EXIT_RC(SUCCESS);
 }
 
+/**
+ * @brief Unlock a mutex in the MQTT client
+ *
+ * @param pClient MQTT client
+ * @param pMutex Mutex to unlock
+ *
+ * @return IoT_Error_t of mutex operation
+ */
 IoT_Error_t aws_iot_mqtt_client_unlock_mutex(AWS_IoT_Client *pClient, IoT_Mutex_t *pMutex) {
 	if(NULL == pClient || NULL == pMutex) {
 		return NULL_VALUE_ERROR;
@@ -100,6 +120,15 @@ IoT_Error_t aws_iot_mqtt_client_unlock_mutex(AWS_IoT_Client *pClient, IoT_Mutex_
 }
 #endif
 
+/**
+ * @brief Change the state in an MQTT client
+ *
+ * @param pClient MQTT client
+ * @param expectedCurrentState What the current state of the client should be
+ * @param newState What the new state of the client should be
+ *
+ * @return IoT_Error_t of state change
+ */
 IoT_Error_t aws_iot_mqtt_set_client_state(AWS_IoT_Client *pClient, ClientState expectedCurrentState,
 										  ClientState newState) {
 	IoT_Error_t rc;
@@ -273,7 +302,8 @@ IoT_Error_t aws_iot_mqtt_init(AWS_IoT_Client *pClient, const IoT_Client_Init_Par
 		FUNC_EXIT_RC(rc);
 	}
 
-	init_timer(&(pClient->pingTimer));
+	init_timer(&(pClient->pingReqTimer));
+	init_timer(&(pClient->pingRespTimer));
 	init_timer(&(pClient->reconnectDelayTimer));
 
 	pClient->clientStatus.clientState = CLIENT_STATE_INITIALIZED;
@@ -365,4 +395,3 @@ void aws_iot_mqtt_reset_network_disconnected_count(AWS_IoT_Client *pClient) {
 #ifdef __cplusplus
 }
 #endif
-

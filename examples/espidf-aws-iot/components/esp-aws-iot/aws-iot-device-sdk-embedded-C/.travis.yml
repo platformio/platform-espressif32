@@ -1,27 +1,12 @@
 language: c
 
-# Get Coverity certificate.
-before_install:
-  - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
-
-# Coverity configuration.
-addons:
-  coverity_scan:
-    project:
-      name: "aws-iot-device-sdk-embedded-C"
-      description: "SDK for connecting to AWS IoT from a device using embedded C. "
-    notification_email: nobody@amazon.com
-    build_command_prepend: "cd tests/integration"
-    build_command: "make app"
-    branch_pattern: master
-
 install:
   # Remove placeholders.
   - rm external_libs/CppUTest/*
-  - rm -rf external_libs/mbedTLS
+  - rm external_libs/mbedTLS/*
 
   # Get mbedtls.
-  - git clone https://github.com/ARMmbed/mbedtls.git external_libs/mbedTLS
+  - wget -qO- https://github.com/ARMmbed/mbedtls/archive/mbedtls-2.16.5.tar.gz | tar xvz -C external_libs/mbedTLS --strip-components=1
 
   # Get CppUTest.
   - wget -qO- https://github.com/cpputest/cpputest/archive/v3.6.tar.gz | tar xvz -C external_libs/CppUTest --strip-components=1
@@ -29,38 +14,31 @@ install:
 script:
   # Verify that the samples build.
   - cd samples/linux/jobs_sample
-  - make
+  - make -j2
   - cd ../shadow_sample
-  - make
+  - make -j2
   - cd ../shadow_sample_console_echo
-  - make
+  - make -j2
   - cd ../subscribe_publish_library_sample
-  - make
+  - make -j2
   - cd ../subscribe_publish_sample
-  - make
+  - make -j2
 
-  # Set the AWS IoT endpoint.
-  - cd ../../../tests/integration
-  - sed -i 's/^.*#define AWS_IOT_MQTT_HOST.*$/#define AWS_IOT_MQTT_HOST "'"$INTEGRATION_TEST_ENDPOINT"'"/' include/aws_iot_config.h
+  # Build and run unit tests.
+  - cd ../../../
+  - make build-cpputest -j2
+  - make all_no_tests -j2
+  - ./IotSdkC_tests -v
 
-  # Build the integration tests.
-  - make app
+  # Set up integration tests if not a pull request.
+  - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then cd tests/integration; fi
+  - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then sed -i 's/^.*#define AWS_IOT_MQTT_HOST.*$/#define AWS_IOT_MQTT_HOST "'"$AWS_IOT_ENDPOINT"'"/' include/aws_iot_config.h; fi
+  - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then make app -j2; fi
 
-  # Build the unit tests.
-  - cd ../../
-  - make build-cpputest
-  - make all_no_tests
+  # Import credentials for integration tests.
+  - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then wget https://www.amazontrust.com/repository/AmazonRootCA1.pem -O ../../certs/rootCA.crt; fi
+  - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then echo -e $AWS_IOT_CLIENT_CERT > ../../certs/cert.pem; fi
+  - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then echo -e $AWS_IOT_PRIVATE_KEY > ../../certs/privkey.pem; fi
 
-  # Execute unit tests.
-  - ./IotSdkC_tests
-
-  # Import credentials.
-  - echo -e $INTEGRATION_TEST_CLIENT_CERT > certs/cert.pem
-  - echo -e $INTEGRATION_TEST_ROOT_CA > certs/rootCA.crt
-  - echo -e $INTEGRATION_TEST_PRIVATE_KEY > certs/privkey.pem
-
-  # Execute integration tests.
-  - cd tests/integration
-  - ./integration_tests_mbedtls
-  - ./integration_tests_mbedtls_mt
-  
+  # Run integration tests.
+  - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then ./integration_tests_mbedtls; fi
