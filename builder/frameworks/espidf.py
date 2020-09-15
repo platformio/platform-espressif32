@@ -1065,8 +1065,15 @@ env.Prepend(
     LINKFLAGS=extra_flags,
     LIBS=libs,
     FLASH_EXTRA_IMAGES=[
-        ("0x1000", os.path.join("$BUILD_DIR", "bootloader.bin")),
-        ("0x8000", os.path.join("$BUILD_DIR", "partitions.bin")),
+        (
+            board.get("upload.bootloader_offset", "0x1000"),
+            os.path.join("$BUILD_DIR", "bootloader.bin")
+        ),
+        (
+            board.get("upload.partition_table_offset", hex(
+                sdk_config.get("PARTITION_TABLE_OFFSET", 0x8000))),
+            os.path.join("$BUILD_DIR", "partitions.bin")
+        ),
     ],
 )
 
