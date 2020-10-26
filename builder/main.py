@@ -371,13 +371,13 @@ elif upload_protocol in debug_tools:
         debug_tools.get(upload_protocol).get("server").get("arguments", []))
     openocd_args.extend([
         "-c",
-        "program_esp32 {{$SOURCE}} %s verify" %
+        "program_esp {{$SOURCE}} %s verify" %
         board.get("upload.offset_address", "0x10000")
     ])
     for image in env.get("FLASH_EXTRA_IMAGES", []):
         openocd_args.extend([
             "-c",
-            'program_esp32 {{%s}} %s verify' %
+            'program_esp {{%s}} %s verify' %
             (_to_unix_slashes(image[1]), image[0])
         ])
     openocd_args.extend(["-c", "reset run; shutdown"])
