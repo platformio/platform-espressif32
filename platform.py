@@ -168,13 +168,13 @@ class Espressif32Platform(PlatformBase):
 
         debug_options = copy.deepcopy(initial_debug_options)
         load_cmds = [
-            'monitor program_esp32 "{{{path}}}" {offset} verify'.format(
+            'monitor program_esp "{{{path}}}" {offset} verify'.format(
                 path=fs.to_unix_path(item["path"]), offset=item["offset"]
             )
             for item in flash_images
         ]
         load_cmds.append(
-            'monitor program_esp32 "{%s.bin}" 0x10000 verify'
+            'monitor program_esp "{%s.bin}" 0x10000 verify'
             % fs.to_unix_path(ide_data["prog_path"][:-4])
         )
         debug_options["load_cmds"] = load_cmds
