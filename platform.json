@@ -79,7 +79,7 @@
     "framework-arduino-mbcwb": {
       "type": "framework",
       "optional": true,
-      "owner": "platformio",
+      "owner": "meteca",
       "version": ">=2.1.1"
     },
     "framework-espidf": {
@@ -107,7 +107,7 @@
     },
     "tool-mbctool": {
       "optional": true,
-      "owner": "platformio",
+      "owner": "meteca",
       "version": ">=2.0.0"
     },
     "tool-openocd-esp32": {
