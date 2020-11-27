@@ -913,6 +913,7 @@ project_codemodel = get_cmake_code_model(
     [
         "-DIDF_TARGET=" + idf_variant,
         "-DEXTRA_COMPONENT_DIRS:PATH=" + ";".join(extra_components),
+        "-DPYTHON=" + env.subst("$PYTHONEXE"),
     ]
     + click.parser.split_arg_string(board.get("build.cmake_extra_args", "")),
 )
