@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from os.path import isdir
+import copy
+import os
 
+from platformio import fs
 from platformio.managers.platform import PlatformBase
 from platformio.util import get_systype
 
@@ -32,7 +34,7 @@ class Espressif32Platform(PlatformBase):
             self.packages['tool-mkspiffs']['optional'] = False
         if variables.get("upload_protocol"):
             self.packages['tool-openocd-esp32']['optional'] = False
-        if isdir("ulp"):
+        if os.path.isdir("ulp"):
             self.packages['toolchain-esp32ulp']['optional'] = False
         if "espidf" in frameworks:
             for p in self.packages:
@@ -122,7 +124,8 @@ class Espressif32Platform(PlatformBase):
             server_args = [
                 "-s", "$PACKAGE_DIR/share/openocd/scripts",
                 "-f", "interface/%s.cfg" % openocd_interface,
-                "-f", "board/%s" % debug.get("openocd_board")
+                "-f", "board/%s" % debug.get("openocd_board"),
+                "-c", "adapter_khz %d" % debug.get("adapter_speed", 20000)
             ]
 
             debug['tools'][link] = {
@@ -152,3 +155,31 @@ class Espressif32Platform(PlatformBase):
 
         board.manifest['debug'] = debug
         return board
+
+    def configure_debug_options(self, initial_debug_options, ide_data):
+        ide_extra_data = ide_data.get("extra", {})
+        flash_images = ide_extra_data.get("flash_images", [])
+        ignore_conds = [
+            initial_debug_options["load_cmds"] != ["load"],
+            not flash_images,
+            not all([os.path.isfile(item["path"]) for item in flash_images]),
+        ]
+        if any(ignore_conds):
+            return initial_debug_options
+
+        debug_options = copy.deepcopy(initial_debug_options)
+        load_cmds = [
+            'monitor program_esp "{{{path}}}" {offset} verify'.format(
+                path=fs.to_unix_path(item["path"]), offset=item["offset"]
+            )
+            for item in flash_images
+        ]
+        load_cmds.append(
+            'monitor program_esp "{%s.bin}" %s verify'
+            % (
+                fs.to_unix_path(ide_data["prog_path"][:-4]),
+                ide_extra_data.get("application_offset", "0x10000"),
+            )
+        )
+        debug_options["load_cmds"] = load_cmds
+        return debug_options
