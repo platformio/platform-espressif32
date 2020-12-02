@@ -163,6 +163,7 @@ env.Replace(
     MKSPIFFSTOOL="mkspiffs_${PIOPLATFORM}_" + ("espidf" if "espidf" in env.subst(
         "$PIOFRAMEWORK") else "${PIOFRAMEWORK}"),
     ESP32_SPIFFS_IMAGE_NAME=env.get("ESP32_SPIFFS_IMAGE_NAME", "spiffs"),
+    ESP32_APP_OFFSET="0x10000",
 
     PROGSUFFIX=".elf"
 )
@@ -310,7 +311,7 @@ elif upload_protocol == "esptool":
             "--flash_freq", "${__get_board_f_flash(__env__)}",
             "--flash_size", "detect"
         ],
-        UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS 0x10000 $SOURCE'
+        UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS $ESP32_APP_OFFSET $SOURCE'
     )
     for image in env.get("FLASH_EXTRA_IMAGES", []):
         env.Append(UPLOADERFLAGS=[image[0], env.subst(image[1])])
@@ -372,7 +373,7 @@ elif upload_protocol in debug_tools:
     openocd_args.extend([
         "-c",
         "program_esp {{$SOURCE}} %s verify" %
-        board.get("upload.offset_address", "0x10000")
+        board.get("upload.offset_address", "$ESP32_APP_OFFSET")
     ])
     for image in env.get("FLASH_EXTRA_IMAGES", []):
         openocd_args.extend([

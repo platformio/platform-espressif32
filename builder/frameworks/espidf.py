@@ -499,7 +499,9 @@ def generate_project_ld_script(sdk_config, ignore_targets=None):
         "env_file": os.path.join("$BUILD_DIR", "config.env"),
         "libraries_list": libraries_list,
         "objdump": os.path.join(
-            TOOLCHAIN_DIR, "bin", env.subst("$CC").replace("-gcc", "-objdump"),
+            TOOLCHAIN_DIR,
+            "bin",
+            env.subst("$CC").replace("-gcc", "-objdump"),
         ),
     }
 
@@ -803,19 +805,90 @@ def find_default_component(target_configs):
     return ""
 
 
-def create_verion_file():
+def create_version_file():
     version_file = os.path.join(FRAMEWORK_DIR, "version.txt")
     if not os.path.isfile(version_file):
         with open(version_file, "w") as fp:
             fp.write(platform.get_package_version("framework-espidf"))
 
 
-#
+def generate_empty_partition_image(binary_path, image_size):
+    empty_partition = env.Command(
+        binary_path,
+        None,
+        env.VerboseAction(
+            '"$PYTHONEXE" "%s" %s $TARGET'
+            % (
+                os.path.join(
+                    FRAMEWORK_DIR,
+                    "components",
+                    "partition_table",
+                    "gen_empty_partition.py",
+                ),
+                image_size,
+            ),
+            "Generating an empty partition $TARGET",
+        ),
+    )
+
+    env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", empty_partition)
+
+
+def get_partition_info(pt_path, pt_offset, pt_params):
+    assert os.path.isfile(pt_path)
+    cmd = [
+        env.subst("$PYTHONEXE"),
+        os.path.join(FRAMEWORK_DIR, "components", "partition_table", "parttool.py"),
+        "-q",
+        "--partition-table-offset",
+        hex(pt_offset),
+        "--partition-table-file",
+        pt_path,
+        "get_partition_info",
+        "--info",
+        "size",
+        "offset",
+    ]
+
+    if pt_params["name"] == "boot":
+        cmd.append("--partition-boot-default")
+    else:
+        cmd.extend(
+            [
+                "--partition-type",
+                pt_params["type"],
+                "--partition-subtype",
+                pt_params["subtype"],
+            ]
+        )
+
+    result = exec_command(cmd)
+    if result["returncode"] != 0:
+        sys.stderr.write(
+            "Couldn't extract information for %s/%s from the partition table\n"
+            % (pt_params["type"], pt_params["subtype"])
+        )
+        sys.stderr.write(result["out"] + "\n")
+        sys.stderr.write(result["err"] + "\n")
+        env.Exit(1)
+
+    size = offset = 0
+    if result["out"].strip():
+        size, offset = result["out"].strip().split(" ", 1)
+
+    return {"size": size, "offset": offset}
+
+
+def get_app_partition_offset(pt_table, pt_offset):
+    # Get the default boot partition offset
+    app_params = get_partition_info(pt_table, pt_offset, {"name": "boot"})
+    return app_params.get("offset", "0x10000")
+
+
 # ESP-IDF package doesn't contain .git folder, instead package version is specified
 # in a special file "version.h" in the root folder of the package
-#
 
-create_verion_file()
+create_version_file()
 
 #
 # Generate final linker script
@@ -845,6 +918,7 @@ if not board.get("build.ldscript", ""):
 
 fwpartitions_dir = os.path.join(FRAMEWORK_DIR, "components", "partition_table")
 partitions_csv = board.get("build.partitions", "partitions_singleapp.csv")
+
 env.Replace(
     PARTITIONS_TABLE_CSV=os.path.abspath(
         os.path.join(fwpartitions_dir, partitions_csv)
@@ -1058,6 +1132,7 @@ if "__test" not in COMMAND_LINE_TARGETS or env.GetProjectOption(
         )
     )
 
+partition_table_offset = sdk_config.get("PARTITION_TABLE_OFFSET", 0x8000)
 project_flags.update(link_args)
 env.MergeFlags(project_flags)
 env.Prepend(
@@ -1068,12 +1143,11 @@ env.Prepend(
     FLASH_EXTRA_IMAGES=[
         (
             board.get("upload.bootloader_offset", "0x1000"),
-            os.path.join("$BUILD_DIR", "bootloader.bin")
+            os.path.join("$BUILD_DIR", "bootloader.bin"),
         ),
         (
-            board.get("upload.partition_table_offset", hex(
-                sdk_config.get("PARTITION_TABLE_OFFSET", 0x8000))),
-            os.path.join("$BUILD_DIR", "partitions.bin")
+            board.get("upload.partition_table_offset", hex(partition_table_offset)),
+            os.path.join("$BUILD_DIR", "partitions.bin"),
         ),
     ],
 )
@@ -1095,3 +1169,42 @@ env["BUILDERS"]["ElfToBin"].action = action
 ulp_dir = os.path.join(env.subst("$PROJECT_DIR"), "ulp")
 if os.path.isdir(ulp_dir) and os.listdir(ulp_dir):
     env.SConscript("ulp.py", exports="env project_config idf_variant")
+
+#
+# Process OTA partition and image
+#
+
+ota_partition_params = get_partition_info(
+    env.subst("$PARTITIONS_TABLE_CSV"),
+    partition_table_offset,
+    {"name": "ota", "type": "data", "subtype": "ota"},
+)
+
+if ota_partition_params["size"] and ota_partition_params["offset"]:
+    # Generate an empty image if OTA is enabled in partition table
+    ota_partition_image = os.path.join("$BUILD_DIR", "ota_data_initial.bin")
+    generate_empty_partition_image(ota_partition_image, ota_partition_params["size"])
+
+    env.Append(
+        FLASH_EXTRA_IMAGES=[
+            (
+                board.get(
+                    "upload.ota_partition_offset", ota_partition_params["offset"]
+                ),
+                ota_partition_image,
+            )
+        ]
+    )
+
+#
+# Configure application partition offset
+#
+
+env.Replace(
+    ESP32_APP_OFFSET=get_app_partition_offset(
+        env.subst("$PARTITIONS_TABLE_CSV"), partition_table_offset
+    )
+)
+
+# Propagate application offset to debug configurations
+env["IDE_EXTRA_DATA"].update({"application_offset": env.subst("$ESP32_APP_OFFSET")})
