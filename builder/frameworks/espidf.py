@@ -835,7 +835,11 @@ def generate_empty_partition_image(binary_path, image_size):
 
 
 def get_partition_info(pt_path, pt_offset, pt_params):
-    assert os.path.isfile(pt_path)
+    if not os.path.isfile(pt_path):
+        sys.stderr.write(
+            "Missing partition table file `%s`\n" % os.path.basename(pt_path))
+        env.Exit(1)
+
     cmd = [
         env.subst("$PYTHONEXE"),
         os.path.join(FRAMEWORK_DIR, "components", "partition_table", "parttool.py"),
