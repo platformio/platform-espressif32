@@ -125,7 +125,7 @@ class Espressif32Platform(PlatformBase):
                 "-s", "$PACKAGE_DIR/share/openocd/scripts",
                 "-f", "interface/%s.cfg" % openocd_interface,
                 "-f", "board/%s" % debug.get("openocd_board"),
-                "-c", "adapter_khz %d" % debug.get("adapter_speed", 20000)
+                "-c", "adapter_khz %d" % debug.get("adapter_speed", 5000)
             ]
 
             debug['tools'][link] = {
