@@ -16,10 +16,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/platformio/platform-espressif32.git"
-  },
-    "https://raw.githubusercontent.com/eerimoq/pumbaa/master/make/platformio/manifest.json",
+    "url": "https://github.com/platformio/platform-espressif32.git",
     "https://raw.githubusercontent.com/FastEmbedded/FEmbed-tools/master/manifest.json"
+  },
   "version": "2.1.0",
   "frameworks": {
     "arduino": {
