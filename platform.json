@@ -6,7 +6,7 @@
   "license": "Apache-2.0",
   "keywords": [
     "dev-platform",
-    "Wi-Fi",
+    "Wi-Fi",'
     "Bluetooth",
     "Xtensa",
     "LX6"
@@ -16,10 +16,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/platformio/platform-espressif32.git",
-    "https://raw.githubusercontent.com/FastEmbedded/FEmbed-tools/master/manifest.json"
+    "url": "https://github.com/platformio/platform-espressif32.git"
   },
   "version": "2.1.0",
+  "packageRepositories": [
+    "https://dl.bintray.com/platformio/dl-packages/manifest.json",
+    "http://dl.platformio.org/packages/manifest.json",
+    "https://raw.githubusercontent.com/eerimoq/simba/master/make/platformio/manifest.json",
+    "https://raw.githubusercontent.com/eerimoq/pumbaa/master/make/platformio/manifest.json",
+    "https://raw.githubusercontent.com/FastEmbedded/FEmbed-tools/master/manifest.json"
+  ],
   "frameworks": {
     "arduino": {
       "package": "framework-arduinoespressif32",
