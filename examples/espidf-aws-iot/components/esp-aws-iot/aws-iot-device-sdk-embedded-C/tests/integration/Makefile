@@ -22,11 +22,12 @@ PLATFORM_DIR = $(IOT_CLIENT_DIR)/platform/linux
 #MbedTLS directory
 TEMP_MBEDTLS_SRC_DIR = $(IOT_CLIENT_DIR)/external_libs/mbedTLS
 TLS_LIB_DIR = $(TEMP_MBEDTLS_SRC_DIR)/library
+CRYPTO_LIB_DIR = $(TEMP_MBEDTLS_SRC_DIR)/library
 TLS_INCLUDE_DIR = -I $(TEMP_MBEDTLS_SRC_DIR)/include
 
 EXTERNAL_LIBS += -L$(TLS_LIB_DIR)
 LD_FLAG += -Wl,-rpath,$(TLS_LIB_DIR)
-LD_FLAG += -ldl $(TLS_LIB_DIR)/libmbedtls.a $(TLS_LIB_DIR)/libmbedcrypto.a $(TLS_LIB_DIR)/libmbedx509.a -lpthread
+LD_FLAG += -ldl $(TLS_LIB_DIR)/libmbedtls.a $(CRYPTO_LIB_DIR)/libmbedcrypto.a $(TLS_LIB_DIR)/libmbedx509.a -lpthread
 
 # Logging level control
 #LOG_FLAGS += -DENABLE_IOT_DEBUG
@@ -93,7 +94,7 @@ app:
 	$(PRE_MAKE_CMDS)
 	$(DEBUG)$(MAKE_CMD)
 	$(DEBUG)$(MAKE_MT_CMD)
-	
+
 tests:
 	./$(APP_NAME)
 	./$(MT_APP_NAME)

@@ -4,21 +4,23 @@
   "description": "Espressif Systems is a privately held fabless semiconductor company. They provide wireless communications and Wi-Fi chips which are widely used in mobile devices and the Internet of Things applications.",
   "homepage": "https://espressif.com/",
   "license": "Apache-2.0",
+  "keywords": [
+    "dev-platform",
+    "Wi-Fi",
+    "Bluetooth",
+    "Xtensa",
+    "LX6"
+  ],
   "engines": {
-    "platformio": "<5"
+    "platformio": "^5"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/platformio/platform-espressif32.git"
   },
-  "version": "1.12.4",
-  "packageRepositories": [
-    "https://dl.bintray.com/platformio/dl-packages/manifest.json",
-    "http://dl.platformio.org/packages/manifest.json",
-    "https://raw.githubusercontent.com/eerimoq/simba/master/make/platformio/manifest.json",
     "https://raw.githubusercontent.com/eerimoq/pumbaa/master/make/platformio/manifest.json",
     "https://raw.githubusercontent.com/FastEmbedded/FEmbed-tools/master/manifest.json"
-  ],
+  "version": "2.1.0",
   "frameworks": {
     "arduino": {
       "package": "framework-arduinoespressif32",
@@ -49,75 +51,97 @@
   "packages": {
     "toolchain-xtensa32": {
       "type": "toolchain",
+      "owner": "platformio",
       "version": "~2.50200.0"
     },
     "toolchain-xtensa32s2": {
       "type": "toolchain",
       "optional": true,
+      "owner": "platformio",
       "version": "~1.80200.0"
     },
     "toolchain-esp32ulp": {
       "type": "toolchain",
       "optional": true,
-      "version": "~1.22851.190618"
+      "owner": "platformio",
+      "version": "~1.22851.0"
+    },
+    "toolchain-esp32s2ulp": {
+      "type": "toolchain",
+      "optional": true,
+      "owner": "platformio",
+      "version": "~1.22851.0"
     },
     "framework-arduinoespressif32": {
       "type": "framework",
       "optional": true,
+      "owner": "platformio",
       "version": "~3.10004.191002"
     },
     "framework-arduino-mbcwb": {
       "type": "framework",
       "optional": true,
+      "owner": "meteca",
       "version": ">=2.1.1"
     },
     "framework-espidf": {
       "type": "framework",
       "optional": true,
-      "version": "~3.40001.0"
+      "owner": "platformio",
+      "version": "~3.40100.0"
     },
     "framework-simba": {
       "type": "framework",
       "optional": true,
+      "owner": "platformio",
       "version": ">=12.2.0"
     },
     "framework-pumbaa": {
       "type": "framework",
       "optional": true,
+      "owner": "platformio",
       "version": ">=2.3.0"
     },
     "tool-esptoolpy": {
       "type": "uploader",
-      "version": "~1.20600.0"
+      "owner": "platformio",
+      "version": "~1.30000.0"
     },
     "tool-mbctool": {
       "optional": true,
+      "owner": "meteca",
       "version": ">=2.0.0"
     },
     "tool-openocd-esp32": {
       "type": "debugger",
       "optional": true,
-      "version": "~1.1000.20181026"
+      "owner": "platformio",
+      "version": "~2.1000.0"
     },
     "tool-mkspiffs": {
       "type": "uploader",
       "optional": true,
+      "owner": "platformio",
       "version": "~2.230.0"
     },
     "tool-cmake": {
       "optional": true,
+      "owner": "platformio",
       "version": "~3.16.0"
     },
     "tool-ninja": {
       "optional": true,
+      "owner": "platformio",
       "version": "^1.7.0"
     },
     "tool-mconf": {
       "optional": true,
+      "owner": "platformio",
       "version": "~1.4060000.0"
     },
     "tool-idf": {
       "optional": true,
+      "owner": "platformio",
       "version": "~1.0.1"
     },
     "tool-kconfig": {

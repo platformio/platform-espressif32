@@ -26,6 +26,7 @@ extern "C" {
 #include <sys/types.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <unistd.h>
 
 #include "timer_platform.h"
 
@@ -67,6 +68,13 @@ void countdown_sec(Timer *timer, uint32_t timeout) {
 
 void init_timer(Timer *timer) {
 	timer->end_time = (struct timeval) {0, 0};
+}
+
+void delay(unsigned milliseconds)
+{
+	useconds_t sleepTime = (useconds_t)(milliseconds * 1000);
+
+	usleep(sleepTime);
 }
 
 #ifdef __cplusplus

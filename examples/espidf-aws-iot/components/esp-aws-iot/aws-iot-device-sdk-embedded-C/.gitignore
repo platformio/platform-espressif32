@@ -1,0 +1,22 @@
+# Ignore executables
+*.o
+IotSdkC_tests
+samples/linux/jobs_sample/jobs_sample
+samples/linux/shadow_sample/shadow_sample
+samples/linux/shadow_sample_console_echo/shadow_console_echo
+samples/linux/subscribe_publish_library_sample/libAwsIotSdk.a
+samples/linux/subscribe_publish_library_sample/subscribe_publish_library_sample
+samples/linux/subscribe_publish_sample/subscribe_publish_sample
+tests/integration/integration_tests_mbedtls
+tests/integration/integration_tests_mbedtls_mt
+
+# Ignore test artifacts
+objs/*
+testLibs/*
+
+# Ignore CppUTest and mbed TLS
+external_libs/CppUTest/*
+external_libs/mbedTLS/*
+
+# Ignore credentials
+certs/*

@@ -5,7 +5,7 @@ variables:
   BATCH_BUILD: "1"
   V: "0"
   MAKEFLAGS: "-j5 --no-keep-going"
-  IDF_PATH: "$CI_PROJECT_DIR/idf/esp-idf"
+  IDF_PATH: "$CI_PROJECT_DIR/esp-idf"
 
 build_demo:
   stage: build
@@ -23,12 +23,11 @@ build_demo:
     - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
     - git --version
     - git submodule update --init --recursive
-    - mkdir idf
-    - cd idf
-    - git clone --depth 1 $GITLAB_SSH_SERVER/idf/esp-idf.git
-    - pushd esp-idf
-    - ./tools/ci/mirror-submodule-update.sh
-    - popd
+    - git clone --recursive --depth 1 $GITLAB_SSH_SERVER/idf/esp-idf.git
+    - export PATH="$IDF_PATH/tools:$PATH"
+    - cd esp-idf
+    - ./install.sh
+    - . export.sh
     - cd ..
     - cd examples/thing_shadow
     - cat sdkconfig.ci >> sdkconfig.defaults

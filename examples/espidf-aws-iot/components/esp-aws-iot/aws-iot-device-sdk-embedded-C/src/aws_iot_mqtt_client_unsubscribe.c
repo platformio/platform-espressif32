@@ -196,21 +196,6 @@ static IoT_Error_t _aws_iot_mqtt_internal_unsubscribe(AWS_IoT_Client *pClient, c
 	FUNC_EXIT_RC(SUCCESS);
 }
 
-/**
- * @brief Unsubscribe to an MQTT topic.
- *
- * Called to send an unsubscribe message to the broker requesting removal of a subscription
- * to an MQTT topic.
- * @note Call is blocking.  The call returns after the receipt of the UNSUBACK control packet.
- * This is the outer function which does the validations and calls the internal unsubscribe above
- * to perform the actual operation. It is also responsible for client state changes
- *
- * @param pClient Reference to the IoT Client
- * @param pTopicName Topic Name to publish to
- * @param topicNameLen Length of the topic name
- *
- * @return An IoT Error Type defining successful/failed unsubscribe call
- */
 IoT_Error_t aws_iot_mqtt_unsubscribe(AWS_IoT_Client *pClient, const char *pTopicFilter, uint16_t topicFilterLen) {
 	IoT_Error_t rc, unsubRc;
 	ClientState clientState;
@@ -247,4 +232,3 @@ IoT_Error_t aws_iot_mqtt_unsubscribe(AWS_IoT_Client *pClient, const char *pTopic
 #ifdef __cplusplus
 }
 #endif
-

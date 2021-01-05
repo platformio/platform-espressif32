@@ -69,7 +69,7 @@ static void iot_subscribe_callback_handler1(AWS_IoT_Client *pClient, char *topic
 	char *tmp = params->payload;
 	unsigned int i;
 
-	printf("callback topic %s\n", topicName);
+	printf("callback topic %.*s\n", topicNameLen, topicName);
 	for(i = 0; i < (params->payloadLen); i++) {
 		CallbackMsgString1[i] = tmp[i];
 	}
@@ -363,7 +363,7 @@ TEST_C(SubscribeTests, SubscribeToMultipleTopicsSuccess) {
 	IOT_DEBUG("-->Success - C:16 - Subscribe, multiple topics, messages on each topic \n");
 }
 /* C:17 - Subscribe, max topics, messages on each topic */
-TEST_C(SubscribeTests, SubcribeToMaxAllowedTopicsSuccess) {
+TEST_C(SubscribeTests, SubscribeToMaxAllowedTopicsSuccess) {
 	IoT_Error_t rc = SUCCESS;
 	char expectedCallbackString[] = "topics sdk/Test1";
 	char expectedCallbackString2[] = "topics sdk/Test2";
@@ -422,7 +422,7 @@ TEST_C(SubscribeTests, SubcribeToMaxAllowedTopicsSuccess) {
 	IOT_DEBUG("-->Success - C:17 - Subscribe, max topics, messages on each topic \n");
 }
 /* C:18 - Subscribe, max topics, another subscribe */
-TEST_C(SubscribeTests, SubcribeToMaxPlusOneAllowedTopicsFailure) {
+TEST_C(SubscribeTests, SubscribeToMaxPlusOneAllowedTopicsFailure) {
 	IoT_Error_t rc = SUCCESS;
 
 	IOT_DEBUG("-->Running Subscribe Tests - C:18 - Subscribe, max topics, another subscribe \n");

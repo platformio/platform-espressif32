@@ -15,8 +15,8 @@ Current SDK Directory Layout (mbedTLS)
 |--`include` (Header files of the AWS IoT device SDK) <br>
 |--`src` (Source files of the AWS IoT device SDK) <br>
 |--`platform` (Platform specific files) <br>
-|--`samples` (Samples including makefiles for building on mbedTLS) <br> 
-|--`tests` (Tests for verifying SDK is functioning as expected) <br> 
+|--`samples` (Samples including makefiles for building on mbedTLS) <br>
+|--`tests` (Tests for verifying SDK is functioning as expected) <br>
 
 All makefiles in this SDK were configured using the documented folder structure above, so moving or renaming folders will require modifications to makefiles.
 
@@ -44,7 +44,7 @@ This section explains the API calls that need to be implemented in order for the
 
 ### Timer Functions
 
-A timer implementation is necessary to handle request timeouts (sending MQTT connect, subscribe, etc. commands) as well as connection maintenance (MQTT keep-alive pings). Timers need millisecond resolution and are polled for expiration so these can be implemented using a "milliseconds since startup" free-running counter if desired. In the synchronous sample provided with this SDK only one command will be "in flight" at one point in time plus the client's ping timer. 
+A timer implementation is necessary to handle request timeouts (sending MQTT connect, subscribe, etc. commands) as well as connection maintenance (MQTT keep-alive pings). Timers need millisecond resolution and are polled for expiration so these can be implemented using a "milliseconds since startup" free-running counter if desired. In the synchronous sample provided with this SDK only one command will be "in flight" at one point in time plus the client's ping timer.
 
 Define the `Timer` Struct as in `timer_platform.h`
 
@@ -63,10 +63,13 @@ countdown_sec - set the timer to expire in x seconds and start the timer.
 `uint32_t left_ms(Timer *);`
 left_ms - query time in milliseconds left on the timer.
 
+`void delay(unsigned milliseconds)`
+delay - sleep for the specified number of milliseconds.
+
 
 ### Network Functions
 
-In order for the MQTT client stack to be able to communicate via the TCP/IP network protocol stack using a mutually authenticated TLS connection, the following API calls need to be implemented for your platform. 
+In order for the MQTT client stack to be able to communicate via the TCP/IP network protocol stack using a mutually authenticated TLS connection, the following API calls need to be implemented for your platform.
 
 For additional details about API parameters refer to the [API documentation](http://aws-iot-device-sdk-embedded-c-docs.s3-website-us-east-1.amazonaws.com/index.html).
 
@@ -76,7 +79,7 @@ This is used for data specific to the TLS library being used.
 `IoT_Error_t iot_tls_init(Network *pNetwork, char *pRootCALocation, const char *pDeviceCertLocation,
   						 const char *pDevicePrivateKeyLocation, const char *pDestinationURL,
   						 uint16_t DestinationPort, uint32_t timeout_ms, bool ServerVerificationFlag);`
-Initialize the network client / structure.  
+Initialize the network client / structure.
 
 `IoT_Error_t iot_tls_connect(Network *pNetwork, TLSConnectParams *TLSParams);`
 Create a TLS TCP socket to the configure address using the credentials provided via the NewNetwork API call. This will include setting up certificate locations / arrays.
@@ -102,7 +105,7 @@ The TLS library generally provides the API for the underlying TCP socket.
 
 ### Threading Functions
 
-The MQTT client uses a state machine to control operations in multi-threaded situations. However it requires a mutex implementation to guarantee thread safety. This is not required in situations where thread safety is not important and it is disabled by default. The _ENABLE_THREAD_SUPPORT_ macro needs to be defined in aws_iot_config.h to enable this layer. You will also need to add the -lpthread linker flag for the compiler if you are using the provided reference implementation.   
+The MQTT client uses a state machine to control operations in multi-threaded situations. However it requires a mutex implementation to guarantee thread safety. This is not required in situations where thread safety is not important and it is disabled by default. The _ENABLE_THREAD_SUPPORT_ macro needs to be defined in aws_iot_config.h to enable this layer. You will also need to add the -lpthread linker flag for the compiler if you are using the provided reference implementation.
 
 For additional details about API parameters refer to the [API documentation](http://aws-iot-device-sdk-embedded-c-docs.s3-website-us-east-1.amazonaws.com/index.html).
 
@@ -110,7 +113,7 @@ Define the `IoT_Mutex_t` Struct as in `threads_platform.h`
 This is used for data specific to the TLS library being used.
 
 `IoT_Error_t aws_iot_thread_mutex_init(IoT_Mutex_t *);`
-Initialize the mutex provided as argument.  
+Initialize the mutex provided as argument.
 
 `IoT_Error_t aws_iot_thread_mutex_lock(IoT_Mutex_t *);`
 Lock the mutex provided as argument
@@ -122,11 +125,6 @@ Unlock the mutex provided as argument.
 Destroy the mutex provided as argument.
 
 The threading layer provides the implementation of mutexes used for thread-safe operations.
-
-### Sample Porting:
-
-Marvell has ported the SDK for their development boards. [These](https://github.com/marvell-iot/aws_starter_sdk/tree/master/sdk/external/aws_iot/platform/wmsdk) files are example implementations of the above mentioned functions. 
-This provides a port of the timer and network layer. The threading layer is not a part of this port.
 
 ## Time source for certificate validation
 
@@ -140,7 +138,7 @@ The single threaded implementation implies that the sample application code (SDK
 ### Multi-Threaded implementation
 
 In the simple multi-threaded case the `yield` function can be moved to a background thread. Ensure this task runs at the frequency described above. In this case, depending on the OS mechanism, a message queue or mailbox could be used to proxy incoming MQTT messages from the callback to the worker task responsible for responding to or dispatching messages. A similar mechanism could be employed to queue publish messages from threads into a publish queue that are processed by a publishing task. Ensure the threading layer is enabled as the library is not thread safe otherwise.
-There is a validation test for the multi-threaded implementation that can be found with the integration tests. You can find further details in the Readme for the integration tests [here](https://github.com/aws/aws-iot-device-sdk-embedded-C/blob/master/tests/integration/README.md). We have run the validation test with 10 threads sending 500 messages each and verified to be working fine. It can be used as a reference testing application to validate whether your use case will work with multi-threading enabled.
+There is a validation test for the multi-threaded implementation that can be found with the integration tests. You can find further details in the Readme for the integration tests [here](https://github.com/aws/aws-iot-device-sdk-embedded-C/blob/master/tests/integration/README.md/). We have run the validation test with 10 threads sending 500 messages each and verified to be working fine. It can be used as a reference testing application to validate whether your use case will work with multi-threading enabled.
 
 ## Sample applications
 

@@ -61,6 +61,7 @@ extern "C" {
 #include "threads_interface.h"
 #endif
 
+/** Greatest packet identifier, per MQTT spec */
 #define MAX_PACKET_ID 65535
 
 typedef struct _Client AWS_IoT_Client;
@@ -118,8 +119,10 @@ typedef struct {
 	bool isRetained;		///< NOT supported. The retained flag for the LWT message (see MQTTAsync_message.retained)
 	QoS qos;			///< QoS of LWT message
 } IoT_MQTT_Will_Options;
+/** Default initializer for will */
 extern const IoT_MQTT_Will_Options iotMqttWillOptionsDefault;
 
+/** Default initializer for will */
 #define IoT_MQTT_Will_Options_Initializer { {'M', 'Q', 'T', 'W'}, NULL, 0, NULL, 0, false, QOS0 }
 
 /**
@@ -142,8 +145,10 @@ typedef struct {
 	char *pPassword;			///< Not used in the AWS IoT Service, will need to be cstring if used
 	uint16_t passwordLen;			///< Password Length. 16 bit unsigned integer
 } IoT_Client_Connect_Params;
+/** Default initializer for connect */
 extern const IoT_Client_Connect_Params iotClientConnectParamsDefault;
 
+/** Default initializer for connect */
 #define IoT_Client_Connect_Params_initializer { {'M', 'Q', 'T', 'C'}, MQTT_3_1_1, NULL, 0, 60, true, false, \
         IoT_MQTT_Will_Options_Initializer, NULL, 0, NULL, 0 }
 
@@ -179,8 +184,10 @@ typedef struct {
 	bool isBlockOnThreadLockEnabled;		///< Timeout for Thread blocking calls. Set to 0 to block until lock is obtained. In milliseconds
 #endif
 } IoT_Client_Init_Params;
+/** Default initializer for client */
 extern const IoT_Client_Init_Params iotClientInitParamsDefault;
 
+/** Default initializer for client */
 #ifdef _ENABLE_THREAD_SUPPORT_
 #define IoT_Client_Init_Params_initializer { true, NULL, 0, NULL, NULL, NULL, 2000, 20000, 5000, true, NULL, NULL, false }
 #else
@@ -228,11 +235,12 @@ typedef void (*pApplicationHandler_t)(AWS_IoT_Client *pClient, char *pTopicName,
  *
  */
 typedef struct _MessageHandlers {
-	const char *topicName;
-	uint16_t topicNameLen;
-	QoS qos;
-	pApplicationHandler_t pApplicationHandler;
-	void *pApplicationHandlerData;
+	const char *topicName; ///< Topic name of subscription
+	uint16_t topicNameLen; ///< Length of topic name
+	char resubscribed; ///< Whether this handler was successfully resubscribed in the reconnect workflow
+	QoS qos; ///< QoS of subscription
+	pApplicationHandler_t pApplicationHandler; ///< Application function to invoke
+	void *pApplicationHandlerData; ///< Context to pass to application handler
 } MessageHandlers;   /* Message handlers are indexed by subscription topic */
 
 /**
@@ -243,9 +251,9 @@ typedef struct _MessageHandlers {
  *
  */
 typedef struct _ClientStatus {
-	ClientState clientState;
-	bool isPingOutstanding;
-	bool isAutoReconnectEnabled;
+	ClientState clientState; ///< The current state of the client's state machine
+	bool isPingOutstanding; ///< Whether this client is waiting for a ping response
+	bool isAutoReconnectEnabled; ///< Whether auto-reconnect is enabled for this client
 } ClientStatus;
 
 /**
@@ -256,36 +264,35 @@ typedef struct _ClientStatus {
  *
  */
 typedef struct _ClientData {
-	uint16_t nextPacketId;
+	uint16_t nextPacketId; ///< Packet ID to use for the next generated packet
 
-	uint32_t packetTimeoutMs;
-	uint32_t commandTimeoutMs;
-	uint16_t keepAliveInterval;
-	uint32_t currentReconnectWaitInterval;
-	uint32_t counterNetworkDisconnected;
+	uint32_t packetTimeoutMs; ///< Timeout for reading incoming packets from the network
+	uint32_t commandTimeoutMs; ///< Timeout for processing outgoing MQTT packets
+	uint16_t keepAliveInterval; ///< Maximum interval between control packets
+	uint32_t currentReconnectWaitInterval; ///< Current backoff period for reconnect
+	uint32_t counterNetworkDisconnected; ///< How many times this client detected a disconnection
 
 	/* The below values are initialized with the
 	 * lengths of the TX/RX buffers and never modified
 	 * afterwards */
-	size_t writeBufSize;
-	size_t readBufSize;
-    size_t readBufIndex;
-	unsigned char writeBuf[AWS_IOT_MQTT_TX_BUF_LEN];
-	unsigned char readBuf[AWS_IOT_MQTT_RX_BUF_LEN];
+	size_t writeBufSize; ///< Size of this client's outgoing data buffer
+	size_t readBufSize; ///< Size of this client's incoming data buffer
+	size_t readBufIndex; ///< Current offset into the incoming data buffer
+	unsigned char writeBuf[AWS_IOT_MQTT_TX_BUF_LEN]; ///< Buffer for outgoing data
+	unsigned char readBuf[AWS_IOT_MQTT_RX_BUF_LEN]; ///< Buffer for incoming data
 
 #ifdef _ENABLE_THREAD_SUPPORT_
-	bool isBlockOnThreadLockEnabled;
-	IoT_Mutex_t state_change_mutex;
-	IoT_Mutex_t tls_read_mutex;
-	IoT_Mutex_t tls_write_mutex;
+	bool isBlockOnThreadLockEnabled; ///< Whether to use nonblocking or blocking mutex APIs
+	IoT_Mutex_t state_change_mutex; ///< Mutex protecting the client's state machine
+	IoT_Mutex_t tls_read_mutex; ///< Mutex protecting incoming data
+	IoT_Mutex_t tls_write_mutex; ///< Mutex protecting outgoing data
 #endif
 
-	IoT_Client_Connect_Params options;
+	IoT_Client_Connect_Params options; ///< Options passed when the client was initialized
 
-	MessageHandlers messageHandlers[AWS_IOT_MQTT_NUM_SUBSCRIBE_HANDLERS];
-	iot_disconnect_handler disconnectHandler;
-
-	void *disconnectHandlerData;
+	MessageHandlers messageHandlers[AWS_IOT_MQTT_NUM_SUBSCRIBE_HANDLERS]; ///< Callbacks for incoming messages
+	iot_disconnect_handler disconnectHandler; ///< Callback when a disconnection is detected
+	void *disconnectHandlerData; ///< Context for disconnect handler
 } ClientData;
 
 /**
@@ -295,121 +302,186 @@ typedef struct _ClientData {
  *
  */
 struct _Client {
-	Timer pingTimer;
-	Timer reconnectDelayTimer;
+	Timer pingReqTimer;		///< Timer to keep track of when to send next PINGREQ
+	Timer pingRespTimer;	///< Timer to ensure that PINGRESP is received timely
+	Timer reconnectDelayTimer; ///< Timer for backoff on reconnect
 
-	ClientStatus clientStatus;
-	ClientData clientData;
-	Network networkStack;
+	ClientStatus clientStatus; ///< Client state information
+	ClientData clientData; ///< Client context
+	Network networkStack; ///< Table of network function pointers
 };
 
 /**
- * @brief What is the next available packet Id
- *
- * Called to retrieve the next packet id to be used for outgoing packets.
- * Automatically increments the last sent packet id variable
- *
- * @param pClient Reference to the IoT Client
- *
- * @return next packet id as a 16 bit unsigned integer
+ * @functionpage{aws_iot_mqtt_get_next_packet_id,mqtt,get_next_packet_id}
+ * @functionpage{aws_iot_mqtt_set_connect_params,mqtt,set_connect_params}
+ * @functionpage{aws_iot_mqtt_is_client_connected,mqtt,is_client_connected}
+ * @functionpage{aws_iot_mqtt_get_client_state,mqtt,get_client_state}
+ * @functionpage{aws_iot_is_autoreconnect_enabled,mqtt,is_autoreconnect_enabled}
+ * @functionpage{aws_iot_mqtt_set_disconnect_handler,mqtt,set_disconnect_handler}
+ * @functionpage{aws_iot_mqtt_autoreconnect_set_status,mqtt,autoreconnect_set_status}
+ * @functionpage{aws_iot_mqtt_get_network_disconnected_count,mqtt,get_network_disconnected_count}
+ * @functionpage{aws_iot_mqtt_reset_network_disconnected_count,mqtt,reset_network_disconnected_count}
  */
+
+/**
+ * @brief Retrieve and increment the next packet identifier for an MQTT client context.
+ *
+ * This function generates a two-byte packet identifier for an outgoing MQTT packet and
+ * modifies the internal state of the MQTT client context so that the next call generates
+ * a different packet identifier. Per the MQTT specification, MQTT packet identifiers are
+ * nonzero, two-byte integers that identify certain MQTT packets. MQTT packet identifiers
+ * must be unique at any given time: no two concurrent packets may use the same identifier,
+ * but packet identifiers from previously processed packets may be reused.
+ *
+ * @param[in] pClient MQTT client context
+ *
+ * @return A two-byte MQTT packet identifier that will be unique for the given MQTT client
+ * context.
+ *
+ * @warning This function is not thread safe. Do not call it concurrently from different
+ * threads.
+ */
+/* @[declare_mqtt_get_next_packet_id] */
 uint16_t aws_iot_mqtt_get_next_packet_id(AWS_IoT_Client *pClient);
+/* @[declare_mqtt_get_next_packet_id] */
 
 /**
- * @brief Set the connection parameters for the IoT Client
+ * @brief Reset the connection parameters of an initialized MQTT client context.
  *
- * Called to set the connection parameters for the IoT Client.
- * Used to update the connection parameters provided before the last connect.
- * Won't take effect until the next time connect is called
+ * This function replaces the current connection parameters of an MQTT client
+ * context with a new set of parameters. Its primary use is to modify the connection
+ * parameters for the next reconnect attempt if the existing parameters are no longer
+ * valid. Therefore, it should be called just before a reconnect attempt, i.e. just
+ * before @ref mqtt_function_attempt_reconnect or @ref mqtt_function_yield.
  *
- * @param pClient Reference to the IoT Client
- * @param pNewConnectParams Reference to the new Connection Parameters structure
+ * The new connection parameters take effect at the next connection attempt.
  *
- * @return IoT_Error_t Type defining successful/failed API call
+ * @param[in] pClient MQTT client context
+ * @param[in] pNewConnectParams The new connection parameters
+ *
+ * @return Returns NULL_VALUE_ERROR if provided a bad parameter; otherwise, always
+ * returns SUCCESS.
+ *
+ * @warning Do not call this function if a connection attempt is in progress. Connection
+ * attempts happen in the context of @ref mqtt_function_connect, @ref mqtt_function_attempt_reconnect,
+ * or @ref mqtt_function_yield.
  */
+/* @[declare_mqtt_set_connect_params] */
 IoT_Error_t aws_iot_mqtt_set_connect_params(AWS_IoT_Client *pClient, const IoT_Client_Connect_Params *pNewConnectParams);
+/* @[declare_mqtt_set_connect_params] */
 
 /**
- * @brief Is the MQTT client currently connected?
+ * @brief Determine if the MQTT client context currently connected to a server.
  *
- * Called to determine if the MQTT client is currently connected.  Used to support logic
- * in the device application around reconnecting and managing offline state.
+ * This function checks the internal state of the MQTT client context to determine
+ * if it is currently connected to the server.
  *
- * @param pClient Reference to the IoT Client
+ * @param[in] pClient MQTT client context
  *
- * @return true = connected, false = not currently connected
+ * @return true if connected; false otherwise.
+ *
+ * @warning Application code should not rely on this function's return value.
+ * The returned value only represents the internal state of the client and
+ * does not check the network connection status.
  */
+/* @[declare_mqtt_is_client_connected] */
 bool aws_iot_mqtt_is_client_connected(AWS_IoT_Client *pClient);
+/* @[declare_mqtt_is_client_connected] */
 
 /**
- * @brief Get the current state of the client
+ * @brief Get the current state of the MQTT client context.
  *
- * Called to get the current state of the client
+ * @param[in] pClient MQTT client context
  *
- * @param pClient Reference to the IoT Client
+ * @return The state of the MQTT client context at the time of the function call.
  *
- * @return ClientState value equal to the current state of the client
+ * @note The client's state is internal and generally not useful to application code.
+ * Applications should not make assumptions about the status of the client based on
+ * its state.
  */
+/* @[declare_mqtt_get_client_state] */
 ClientState aws_iot_mqtt_get_client_state(AWS_IoT_Client *pClient);
+/* @[declare_mqtt_get_client_state] */
 
 /**
- * @brief Is the MQTT client set to reconnect automatically?
+ * @brief Determine if auto-reconnect is enabled for an MQTT client context.
  *
- * Called to determine if the MQTT client is set to reconnect automatically.
- * Used to support logic in the device application around reconnecting
+ * @param[in] pClient MQTT client context
  *
- * @param pClient Reference to the IoT Client
- *
- * @return true = enabled, false = disabled
+ * @return true if auto-reconnect is enabled; false otherwise.
  */
+/* @[declare_mqtt_is_autoreconnect_enabled] */
 bool aws_iot_is_autoreconnect_enabled(AWS_IoT_Client *pClient);
+/* @[declare_mqtt_is_autoreconnect_enabled] */
 
 /**
- * @brief Set the IoT Client disconnect handler
+ * @brief Reset the disconnect handler of an initialized MQTT client context.
  *
- * Called to set the IoT Client disconnect handler
- * The disconnect handler is called whenever the client disconnects with error
+ * This function replaces the current disconnect handler of an MQTT client
+ * context with a new disconnect handler.
  *
- * @param pClient Reference to the IoT Client
- * @param pConnectHandler Reference to the new Disconnect Handler
- * @param pDisconnectHandlerData Reference to the data to be passed as argument when disconnect handler is called
+ * The new disconnect handler will be invoked when the next disconnect is detected.
  *
- * @return IoT_Error_t Type defining successful/failed API call
+ * @param[in] pClient MQTT client context
+ * @param[in] pDisconnectHandler New disconnect handler
+ * @param[in] pDisconnectHandlerData Context to be passed to new disconnect handler
+ *
+ * @return Returns NULL_VALUE_ERROR if provided a bad parameter; otherwise, always
+ * returns SUCCESS.
+ *
+ * @warning Do not call this function if @ref mqtt_function_yield is in progress.
  */
+/* @[declare_mqtt_set_disconnect_handler] */
 IoT_Error_t aws_iot_mqtt_set_disconnect_handler(AWS_IoT_Client *pClient, iot_disconnect_handler pDisconnectHandler,
 												void *pDisconnectHandlerData);
+/* @[declare_mqtt_set_disconnect_handler] */
 
 /**
- * @brief Enable or Disable AutoReconnect on Network Disconnect
+ * @brief Enable or disable auto-reconnect for an initialized MQTT client context.
  *
- * Called to enable or disabled the auto reconnect features provided with the SDK
+ * This function replaces the current auto-reconnect setting with the provided setting.
  *
- * @param pClient Reference to the IoT Client
- * @param newStatus set to true for enabling and false for disabling
+ * @note This function should only be called after @ref mqtt_function_connect has been
+ * called for the provided client.
  *
- * @return IoT_Error_t Type defining successful/failed API call
+ * @param[in] pClient MQTT client context
+ * @param[in] newStatus New setting for auto-reconnect
+ *
+ * @return Returns NULL_VALUE_ERROR if provided a bad parameter; otherwise, always
+ * returns SUCCESS.
+ *
+  * @warning Do not call this function if a connection attempt is in progress. Connection
+ * attempts happen in the context of @ref mqtt_function_connect, @ref mqtt_function_attempt_reconnect,
+ * or @ref mqtt_function_yield.
  */
+/* @[declare_mqtt_autoreconnect_set_status] */
 IoT_Error_t aws_iot_mqtt_autoreconnect_set_status(AWS_IoT_Client *pClient, bool newStatus);
+/* @[declare_mqtt_autoreconnect_set_status] */
 
 /**
- * @brief Get count of Network Disconnects
+ * @brief Get the current number of disconnects detected by an MQTT client context.
  *
- * Called to get the number of times a network disconnect occurred due to errors
+ * @param[in] pClient MQTT client context
  *
- * @param pClient Reference to the IoT Client
+ * @return The number of disconnects detected since the client was created
+ * (or since the last call to @ref mqtt_function_reset_network_disconnected_count).
  *
- * @return uint32_t the disconnect count
+ * @warning Do not call this function if @ref mqtt_function_yield is in progress.
  */
+/* @[declare_mqtt_get_network_disconnected_count] */
 uint32_t aws_iot_mqtt_get_network_disconnected_count(AWS_IoT_Client *pClient);
+/* @[declare_mqtt_get_network_disconnected_count] */
 
 /**
- * @brief Reset Network Disconnect conter
+ * @brief Reset the number of disconnects detected by an MQTT client context to zero.
  *
- * Called to reset the Network Disconnect counter to zero
+ * @param[in] pClient MQTT client context
  *
- * @param pClient Reference to the IoT Client
+ * @warning Do not call this function if @ref mqtt_function_yield is in progress.
  */
+/* @[declare_mqtt_reset_network_disconnected_count] */
 void aws_iot_mqtt_reset_network_disconnected_count(AWS_IoT_Client *pClient);
+/* @[declare_mqtt_reset_network_disconnected_count] */
 
 #ifdef __cplusplus
 }

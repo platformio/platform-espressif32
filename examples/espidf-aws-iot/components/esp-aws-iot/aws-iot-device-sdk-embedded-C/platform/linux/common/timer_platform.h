@@ -34,6 +34,13 @@ struct Timer {
 	struct timeval end_time;
 };
 
+/**
+ * @brief Delay (sleep) for the specified number of milliseconds.
+ *
+ * @param milliseconds The number of milliseconds to sleep.
+ */
+void delay(unsigned milliseconds);
+
 #ifdef __cplusplus
 }
 #endif

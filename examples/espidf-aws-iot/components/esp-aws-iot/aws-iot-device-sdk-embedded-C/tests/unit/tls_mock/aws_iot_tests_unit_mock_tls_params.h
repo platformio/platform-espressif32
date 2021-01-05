@@ -36,6 +36,7 @@ typedef struct {
 	bool NoMsgFlag;
 	struct timeval expiry_time;
 	size_t BufMaxSize;
+	IoT_Error_t mockedError;
 } TlsBuffer;
 
 

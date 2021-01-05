@@ -53,30 +53,113 @@
  * @note Ensure the buffer sizes in aws_iot_config.h are big enough to receive the delta message. The delta message will also contain the metadata with the timestamps
  */
 
-char certDirectory[PATH_MAX + 1] = "../../../certs";
+static char certDirectory[PATH_MAX + 1] = "../../../certs";
 #define HOST_ADDRESS_SIZE 255
-char HostAddress[HOST_ADDRESS_SIZE] = AWS_IOT_MQTT_HOST;
-uint32_t port = AWS_IOT_MQTT_PORT;
-bool messageArrivedOnDelta = false;
+static char HostAddress[HOST_ADDRESS_SIZE] = AWS_IOT_MQTT_HOST;
+static uint32_t port = AWS_IOT_MQTT_PORT;
+static bool messageArrivedOnDelta = false;
 
 /*
  * @note The delta message is always sent on the "state" key in the json
  * @note Any time messages are bigger than AWS_IOT_MQTT_RX_BUF_LEN the underlying MQTT library will ignore it. The maximum size of the message that can be received is limited to the AWS_IOT_MQTT_RX_BUF_LEN
  */
-char stringToEchoDelta[SHADOW_MAX_SIZE_OF_RX_BUFFER];
+static char stringToEchoDelta[SHADOW_MAX_SIZE_OF_RX_BUFFER];
+
+
+/**
+ * @brief This function builds a full Shadow expected JSON document by putting the data in the reported section
+ *
+ * @param pJsonDocument Buffer to be filled up with the JSON data
+ * @param maxSizeOfJsonDocument maximum size of the buffer that could be used to fill
+ * @param pReceivedDeltaData This is the data that will be embedded in the reported section of the JSON document
+ * @param lengthDelta Length of the data
+ */
+static bool buildJSONForReported(char *pJsonDocument, size_t maxSizeOfJsonDocument, const char *pReceivedDeltaData, uint32_t lengthDelta) {
+	int32_t ret;
+
+	if (NULL == pJsonDocument) {
+		return false;
+	}
+
+	char tempClientTokenBuffer[MAX_SIZE_CLIENT_TOKEN_CLIENT_SEQUENCE];
+
+	if(aws_iot_fill_with_client_token(tempClientTokenBuffer, MAX_SIZE_CLIENT_TOKEN_CLIENT_SEQUENCE) != SUCCESS){
+		return false;
+	}
+
+	ret = snprintf(pJsonDocument, maxSizeOfJsonDocument, "{\"state\":{\"reported\":%.*s}, \"clientToken\":\"%s\"}", lengthDelta, pReceivedDeltaData, tempClientTokenBuffer);
+
+	if (ret >= maxSizeOfJsonDocument || ret < 0) {
+		return false;
+	}
+
+	return true;
+}
 
 // Helper functions
-void parseInputArgsForConnectParams(int argc, char** argv);
+static void parseInputArgsForConnectParams(int argc, char** argv) {
+	int opt;
+
+	while (-1 != (opt = getopt(argc, argv, "h:p:c:"))) {
+		switch (opt) {
+		case 'h':
+			strncpy(HostAddress, optarg, HOST_ADDRESS_SIZE);
+			IOT_DEBUG("Host %s", optarg);
+			break;
+		case 'p':
+			port = atoi(optarg);
+			IOT_DEBUG("arg %s", optarg);
+			break;
+		case 'c':
+			strncpy(certDirectory, optarg, PATH_MAX + 1);
+			IOT_DEBUG("cert root directory %s", optarg);
+			break;
+		case '?':
+			if (optopt == 'c') {
+				IOT_ERROR("Option -%c requires an argument.", optopt);
+			} else if (isprint(optopt)) {
+				IOT_WARN("Unknown option `-%c'.", optopt);
+			} else {
+				IOT_WARN("Unknown option character `\\x%x'.", optopt);
+			}
+			break;
+		default:
+			IOT_ERROR("ERROR in command line argument parsing");
+			break;
+		}
+	}
+
+}
 
 // Shadow Callback for receiving the delta
-void DeltaCallback(const char *pJsonValueBuffer, uint32_t valueLength, jsonStruct_t *pJsonStruct_t);
+static void DeltaCallback(const char *pJsonValueBuffer, uint32_t valueLength, jsonStruct_t *pJsonStruct_t) {
+	IOT_UNUSED(pJsonStruct_t);
 
-void UpdateStatusCallback(const char *pThingName, ShadowActions_t action, Shadow_Ack_Status_t status,
-		const char *pReceivedJsonDocument, void *pContextData);
+	IOT_DEBUG("Received Delta message %.*s", valueLength, pJsonValueBuffer);
+
+	if (buildJSONForReported(stringToEchoDelta, SHADOW_MAX_SIZE_OF_RX_BUFFER, pJsonValueBuffer, valueLength)) {
+		messageArrivedOnDelta = true;
+	}
+}
+
+static void UpdateStatusCallback(const char *pThingName, ShadowActions_t action, Shadow_Ack_Status_t status,
+		const char *pReceivedJsonDocument, void *pContextData) {
+	IOT_UNUSED(pThingName);
+	IOT_UNUSED(action);
+	IOT_UNUSED(pReceivedJsonDocument);
+	IOT_UNUSED(pContextData);
+
+	if(SHADOW_ACK_TIMEOUT == status) {
+		IOT_INFO("Update Timeout--");
+	} else if(SHADOW_ACK_REJECTED == status) {
+		IOT_INFO("Update RejectedXX");
+	} else if(SHADOW_ACK_ACCEPTED == status) {
+		IOT_INFO("Update Accepted !!");
+	}
+}
 
 int main(int argc, char** argv) {
 	IoT_Error_t rc = SUCCESS;
-	int32_t i = 0;
 
 	char rootCA[PATH_MAX + 1];
 	char clientCRT[PATH_MAX + 1];
@@ -185,94 +268,4 @@ int main(int argc, char** argv) {
 	}
 
 	return rc;
-}
-/**
- * @brief This function builds a full Shadow expected JSON document by putting the data in the reported section
- *
- * @param pJsonDocument Buffer to be filled up with the JSON data
- * @param maxSizeOfJsonDocument maximum size of the buffer that could be used to fill
- * @param pReceivedDeltaData This is the data that will be embedded in the reported section of the JSON document
- * @param lengthDelta Length of the data
- */
-bool buildJSONForReported(char *pJsonDocument, size_t maxSizeOfJsonDocument, const char *pReceivedDeltaData, uint32_t lengthDelta) {
-	int32_t ret;
-
-	if (NULL == pJsonDocument) {
-		return false;
-	}
-
-	char tempClientTokenBuffer[MAX_SIZE_CLIENT_TOKEN_CLIENT_SEQUENCE];
-
-	if(aws_iot_fill_with_client_token(tempClientTokenBuffer, MAX_SIZE_CLIENT_TOKEN_CLIENT_SEQUENCE) != SUCCESS){
-		return false;
-	}
-
-	ret = snprintf(pJsonDocument, maxSizeOfJsonDocument, "{\"state\":{\"reported\":%.*s}, \"clientToken\":\"%s\"}", lengthDelta, pReceivedDeltaData, tempClientTokenBuffer);
-
-	if (ret >= maxSizeOfJsonDocument || ret < 0) {
-		return false;
-	}
-
-	return true;
-}
-
-void parseInputArgsForConnectParams(int argc, char** argv) {
-	int opt;
-
-	while (-1 != (opt = getopt(argc, argv, "h:p:c:"))) {
-		switch (opt) {
-		case 'h':
-			strncpy(HostAddress, optarg, HOST_ADDRESS_SIZE);
-			IOT_DEBUG("Host %s", optarg);
-			break;
-		case 'p':
-			port = atoi(optarg);
-			IOT_DEBUG("arg %s", optarg);
-			break;
-		case 'c':
-			strncpy(certDirectory, optarg, PATH_MAX + 1);
-			IOT_DEBUG("cert root directory %s", optarg);
-			break;
-		case '?':
-			if (optopt == 'c') {
-				IOT_ERROR("Option -%c requires an argument.", optopt);
-			} else if (isprint(optopt)) {
-				IOT_WARN("Unknown option `-%c'.", optopt);
-			} else {
-				IOT_WARN("Unknown option character `\\x%x'.", optopt);
-			}
-			break;
-		default:
-			IOT_ERROR("ERROR in command line argument parsing");
-			break;
-		}
-	}
-
-}
-
-
-void DeltaCallback(const char *pJsonValueBuffer, uint32_t valueLength, jsonStruct_t *pJsonStruct_t) {
-	IOT_UNUSED(pJsonStruct_t);
-
-	IOT_DEBUG("Received Delta message %.*s", valueLength, pJsonValueBuffer);
-
-	if (buildJSONForReported(stringToEchoDelta, SHADOW_MAX_SIZE_OF_RX_BUFFER, pJsonValueBuffer, valueLength)) {
-		messageArrivedOnDelta = true;
-	}
-}
-
-void UpdateStatusCallback(const char *pThingName, ShadowActions_t action, Shadow_Ack_Status_t status,
-		const char *pReceivedJsonDocument, void *pContextData) {
-	IOT_UNUSED(pThingName);
-	IOT_UNUSED(action);
-	IOT_UNUSED(pReceivedJsonDocument);
-	IOT_UNUSED(pContextData);
-
-	if(SHADOW_ACK_TIMEOUT == status) {
-		IOT_INFO("Update Timeout--");
-	} else if(SHADOW_ACK_REJECTED == status) {
-		IOT_INFO("Update RejectedXX");
-	} else if(SHADOW_ACK_ACCEPTED == status) {
-		IOT_INFO("Update Accepted !!");
-	}
 }
