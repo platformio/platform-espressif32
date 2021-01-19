@@ -113,7 +113,7 @@ env.Append(
             action=env.VerboseAction(
                 " ".join(
                     [
-                        "xtensa-ESP8266-elf-objcopy",
+                        "xtensa-esp32-elf-objcopy",
                         "--input-target",
                         "binary",
                         "--output-target",
