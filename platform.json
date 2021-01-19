@@ -19,13 +19,6 @@
     "url": "https://github.com/platformio/platform-espressif32.git"
   },
   "version": "2.1.0",
-  "packageRepositories": [
-    "https://dl.bintray.com/platformio/dl-packages/manifest.json",
-    "http://dl.platformio.org/packages/manifest.json",
-    "https://raw.githubusercontent.com/eerimoq/simba/master/make/platformio/manifest.json",
-    "https://raw.githubusercontent.com/eerimoq/pumbaa/master/make/platformio/manifest.json",
-    "https://raw.githubusercontent.com/FastEmbedded/FEmbed-tools/master/manifest.json"
-  ],
   "frameworks": {
     "arduino": {
       "package": "framework-arduinoespressif32",
@@ -93,7 +86,7 @@
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~3.40100.0"
+      "version": "https://github.com/FastEmbedded/esp-idf.git"
     },
     "framework-simba": {
       "type": "framework",
@@ -151,7 +144,7 @@
     },
     "tool-kconfig": {
       "type": "kconfig",
-      "version": "13.1.1"
+      "version": "https://github.com/FastEmbedded/FEmbed-tools/raw/master/tool-kconfig-13.1.1.zip"
     }
   }
 }

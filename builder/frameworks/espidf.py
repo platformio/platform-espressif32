@@ -1,3 +1,4 @@
+
 # Copyright 2020-present PlatformIO <contact@platformio.org>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,6 +26,7 @@ import json
 import subprocess
 import sys
 from os import environ, listdir, makedirs, rename, pathsep
+import os
 from os.path import (
     abspath,
     basename,
@@ -121,7 +123,6 @@ def get_project_lib_includes(env):
             continue
         lb.env.PrependUnique(CPPPATH=lb.get_include_dirs())
         paths.extend(lb.env["CPPPATH"])
-
     DefaultEnvironment().Replace(__PIO_LIB_BUILDERS=None)
 
     return paths
@@ -299,6 +300,7 @@ def get_app_includes(app_config):
     cg = app_config["compileGroups"][0]
     for inc in cg.get("includes", []):
         inc_path = inc["path"]
+        if not os.path.exists(inc_path): continue
         if inc.get("isSystem", False):
             sys_includes.append(inc_path)
         else:
@@ -552,6 +554,7 @@ def prepare_build_envs(config, default_env):
         sys_includes = []
         for inc in cg.get("includes", []):
             inc_path = inc["path"]
+            if not os.path.exists(inc_path): continue
             if inc.get("isSystem", False):
                 sys_includes.append(inc_path)
             else:
@@ -602,7 +605,6 @@ def compile_source_files(config, default_env, project_src_dir, prepend_dir=None)
                     source=os.path.realpath(src_path),
                 )
             )
-
     return objects
 
 
@@ -627,7 +629,7 @@ def run_tool(cmd):
 def check_kconfig(idf_env):
     components_with_kconfig = []
     components_with_kconfig_projbuild = []
-    idf_path = join(expandvars("$IDF_PATH"), "components")
+    idf_path = join(FRAMEWORK_DIR, "components")
     for src in listdir(idf_path):
         if isfile(join(idf_path,  src, "Kconfig")):
             components_with_kconfig.append(join(idf_path, src, "Kconfig"))
@@ -643,8 +645,8 @@ def check_kconfig(idf_env):
             if isfile(join(env.subst(lib_dir), lib, "Kconfig.projbuild")):
                 components_with_kconfig_projbuild.append(join(env.subst(lib_dir), lib, "Kconfig.projbuild"))
 
-    idf_env["COMPONENT_KCONFIGS"] = " ".join(components_with_kconfig)
-    idf_env["COMPONENT_KCONFIGS_PROJBUILD"] = " ".join(components_with_kconfig_projbuild)
+    idf_env["COMPONENT_KCONFIGS_SOURCE_FILE"] = " ".join(components_with_kconfig)
+    idf_env["COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE"] = " ".join(components_with_kconfig_projbuild)
     idf_env["KCONFIG_CONFIG"] = "sdkconfig"
     idf_env["IDF_CMAKE"] = "y"
     idf_env["IDF_TARGET"] = "esp32"
@@ -652,13 +654,12 @@ def check_kconfig(idf_env):
 def RunMenuconfig(target, source, env):
     idf_env = os.environ.copy()
     populate_idf_env_vars(idf_env)
-
     check_kconfig(idf_env)
     rc = subprocess.call(
         [
             "python", 
             join(platform.get_package_dir("tool-kconfig"), "guiconfig.py"),
-            expandvars(join("$IDF_PATH", "Kconfig"))
+            expandvars(join(FRAMEWORK_DIR, "Kconfig"))
         ],
         env=idf_env,
     )
