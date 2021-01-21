@@ -21,48 +21,45 @@ from platformio.util import get_systype
 
 
 class Espressif32Platform(PlatformBase):
-
     def configure_default_packages(self, variables, targets):
         if not variables.get("board"):
-            return PlatformBase.configure_default_packages(
-                self, variables, targets)
+            return PlatformBase.configure_default_packages(self, variables, targets)
 
         board_config = self.board_config(variables.get("board"))
         mcu = variables.get("board_build.mcu", board_config.get("build.mcu", "esp32"))
         frameworks = variables.get("pioframework", [])
         if "buildfs" in targets:
-            self.packages['tool-mkspiffs']['optional'] = False
+            self.packages["tool-mkspiffs"]["optional"] = False
         if variables.get("upload_protocol"):
-            self.packages['tool-openocd-esp32']['optional'] = False
+            self.packages["tool-openocd-esp32"]["optional"] = False
         if os.path.isdir("ulp"):
-            self.packages['toolchain-esp32ulp']['optional'] = False
+            self.packages["toolchain-esp32ulp"]["optional"] = False
         if "espidf" in frameworks:
             for p in self.packages:
                 if p in ("tool-cmake", "tool-ninja", "toolchain-%sulp" % mcu):
                     self.packages[p]["optional"] = False
                 elif p in ("tool-mconf", "tool-idf") and "windows" in get_systype():
-                    self.packages[p]['optional'] = False
-            self.packages['toolchain-xtensa32']['version'] = "~2.80200.0"
+                    self.packages[p]["optional"] = False
+            self.packages["toolchain-xtensa32"]["version"] = "~2.80400.0"
             if "arduino" in frameworks:
                 # Arduino component is not compatible with ESP-IDF >=4.1
-                self.packages['framework-espidf']['version'] = "~3.40001.0"
+                self.packages["framework-espidf"]["version"] = "~3.40001.0"
         # ESP32-S2 toolchain is identical for both Arduino and ESP-IDF
         if mcu == "esp32s2":
             self.packages.pop("toolchain-xtensa32", None)
-            self.packages['toolchain-xtensa32s2']['optional'] = False
-            self.packages['toolchain-esp32s2ulp']['optional'] = False
-            self.packages['tool-esptoolpy']['version'] = "~1.30000.0"
+            self.packages["toolchain-xtensa32s2"]["optional"] = False
+            self.packages["toolchain-esp32s2ulp"]["optional"] = False
 
         build_core = variables.get(
-            "board_build.core", board_config.get("build.core", "arduino")).lower()
+            "board_build.core", board_config.get("build.core", "arduino")
+        ).lower()
         if build_core == "mbcwb":
-            self.packages['framework-arduinoespressif32']['optional'] = True
-            self.packages['framework-arduino-mbcwb']['optional'] = False
-            self.packages['tool-mbctool']['type'] = "uploader"
-            self.packages['tool-mbctool']['optional'] = False
+            self.packages["framework-arduinoespressif32"]["optional"] = True
+            self.packages["framework-arduino-mbcwb"]["optional"] = False
+            self.packages["tool-mbctool"]["type"] = "uploader"
+            self.packages["tool-mbctool"]["optional"] = False
 
-        return PlatformBase.configure_default_packages(self, variables,
-                                                       targets)
+        return PlatformBase.configure_default_packages(self, variables, targets)
 
     def get_boards(self, id_=None):
         result = PlatformBase.get_boards(self, id_)
@@ -78,9 +75,9 @@ class Espressif32Platform(PlatformBase):
     def _add_dynamic_options(self, board):
         # upload protocols
         if not board.get("upload.protocols", []):
-            board.manifest['upload']['protocols'] = ["esptool", "espota"]
+            board.manifest["upload"]["protocols"] = ["esptool", "espota"]
         if not board.get("upload.protocol", ""):
-            board.manifest['upload']['protocol'] = "esptool"
+            board.manifest["upload"]["protocol"] = "esptool"
 
         # debug tools
         debug = board.manifest.get("debug", {})
@@ -94,24 +91,24 @@ class Espressif32Platform(PlatformBase):
             "olimex-arm-usb-ocd-h",
             "olimex-arm-usb-ocd",
             "olimex-jtag-tiny",
-            "tumpa"
+            "tumpa",
+            "esp32s2_kaluga_v1",
         ]
 
         upload_protocol = board.manifest.get("upload", {}).get("protocol")
-        upload_protocols = board.manifest.get("upload", {}).get(
-            "protocols", [])
+        upload_protocols = board.manifest.get("upload", {}).get("protocols", [])
         if debug:
             upload_protocols.extend(supported_debug_tools)
         if upload_protocol and upload_protocol not in upload_protocols:
             upload_protocols.append(upload_protocol)
-        board.manifest['upload']['protocols'] = upload_protocols
+        board.manifest["upload"]["protocols"] = upload_protocols
 
         if "tools" not in debug:
-            debug['tools'] = {}
+            debug["tools"] = {}
 
         # Only FTDI based debug probes
         for link in upload_protocols:
-            if link in non_debug_protocols or link in debug['tools']:
+            if link in non_debug_protocols or link in debug["tools"]:
                 continue
 
             if link == "jlink":
@@ -122,17 +119,26 @@ class Espressif32Platform(PlatformBase):
                 openocd_interface = "ftdi/" + link
 
             server_args = [
-                "-s", "$PACKAGE_DIR/share/openocd/scripts",
-                "-f", "interface/%s.cfg" % openocd_interface,
-                "-f", "board/%s" % debug.get("openocd_board"),
-                "-c", "adapter_khz %d" % debug.get("adapter_speed", 20000)
+                "-s",
+                "$PACKAGE_DIR/share/openocd/scripts",
+                "-f",
+                "interface/%s.cfg" % openocd_interface,
+                "-f",
+                "%s/%s"
+                % (
+                    ("target", debug.get("openocd_target"))
+                    if "openocd_target" in debug
+                    else ("board", debug.get("openocd_board"))
+                ),
+                "-c",
+                "adapter_khz %d" % debug.get("adapter_speed", 5000),
             ]
 
-            debug['tools'][link] = {
+            debug["tools"][link] = {
                 "server": {
                     "package": "tool-openocd-esp32",
                     "executable": "bin/openocd",
-                    "arguments": server_args
+                    "arguments": server_args,
                 },
                 "init_break": "thb app_main",
                 "init_cmds": [
@@ -146,14 +152,13 @@ class Espressif32Platform(PlatformBase):
                     "target extended-remote $DEBUG_PORT",
                     "$LOAD_CMDS",
                     "pio_reset_halt_target",
-                    "$INIT_BREAK"
+                    "$INIT_BREAK",
                 ],
                 "onboard": link in debug.get("onboard_tools", []),
-                "default": link == debug.get("default_tool")
-
+                "default": link == debug.get("default_tool"),
             }
 
-        board.manifest['debug'] = debug
+        board.manifest["debug"] = debug
         return board
 
     def configure_debug_options(self, initial_debug_options, ide_data):
