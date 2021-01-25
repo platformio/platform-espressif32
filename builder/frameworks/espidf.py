@@ -1281,7 +1281,7 @@ env.Prepend(
 # in File-API hence it's not present in components map. As a workaround we can build
 # the lib using project build environment with additional flags from CMakeLists.txt
 if (
-    idf_variant.startswith("esp32s2")
+    sdk_config.get("USB_ENABLED", False)
     and "__idf_tinyusb" not in framework_components_map
 ):
     build_tinyusb_lib(env)
