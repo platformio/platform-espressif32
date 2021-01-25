@@ -104,8 +104,8 @@ def embed_files(files, files_type):
 
 def transform_to_asm(target, source, env):
     files = [join("$BUILD_DIR", s.name + ".S") for s in source]
-    env.AppendUnique(PIOBUILDFILES=files)
     return files, source
+
 
 env.Append(
     BUILDERS=dict(
@@ -155,7 +155,7 @@ env.Append(
                 "Generating assembly for $TARGET",
             ),
             emitter=transform_to_asm,
-            single_source=True
+            single_source=True,
         ),
     )
 )
