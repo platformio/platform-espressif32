@@ -11,10 +11,7 @@
     "variant": "esp32s2"
   },
   "connectivity": [
-    "wifi",
-    "bluetooth",
-    "ethernet",
-    "can"
+    "wifi"
   ],
   "debug": {
     "default_tool": "esp32s2_kaluga_v1",
