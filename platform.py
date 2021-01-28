@@ -130,8 +130,6 @@ class Espressif32Platform(PlatformBase):
                     if "openocd_target" in debug
                     else ("board", debug.get("openocd_board"))
                 ),
-                "-c",
-                "adapter_khz %d" % debug.get("adapter_speed", 5000),
             ]
 
             debug["tools"][link] = {
@@ -164,15 +162,22 @@ class Espressif32Platform(PlatformBase):
     def configure_debug_options(self, initial_debug_options, ide_data):
         ide_extra_data = ide_data.get("extra", {})
         flash_images = ide_extra_data.get("flash_images", [])
+        debug_options = copy.deepcopy(initial_debug_options)
+
+        if "openocd" in debug_options["server"].get("executable", ""):
+            debug_options["server"]["arguments"].extend(
+                ["-c", "adapter_khz %s" % (initial_debug_options.get("speed") or "5000")]
+            )
+
         ignore_conds = [
             initial_debug_options["load_cmds"] != ["load"],
             not flash_images,
             not all([os.path.isfile(item["path"]) for item in flash_images]),
         ]
-        if any(ignore_conds):
-            return initial_debug_options
 
-        debug_options = copy.deepcopy(initial_debug_options)
+        if any(ignore_conds):
+            return debug_options
+
         load_cmds = [
             'monitor program_esp "{{{path}}}" {offset} verify'.format(
                 path=fs.to_unix_path(item["path"]), offset=item["offset"]

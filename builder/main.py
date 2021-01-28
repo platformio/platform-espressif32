@@ -372,9 +372,10 @@ elif upload_protocol in debug_tools:
     openocd_args.extend(
         debug_tools.get(upload_protocol).get("server").get("arguments", []))
     openocd_args.extend([
+        "-c", "adapter_khz %s" % env.GetProjectOption("debug_speed", "5000"),
         "-c",
         "program_esp {{$SOURCE}} %s verify" %
-        board.get("upload.offset_address", "$ESP32_APP_OFFSET")
+        board.get("upload.offset_address", "$ESP32_APP_OFFSET"),
     ])
     for image in env.get("FLASH_EXTRA_IMAGES", []):
         openocd_args.extend([
