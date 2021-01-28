@@ -575,16 +575,12 @@ def prepare_build_envs(config, default_env):
     return build_envs
 
 
-def compile_source_files(
-    config, default_env, project_src_dir, prepend_dir=None, skip_generated=False
-):
+def compile_source_files(config, default_env, project_src_dir, prepend_dir=None):
     build_envs = prepare_build_envs(config, default_env)
     objects = []
     components_dir = fs.to_unix_path(os.path.join(FRAMEWORK_DIR, "components"))
     for source in config.get("sources", []):
         if source["path"].endswith(".rule"):
-            continue
-        if source.get("isGenerated", False) and skip_generated:
             continue
         compile_group_idx = source.get("compileGroupIndex")
         if compile_group_idx is not None:
@@ -1257,7 +1253,6 @@ if "__test" not in COMMAND_LINE_TARGETS or env.GetProjectOption(
             target_configs.get(project_target_name),
             project_env,
             project_env.subst("$PROJECT_DIR"),
-            skip_generated=True,
         )
     )
 
