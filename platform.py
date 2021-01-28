@@ -92,7 +92,6 @@ class Espressif32Platform(PlatformBase):
             "olimex-arm-usb-ocd",
             "olimex-jtag-tiny",
             "tumpa",
-            "esp32s2_kaluga_v1",
         ]
 
         upload_protocol = board.manifest.get("upload", {}).get("protocol")
@@ -114,7 +113,10 @@ class Espressif32Platform(PlatformBase):
             if link == "jlink":
                 openocd_interface = link
             elif link in ("esp-prog", "ftdi"):
-                openocd_interface = "ftdi/esp32_devkitj_v1"
+                if board.id == "esp32-s2-kaluga-1":
+                    openocd_interface = "ftdi/esp32s2_kaluga_v1"
+                else:
+                    openocd_interface = "ftdi/esp32_devkitj_v1"
             else:
                 openocd_interface = "ftdi/" + link
 

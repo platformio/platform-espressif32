@@ -14,9 +14,9 @@
     "wifi"
   ],
   "debug": {
-    "default_tool": "esp32s2_kaluga_v1",
+    "default_tool": "ftdi",
     "onboard_tools": [
-      "esp32s2_kaluga_v1"
+      "ftdi"
     ],
     "openocd_target": "esp32s2.cfg"
   },
