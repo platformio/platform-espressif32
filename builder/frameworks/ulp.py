@@ -26,15 +26,24 @@ platform = ulp_env.PioPlatform()
 FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
 BUILD_DIR = ulp_env.subst("$BUILD_DIR")
 ULP_BUILD_DIR = os.path.join(
-    BUILD_DIR, "esp-idf", project_config["name"].replace("__idf_", ""), "ulp_main")
+    BUILD_DIR, "esp-idf", project_config["name"].replace("__idf_", ""), "ulp_main"
+)
 
 
 def prepare_ulp_env_vars(env):
-    ulp_env.PrependENVPath("IDF_PATH", platform.get_package_dir("framework-espidf"))
+    ulp_env.PrependENVPath("IDF_PATH", FRAMEWORK_DIR)
 
     additional_packages = [
-        os.path.join(platform.get_package_dir("toolchain-xtensa32"), "bin"),
-        os.path.join(platform.get_package_dir("toolchain-esp32ulp"), "bin"),
+        os.path.join(
+            platform.get_package_dir(
+                "toolchain-xtensa%s" % ("32s2" if idf_variant == "esp32s2" else "32")
+            ),
+            "bin",
+        ),
+        os.path.join(
+            platform.get_package_dir("toolchain-%sulp" % idf_variant),
+            "bin",
+        ),
         platform.get_package_dir("tool-ninja"),
         os.path.join(platform.get_package_dir("tool-cmake"), "bin"),
         os.path.dirname(where_is_program("python")),
@@ -74,7 +83,7 @@ def generate_ulp_config(target_config):
         "-DCMAKE_GENERATOR=Ninja",
         "-DCMAKE_TOOLCHAIN_FILE="
         + os.path.join(
-            platform.get_package_dir("framework-espidf"),
+            FRAMEWORK_DIR,
             "components",
             "ulp",
             "cmake",
