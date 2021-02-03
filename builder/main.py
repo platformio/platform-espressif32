@@ -293,8 +293,8 @@ if upload_protocol == "espota":
         UPLOADERFLAGS=["--debug", "--progress", "-i", "$UPLOAD_PORT"],
         UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS -f $SOURCE'
     )
-    if "uploadfs" in COMMAND_LINE_TARGETS:
-        env.Append(UPLOADERFLAGS=["-s"])
+    if set(["uploadfs", "uploadfsota"]) & set(COMMAND_LINE_TARGETS):
+        env.Append(UPLOADERFLAGS=["--spiffs"])
     upload_actions = [env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")]
 
 elif upload_protocol == "esptool":
