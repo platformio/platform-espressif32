@@ -17,7 +17,7 @@
     "openocd_target": "esp32s2.cfg"
   },
   "frameworks": [
-  	"arduino",
+    "arduino",
     "espidf"
   ],
   "name": "Adafruit ESP32-S2 Feather Development Board",
