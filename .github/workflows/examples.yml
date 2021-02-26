@@ -24,6 +24,7 @@ jobs:
           - "examples/espidf-peripherals-uart"
           - "examples/espidf-peripherals-usb"
           - "examples/espidf-storage-sdcard"
+          - "examples/espidf-storage-spiffs"
           - "examples/espidf-ulp-adc"
           - "examples/espidf-ulp-pulse"
           - "examples/pumbaa-blink"

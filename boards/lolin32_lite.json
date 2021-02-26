@@ -1,16 +1,15 @@
 {
   "build": {
     "arduino":{
-      "ldscript": "esp32_out.ld",
-      "partitions": "default_16MB.csv"
+      "ldscript": "esp32_out.ld"
     },
     "core": "esp32",
-    "extra_flags": "-DARDUINO_M5STACK_FIRE -DBOARD_HAS_PSRAM -mfix-esp32-psram-cache-issue",
+    "extra_flags": "-DARDUINO_LOLIN32_LITE",
     "f_cpu": "240000000L",
     "f_flash": "40000000L",
     "flash_mode": "dio",
     "mcu": "esp32",
-    "variant": "m5stack_fire"
+    "variant": "lolin32-lite"
   },
   "connectivity": [
     "wifi",
@@ -22,14 +21,14 @@
     "arduino",
     "espidf"
   ],
-  "name": "M5Stack FIRE",
+  "name": "WEMOS LOLIN32 Lite",
   "upload": {
-    "flash_size": "16MB",
-    "maximum_ram_size": 6553600,
-    "maximum_size": 16777216,
+    "flash_size": "4MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 4194304,
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "http://www.m5stack.com",
-  "vendor": "M5Stack"
+  "url": "https://diyprojects.io/wemos-lolin32-lite-compact-revision-lolin32-4-90/",
+  "vendor": "WEMOS"
 }

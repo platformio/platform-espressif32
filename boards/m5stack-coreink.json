@@ -1,16 +1,15 @@
 {
   "build": {
     "arduino":{
-      "ldscript": "esp32_out.ld",
-      "partitions": "default_16MB.csv"
+      "ldscript": "esp32_out.ld"
     },
     "core": "esp32",
-    "extra_flags": "-DARDUINO_M5STACK_FIRE -DBOARD_HAS_PSRAM -mfix-esp32-psram-cache-issue",
+    "extra_flags": "-DARDUINO_M5Stack_CoreInk",
     "f_cpu": "240000000L",
     "f_flash": "40000000L",
     "flash_mode": "dio",
     "mcu": "esp32",
-    "variant": "m5stack_fire"
+    "variant": "m5stack_coreink"
   },
   "connectivity": [
     "wifi",
@@ -22,11 +21,11 @@
     "arduino",
     "espidf"
   ],
-  "name": "M5Stack FIRE",
+  "name": "M5Stick-Core Ink",
   "upload": {
-    "flash_size": "16MB",
-    "maximum_ram_size": 6553600,
-    "maximum_size": 16777216,
+    "flash_size": "4MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 4194304,
     "require_upload_port": true,
     "speed": 460800
   },
