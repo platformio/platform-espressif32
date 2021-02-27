@@ -578,6 +578,51 @@ def prepare_build_envs(config, default_env):
 
     return build_envs
 
+def genGeneratedFile(config, source):
+    bundle_name = "x509_crt_bundle"
+    if bundle_name in source["path"] and sdk_config.get("MBEDTLS_CERTIFICATE_BUNDLE", False):
+        default_crt_dir = join(config["paths"]["source"], "esp_crt_bundle")
+        generate_cert_bundlepy = join(config["paths"]["source"], "esp_crt_bundle", "gen_crt_bundle.py")
+        args = ['python', generate_cert_bundlepy]
+        crt_paths = []
+        if sdk_config.get("MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_FULL", False):
+            crt_paths.append(join(default_crt_dir, "cacrt_all.pem"))
+        elif sdk_config.get("MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_CMN", False):
+            crt_paths.append(join(default_crt_dir, "cacrt_all.pem"))
+            args.extend(["--filter", join(default_crt_dir, "cmn_crt_authorities.csv")])
+
+        if sdk_config.get("MBEDTLS_CUSTOM_CERTIFICATE_BUNDLE", False):
+            crt_paths.append(os.path.abspath(sdk_config.get("MBEDTLS_CUSTOM_CERTIFICATE_BUNDLE")))
+        args.append("--input")
+        args.extend(crt_paths)
+        args.append("-q")
+
+        idf_env = os.environ.copy()
+        populate_idf_env_vars(idf_env)
+        rc = subprocess.call(args, env=idf_env)
+
+        if rc != 0:
+            sys.stderr.write("Error: Couldn't execute 'gen_crt_bundle.py'.\n")
+            env.Exit(1)
+        else:
+            raw = open(bundle_name, "rb").read()
+            gen_file = open(source["path"], "w")
+            gen_file.write(".data\n.section .rodata.embedded\n\n\n")
+            gen_file.write(".global {0}\n{0}:\n\n\n".format(bundle_name))
+            gen_file.write(".global _binary_{0}_start\n_binary_{0}_start:".format(bundle_name))
+
+            raw_len = len(raw)
+            for i in range(raw_len):
+                if i % 16 == 0:
+                    gen_file.write("\n.byte")
+                gen_file.write(" 0x%02x" % raw[0])
+                if i % 16 != 15:
+                    gen_file.write(",")
+            gen_file.write("\n.global _binary_{0}_end\n_binary_{0}_end:\n\n\n".format(bundle_name))
+            gen_file.write("\n.global {0}_length\n{0}_length:\n\n\n".format(bundle_name))
+            gen_file.write(".word %d" % raw_len)
+            os.unlink(bundle_name)
+
 
 def compile_source_files(config, default_env, project_src_dir, prepend_dir=None):
     build_envs = prepare_build_envs(config, default_env)
@@ -587,6 +632,8 @@ def compile_source_files(config, default_env, project_src_dir, prepend_dir=None)
             continue
         compile_group_idx = source.get("compileGroupIndex")
         if compile_group_idx is not None:
+            if source.get("isGenerated"):
+                genGeneratedFile(config, source)
             src_path = source.get("path")
             if not os.path.isabs(src_path):
                 # For cases when sources are located near CMakeLists.txt
