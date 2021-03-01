@@ -9,7 +9,7 @@
     "f_flash": "40000000L",
     "flash_mode": "dio",
     "mcu": "esp32",
-    "variant": "tbeam"
+    "variant": "t-beam"
   },
   "connectivity": [
     "wifi",
