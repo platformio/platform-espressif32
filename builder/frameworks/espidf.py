@@ -1120,6 +1120,7 @@ project_codemodel = get_cmake_code_model(
     BUILD_DIR,
     [
         "-DIDF_TARGET=" + idf_variant,
+        "-DPYTHON_DEPS_CHECKED=1",
         "-DEXTRA_COMPONENT_DIRS:PATH=" + ";".join(extra_components),
         "-DPYTHON=" + env.subst("$PYTHONEXE"),
     ]
