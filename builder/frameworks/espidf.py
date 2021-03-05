@@ -677,6 +677,23 @@ def check_kconfig(idf_env):
     idf_env["IDF_CMAKE"] = "y"
     idf_env["IDF_TARGET"] = "esp32"
 
+def RunGuiconfig(target, source, env):
+    idf_env = os.environ.copy()
+    populate_idf_env_vars(idf_env)
+    check_kconfig(idf_env)
+    rc = subprocess.call(
+        [
+            "python",
+            join(platform.get_package_dir("tool-kconfig"), "guiconfig.py"),
+            expandvars(join(FRAMEWORK_DIR, "Kconfig"))
+        ],
+        env=idf_env,
+    )
+
+    if rc != 0:
+        sys.stderr.write("Error: Couldn't execute 'menuconfig' target.\n")
+        env.Exit(1)
+
 def RunMenuconfig(target, source, env):
     idf_env = os.environ.copy()
     populate_idf_env_vars(idf_env)
@@ -695,7 +712,6 @@ def RunMenuconfig(target, source, env):
     if rc != 0:
         sys.stderr.write("Error: Couldn't execute 'menuconfig' target.\n")
         env.Exit(1)
-
 
 def run_cmake(src_dir, build_dir, extra_args=None):
     cmd = [
@@ -1252,6 +1268,13 @@ env.AddPlatformTarget(
     None,
     [env.VerboseAction(RunMenuconfig, "Running menuconfig...")],
     "Run Menuconfig",
+)
+
+env.AddPlatformTarget(
+    "guiconfig",
+    None,
+    [env.VerboseAction(RunGuiconfig, "Running menuconfig from kconfiglib...")],
+    "Run Gui Menuconfig",
 )
 
 #
