@@ -675,7 +675,7 @@ def check_kconfig(idf_env):
     idf_env["COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE"] = " ".join(components_with_kconfig_projbuild)
     idf_env["KCONFIG_CONFIG"] = "sdkconfig"
     idf_env["IDF_CMAKE"] = "y"
-    idf_env["IDF_TARGET"] = "esp32"
+    idf_env["IDF_TARGET"] = mcu
 
 def RunGuiconfig(target, source, env):
     idf_env = os.environ.copy()
