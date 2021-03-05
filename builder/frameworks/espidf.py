@@ -60,9 +60,7 @@ env.SConscript("_embed_files.py", exports="env")
 platform = env.PioPlatform()
 board = env.BoardConfig()
 mcu = board.get("build.mcu", "esp32")
-idf_variant = board.get(
-    "build.esp-idf.variant", "esp32s2beta" if mcu == "esp32s2" else "esp32"
-)
+idf_variant = mcu.lower()
 
 FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
 TOOLCHAIN_DIR = platform.get_package_dir(
@@ -150,7 +148,7 @@ def is_cmake_reconfigure_required(cmake_api_reply_dir):
         return True
     if any(
         os.path.getmtime(f) > os.path.getmtime(cmake_cache_file)
-        for f in cmake_txt_files + [cmake_preconf_dir]
+        for f in cmake_txt_files + [cmake_preconf_dir, FRAMEWORK_DIR]
     ):
         return True
 
@@ -328,6 +326,16 @@ def get_app_defines(app_config):
 
 
 def extract_link_args(target_config):
+    def _add_to_libpath(lib_path, link_args):
+        if lib_path not in link_args["LIBPATH"]:
+            link_args["LIBPATH"].append(lib_path)
+
+    def _add_archive(archive_path, link_args):
+        archive_name = os.path.basename(archive_path)
+        if archive_name not in link_args["LIBS"]:
+            _add_to_libpath(os.path.dirname(archive_path), link_args)
+            link_args["LIBS"].append(archive_name)
+
     link_args = {"LINKFLAGS": [], "LIBS": [], "LIBPATH": [], "__LIB_DEPS": []}
 
     for f in target_config.get("link", {}).get("commandFragments", []):
@@ -343,23 +351,27 @@ def extract_link_args(target_config):
                 link_args["LIBS"].extend(args)
             elif fragment.startswith("-L"):
                 lib_path = fragment.replace("-L", "").strip()
-                if lib_path not in link_args["LIBPATH"]:
-                    link_args["LIBPATH"].append(lib_path)
+                _add_to_libpath(lib_path, link_args)
             elif fragment.startswith("-") and not fragment.startswith("-l"):
                 # CMake mistakenly marks LINKFLAGS as libraries
                 link_args["LINKFLAGS"].extend(args)
-            elif os.path.isfile(fragment) and os.path.isabs(fragment):
-                # In case of precompiled archives from framework package
-                lib_path = os.path.dirname(fragment)
-                if lib_path not in link_args["LIBPATH"]:
-                    link_args["LIBPATH"].append(os.path.dirname(fragment))
-                link_args["LIBS"].extend(
-                    [os.path.basename(lib) for lib in args if lib.endswith(".a")]
-                )
             elif fragment.endswith(".a"):
-                link_args["__LIB_DEPS"].extend(
-                    [os.path.basename(lib) for lib in args if lib.endswith(".a")]
+                archive_path = fragment
+                # process static archives
+                if archive_path.startswith(FRAMEWORK_DIR):
+                # In case of precompiled archives from framework package
+                    _add_archive(archive_path, link_args)
+                else:
+                    # In case of archives within project
+                    if archive_path.startswith(".."):
+                        # Precompiled archives from project component
+                        _add_archive(
+                            os.path.normpath(os.path.join(BUILD_DIR, archive_path)),
+                            link_args,
                 )
+                    else:
+                        # Internally built libraries used for dependency resolution
+                        link_args["__LIB_DEPS"].append(os.path.basename(archive_path))
 
     return link_args
 
@@ -583,80 +595,42 @@ def prepare_build_envs(config, default_env):
 
     return build_envs
 
-def genGeneratedFile(config, source):
-    bundle_name = "x509_crt_bundle"
-    if bundle_name in source["path"] and sdk_config.get("MBEDTLS_CERTIFICATE_BUNDLE", False):
-        default_crt_dir = join(config["paths"]["source"], "esp_crt_bundle")
-        generate_cert_bundlepy = join(config["paths"]["source"], "esp_crt_bundle", "gen_crt_bundle.py")
-        args = ['python', generate_cert_bundlepy]
-        crt_paths = []
-        if sdk_config.get("MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_FULL", False):
-            crt_paths.append(join(default_crt_dir, "cacrt_all.pem"))
-        elif sdk_config.get("MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_CMN", False):
-            crt_paths.append(join(default_crt_dir, "cacrt_all.pem"))
-            args.extend(["--filter", join(default_crt_dir, "cmn_crt_authorities.csv")])
-
-        if sdk_config.get("MBEDTLS_CUSTOM_CERTIFICATE_BUNDLE", False):
-            crt_paths.append(os.path.abspath(sdk_config.get("MBEDTLS_CUSTOM_CERTIFICATE_BUNDLE")))
-        args.append("--input")
-        args.extend(crt_paths)
-        args.append("-q")
-
-        idf_env = os.environ.copy()
-        populate_idf_env_vars(idf_env)
-        rc = subprocess.call(args, env=idf_env)
-
-        if rc != 0:
-            sys.stderr.write("Error: Couldn't execute 'gen_crt_bundle.py'.\n")
-            env.Exit(1)
-        else:
-            raw = open(bundle_name, "rb").read()
-            gen_file = open(source["path"], "w")
-            gen_file.write(".data\n.section .rodata.embedded\n\n\n")
-            gen_file.write(".global {0}\n{0}:\n\n\n".format(bundle_name))
-            gen_file.write(".global _binary_{0}_start\n_binary_{0}_start:".format(bundle_name))
-
-            raw_len = len(raw)
-            for i in range(raw_len):
-                if i % 16 == 0:
-                    gen_file.write("\n.byte")
-                gen_file.write(" 0x%02x" % raw[0])
-                if i % 16 != 15:
-                    gen_file.write(",")
-            gen_file.write("\n.global _binary_{0}_end\n_binary_{0}_end:\n\n\n".format(bundle_name))
-            gen_file.write("\n.global {0}_length\n{0}_length:\n\n\n".format(bundle_name))
-            gen_file.write(".word %d" % raw_len)
-            os.unlink(bundle_name)
-
 
 def compile_source_files(config, default_env, project_src_dir, prepend_dir=None):
     build_envs = prepare_build_envs(config, default_env)
     objects = []
+    components_dir = fs.to_unix_path(os.path.join(FRAMEWORK_DIR, "components"))
     for source in config.get("sources", []):
         if source["path"].endswith(".rule"):
             continue
         compile_group_idx = source.get("compileGroupIndex")
         if compile_group_idx is not None:
-            if source.get("isGenerated"):
-                genGeneratedFile(config, source)
+            src_dir = config["paths"]["source"]
+            if not os.path.isabs(src_dir):
+                src_dir = os.path.join(project_src_dir, config["paths"]["source"])
             src_path = source.get("path")
             if not os.path.isabs(src_path):
                 # For cases when sources are located near CMakeLists.txt
                 src_path = os.path.join(project_src_dir, src_path)
-            local_path = config["paths"]["source"]
-            if not os.path.isabs(local_path):
-                local_path = os.path.join(project_src_dir, config["paths"]["source"])
-            obj_path = os.path.join(
-                "$BUILD_DIR", prepend_dir or "", config["paths"]["build"]
-            )
+
+            obj_path = os.path.join("$BUILD_DIR", prepend_dir or "")
+            if src_path.startswith(components_dir):
+                obj_path = os.path.join(
+                    obj_path, os.path.relpath(src_path, components_dir)
+                )
+            else:
+                if not os.path.isabs(source["path"]):
+                    obj_path = os.path.join(obj_path, source["path"])
+                else:
+                    obj_path = os.path.join(obj_path, os.path.basename(src_path))
+
             objects.append(
                 build_envs[compile_group_idx].StaticObject(
-                    target=os.path.join(
-                        obj_path, os.path.relpath(src_path, local_path) + ".o"
-                    ),
+                    target=os.path.splitext(obj_path)[0] + ".o",
                     source=os.path.realpath(src_path),
                 )
             )
+
     return objects
 
 
@@ -706,12 +680,14 @@ def check_kconfig(idf_env):
 def RunMenuconfig(target, source, env):
     idf_env = os.environ.copy()
     populate_idf_env_vars(idf_env)
-    check_kconfig(idf_env)
+
     rc = subprocess.call(
         [
-            "python",
-            join(platform.get_package_dir("tool-kconfig"), "guiconfig.py"),
-            expandvars(join(FRAMEWORK_DIR, "Kconfig"))
+            os.path.join(platform.get_package_dir("tool-cmake"), "bin", "cmake"),
+            "--build",
+            BUILD_DIR,
+            "--target",
+            "menuconfig",
         ],
         env=idf_env,
     )
@@ -930,7 +906,8 @@ def generate_empty_partition_image(binary_path, image_size):
 def get_partition_info(pt_path, pt_offset, pt_params):
     if not os.path.isfile(pt_path):
         sys.stderr.write(
-            "Missing partition table file `%s`\n" % os.path.basename(pt_path))
+            "Missing partition table file `%s`\n" % os.path.basename(pt_path)
+        )
         env.Exit(1)
 
     cmd = [
@@ -980,6 +957,105 @@ def get_app_partition_offset(pt_table, pt_offset):
     # Get the default boot partition offset
     app_params = get_partition_info(pt_table, pt_offset, {"name": "boot"})
     return app_params.get("offset", "0x10000")
+
+
+def build_tinyusb_lib(env):
+    tinyusb_dir = os.path.join(FRAMEWORK_DIR, "components", "tinyusb")
+    if not os.path.isdir(tinyusb_dir):
+        return
+
+    envsafe = env.Clone()
+    envsafe.Replace(
+        CFLAGS=[],
+        CXXFLAGS=[],
+        CCFLAGS=["-mlongcalls"],
+        CPPDEFINES=[
+            "HAVE_CONFIG_H",
+            ("MBEDTLS_CONFIG_FILE", '\\"mbedtls/esp_config.h\\"'),
+            "UNITY_INCLUDE_CONFIG_H",
+            "WITH_POSIX",
+            ("CFG_TUSB_MCU", "OPT_MCU_ESP32_S2"),
+        ],
+    )
+
+    envsafe.BuildSources(
+        os.path.join("$BUILD_DIR", "tinyusb"),
+        tinyusb_dir,
+        src_filter=[
+            "-<*>",
+            "+<port/common/src/descriptors_control.c>",
+            "+<port/common/src/usb_descriptors.c>",
+            "+<port/common/src/usbd.c>",
+            "+<port/esp32s2/src/device_controller_driver.c>",
+            "+<port/esp32s2/src/tinyusb.c>",
+            "+<tinyusb/src/common/tusb_fifo.c>",
+            "+<tinyusb/src/device/usbd_control.c>",
+            "+<tinyusb/src/class/msc/msc_device.c>",
+            "+<tinyusb/src/class/cdc/cdc_device.c>",
+            "+<tinyusb/src/class/hid/hid_device.c>",
+            "+<tinyusb/src/class/midi/midi_device.c>",
+            "+<tinyusb/src/tusb.c>",
+        ],
+    )
+
+
+def generate_mbedtls_bundle(sdk_config):
+    bundle_path = os.path.join("$BUILD_DIR", "x509_crt_bundle")
+    if os.path.isfile(env.subst(bundle_path)):
+        return
+
+    default_crt_dir = os.path.join(
+        FRAMEWORK_DIR, "components", "mbedtls", "esp_crt_bundle"
+    )
+
+    cmd = [env.subst("$PYTHONEXE"), os.path.join(default_crt_dir, "gen_crt_bundle.py")]
+
+    crt_args = ["--input"]
+    if sdk_config.get("MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_FULL", False):
+        crt_args.append(os.path.join(default_crt_dir, "cacrt_all.pem"))
+    elif sdk_config.get("MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_CMN", False):
+        crt_args.append(os.path.join(default_crt_dir, "cacrt_all.pem"))
+        cmd.extend(
+            ["--filter", os.path.join(default_crt_dir, "cmn_crt_authorities.csv")]
+        )
+
+    if sdk_config.get("MBEDTLS_CUSTOM_CERTIFICATE_BUNDLE", False):
+        cert_path = sdk_config.get("MBEDTLS_CUSTOM_CERTIFICATE_BUNDLE_PATH", "")
+        if os.path.isfile(cert_path) or os.path.isdir(cert_path):
+            crt_args.append(os.path.abspath(cert_path))
+        else:
+            print("Warning! Couldn't find custom certificate bundle %s" % cert_path)
+
+    crt_args.append("-q")
+
+    # Use exec_command to change working directory
+    exec_command(cmd + crt_args, cwd=env.subst("$BUILD_DIR"))
+    bundle_path = os.path.join("$BUILD_DIR", "x509_crt_bundle")
+    env.Execute(
+        env.VerboseAction(
+            " ".join(
+                [
+                    os.path.join(
+                        env.PioPlatform().get_package_dir("tool-cmake"),
+                        "bin",
+                        "cmake",
+                    ),
+                    "-DDATA_FILE=" + bundle_path,
+                    "-DSOURCE_FILE=%s.S" % bundle_path,
+                    "-DFILE_TYPE=BINARY",
+                    "-P",
+                    os.path.join(
+                        FRAMEWORK_DIR,
+                        "tools",
+                        "cmake",
+                        "scripts",
+                        "data_file_embed_asm.cmake",
+                    ),
+                ]
+            ),
+            "Generating assembly for certificate bundle...",
+        )
+    )
 
 
 # ESP-IDF package doesn't contain .git folder, instead package version is specified
@@ -1264,6 +1340,23 @@ env.Prepend(
         ),
     ],
 )
+
+# USB stack for ESP32-S2 is implemented using tinyusb library. In IDF v4.2 it's added as
+# an INTERFACE library which means that CMake doesn't export build information for it
+# in File-API hence it's not present in components map. As a workaround we can build
+# the lib using project build environment with additional flags from CMakeLists.txt
+if (
+    sdk_config.get("USB_ENABLED", False)
+    and "__idf_tinyusb" not in framework_components_map
+):
+    build_tinyusb_lib(env)
+
+#
+# Generate mbedtls bundle
+#
+
+if sdk_config.get("MBEDTLS_CERTIFICATE_BUNDLE", False):
+    generate_mbedtls_bundle(sdk_config)
 
 #
 # To embed firmware checksum a special argument for esptool.py is required
