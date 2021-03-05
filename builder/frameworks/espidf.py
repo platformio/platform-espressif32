@@ -387,18 +387,23 @@ def filter_args(args, allowed, ignore=None):
 def get_app_flags(app_config, default_config):
     def _extract_flags(config):
         flags = {}
-        for cg in config["compileGroups"]:
-            flags[cg["language"]] = []
-            for ccfragment in cg["compileCommandFragments"]:
-                fragment = ccfragment.get("fragment", "")
-                if not fragment.strip() or fragment.startswith("-D"):
-                    continue
-                flags[cg["language"]].extend(
-                    click.parser.split_arg_string(fragment.strip())
-                )
-
+        if "compileGroups" in config:
+            for cg in config["compileGroups"]:
+                flags[cg["language"]] = []
+                for ccfragment in cg["compileCommandFragments"]:
+                    fragment = ccfragment.get("fragment", "")
+                    if not fragment.strip() or fragment.startswith("-D"):
+                        continue
+                    flags[cg["language"]].extend(
+                        click.parser.split_arg_string(fragment.strip())
+                    )
+        else :
+            flags = {
+                "ASM":[],
+                "C":[],
+                "CXX":[]
+            }
         return flags
-
     app_flags = _extract_flags(app_config)
     default_flags = _extract_flags(default_config)
 
