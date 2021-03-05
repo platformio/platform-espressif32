@@ -1058,6 +1058,19 @@ env.Replace(
     )
 )
 
+if sdk_config.get("ESPTOOLPY_FLASHSIZE_1MB", False):
+    flash_size = "1MB"
+elif sdk_config.get("ESPTOOLPY_FLASHSIZE_2MB", False):
+    flash_size = "2MB"
+elif sdk_config.get("ESPTOOLPY_FLASHSIZE_4MB", False):
+    flash_size = "4MB"
+elif sdk_config.get("ESPTOOLPY_FLASHSIZE_8MB", False):
+    flash_size = "8MB"
+elif sdk_config.get("ESPTOOLPY_FLASHSIZE_16MB", False):
+    flash_size = "16MB"
+else:
+    flash_size = board.get("upload.flash_size", "4MB")
+
 partition_table = env.Command(
     os.path.join("$BUILD_DIR", "partitions.bin"),
     "$PARTITIONS_TABLE_CSV",
@@ -1067,7 +1080,7 @@ partition_table = env.Command(
             os.path.join(
                 FRAMEWORK_DIR, "components", "partition_table", "gen_esp32part.py"
             ),
-            board.get("upload.flash_size", "4MB"),
+            flash_size
         ),
         "Generating partitions $TARGET",
     ),

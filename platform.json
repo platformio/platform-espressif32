@@ -144,7 +144,7 @@
     },
     "tool-kconfig": {
       "type": "kconfig",
-      "version": "https://github.com/FastEmbedded/FEmbed-tools/raw/master/tool-kconfig-13.1.1.zip"
+      "version": "~13.1.1"
     }
   }
 }
