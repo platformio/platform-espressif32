@@ -75,7 +75,7 @@
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~3.10005.0"
+      "version": "~3.10006.0"
     },
     "framework-arduino-mbcwb": {
       "type": "framework",
