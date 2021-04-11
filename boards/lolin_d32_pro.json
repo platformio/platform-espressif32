@@ -4,7 +4,7 @@
       "ldscript": "esp32_out.ld"
     },
     "core": "esp32",
-    "extra_flags": "-DARDUINO_LOLIN_D32_PRO",
+    "extra_flags": "-DARDUINO_LOLIN_D32_PRO -DBOARD_HAS_PSRAM -mfix-esp32-psram-cache-issue",
     "f_cpu": "240000000L",
     "f_flash": "40000000L",
     "flash_mode": "dio",
@@ -18,7 +18,7 @@
     "can"
   ],
   "debug": {
-    "openocd_board": "esp-wroom-32.cfg"
+    "openocd_board": "esp32-wrover.cfg"
   },
   "frameworks": [
     "arduino",
@@ -32,6 +32,6 @@
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://wiki.wemos.cc/products:d32:d32_pro",
+  "url": "https://www.wemos.cc/en/latest/d32/d32_pro.html",
   "vendor": "WEMOS"
 }

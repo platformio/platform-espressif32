@@ -4,7 +4,7 @@
       "ldscript": "esp32_out.ld"
     },
     "core": "esp32",
-    "extra_flags": "-DARDUINO_ESP32_PICO -DBOARD_HAS_PSRAM -mfix-esp32-psram-cache-issue",
+    "extra_flags": "-DARDUINO_TINYPICO -DBOARD_HAS_PSRAM -mfix-esp32-psram-cache-issue",
     "f_cpu": "240000000L",
     "f_flash": "40000000L",
     "flash_mode": "qio",

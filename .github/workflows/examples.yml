@@ -8,7 +8,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-16.04, windows-latest, macos-latest]
-        python-version: [2.7, 3.7]
+        python-version: [3.7]
         example:
           - "examples/arduino-blink"
           - "examples/arduino-briki-internal-libs"
@@ -22,7 +22,9 @@ jobs:
           - "examples/espidf-hello-world"
           - "examples/espidf-http-request"
           - "examples/espidf-peripherals-uart"
+          - "examples/espidf-peripherals-usb"
           - "examples/espidf-storage-sdcard"
+          - "examples/espidf-storage-spiffs"
           - "examples/espidf-ulp-adc"
           - "examples/espidf-ulp-pulse"
           - "examples/pumbaa-blink"

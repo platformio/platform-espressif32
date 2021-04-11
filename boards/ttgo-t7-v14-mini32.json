@@ -1,0 +1,37 @@
+{
+  "build": {
+    "arduino":{
+      "ldscript": "esp32_out.ld"
+    },
+    "core": "esp32",
+    "extra_flags": "-DARDUINO_TTGO_T7_V14_Mini32",
+    "f_cpu": "240000000L",
+    "f_flash": "40000000L",
+    "flash_mode": "dio",
+    "mcu": "esp32",
+    "variant": "ttgo-t7-v14-mini32"
+  },
+  "connectivity": [
+    "wifi",
+    "bluetooth",
+    "can",
+    "ethernet"
+  ],
+  "debug": {
+    "openocd_board": "esp32-wrover.cfg"
+  },
+  "frameworks": [
+    "arduino",
+    "espidf"
+  ],
+  "name": "TTGO T7 V1.4 Mini32",
+  "upload": {
+    "flash_size": "4MB",
+    "maximum_ram_size": 1310720,
+    "maximum_size": 4194304,
+    "require_upload_port": true,
+    "speed": 460800
+  },
+  "url": "http://www.lilygo.cn/prod_view.aspx?TypeId=50033&Id=978&FId=t3:50033:3",
+  "vendor": "TTGO"
+}

@@ -112,8 +112,9 @@ def fetch_spiffs_size(env):
             spiffs = p
     if not spiffs:
         sys.stderr.write(
-            env.subst("Could not find the `spiffs` section in the partitions "
-                      "table $PARTITIONS_TABLE_CSV\n"))
+            "Could not find the `spiffs` section in the partitions "
+            "table %s\n" % env.subst("$PARTITIONS_TABLE_CSV")
+        )
         env.Exit(1)
         return
     env["SPIFFS_START"] = _parse_size(spiffs['offset'])
@@ -163,6 +164,7 @@ env.Replace(
     MKSPIFFSTOOL="mkspiffs_${PIOPLATFORM}_" + ("espidf" if "espidf" in env.subst(
         "$PIOFRAMEWORK") else "${PIOFRAMEWORK}"),
     ESP32_SPIFFS_IMAGE_NAME=env.get("ESP32_SPIFFS_IMAGE_NAME", "spiffs"),
+    ESP32_APP_OFFSET="0x10000",
 
     PROGSUFFIX=".elf"
 )
@@ -229,8 +231,9 @@ else:
     else:
         target_firm = env.ElfToBin(
             join("$BUILD_DIR", "${PROGNAME}"), target_elf)
+        env.Depends(target_firm, "checkprogsize")
 
-env.AddPlatformTarget("buildfs", target_firm, None, "Build Filesystem Image")
+env.AddPlatformTarget("buildfs", target_firm, target_firm, "Build Filesystem Image")
 AlwaysBuild(env.Alias("nobuild", target_firm))
 target_buildprog = env.Alias("buildprog", target_firm, target_firm)
 
@@ -291,8 +294,8 @@ if upload_protocol == "espota":
         UPLOADERFLAGS=["--debug", "--progress", "-i", "$UPLOAD_PORT"],
         UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS -f $SOURCE'
     )
-    if "uploadfs" in COMMAND_LINE_TARGETS:
-        env.Append(UPLOADERFLAGS=["-s"])
+    if set(["uploadfs", "uploadfsota"]) & set(COMMAND_LINE_TARGETS):
+        env.Append(UPLOADERFLAGS=["--spiffs"])
     upload_actions = [env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")]
 
 elif upload_protocol == "esptool":
@@ -310,7 +313,7 @@ elif upload_protocol == "esptool":
             "--flash_freq", "${__get_board_f_flash(__env__)}",
             "--flash_size", "detect"
         ],
-        UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS 0x10000 $SOURCE'
+        UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS $ESP32_APP_OFFSET $SOURCE'
     )
     for image in env.get("FLASH_EXTRA_IMAGES", []):
         env.Append(UPLOADERFLAGS=[image[0], env.subst(image[1])])
@@ -370,14 +373,15 @@ elif upload_protocol in debug_tools:
     openocd_args.extend(
         debug_tools.get(upload_protocol).get("server").get("arguments", []))
     openocd_args.extend([
+        "-c", "adapter_khz %s" % env.GetProjectOption("debug_speed", "5000"),
         "-c",
-        "program_esp32 {{$SOURCE}} %s verify" %
-        board.get("upload.offset_address", "0x10000")
+        "program_esp {{$SOURCE}} %s verify" %
+        board.get("upload.offset_address", "$ESP32_APP_OFFSET"),
     ])
     for image in env.get("FLASH_EXTRA_IMAGES", []):
         openocd_args.extend([
             "-c",
-            'program_esp32 {{%s}} %s verify' %
+            'program_esp {{%s}} %s verify' %
             (_to_unix_slashes(image[1]), image[0])
         ])
     openocd_args.extend(["-c", "reset run; shutdown"])
