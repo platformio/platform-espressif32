@@ -51,7 +51,7 @@ void arduinoTask(void *pvParameter) {
     }
 }
 
-void app_main()
+extern "C" void app_main()
 {
     // initialize arduino library before we start the tasks
     initArduino();
@@ -70,4 +70,4 @@ void loop() {
     Serial.println("Hello!");
     delay(1000);
 }
-#endif 
+#endif
