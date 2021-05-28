@@ -74,7 +74,7 @@
     "framework-arduinoespressif32": {
       "type": "framework",
       "optional": true,
-      "version": "~3.10006.0"
+      "version": "https://github.com/espressif/arduino-esp32.git#idf-master"
     },
     "framework-arduino-mbcwb": {
       "type": "framework",
