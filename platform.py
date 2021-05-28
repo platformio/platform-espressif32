@@ -60,6 +60,7 @@ class Espressif32Platform(PlatformBase):
             self.packages["framework-arduino-mbcwb"]["optional"] = False
             self.packages["tool-mbctool"]["type"] = "uploader"
             self.packages["tool-mbctool"]["optional"] = False
+            self.packages["toolchain-xtensa32"]["version"] = "~2.50200.0"
 
         return PlatformBase.configure_default_packages(self, variables, targets)
 
