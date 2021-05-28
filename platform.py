@@ -34,13 +34,15 @@ class Espressif32Platform(PlatformBase):
             self.packages["tool-openocd-esp32"]["optional"] = False
         if os.path.isdir("ulp"):
             self.packages["toolchain-esp32ulp"]["optional"] = False
+
+        if any(f in frameworks for f in ("simba", "pumbaa")):
+            self.packages["toolchain-xtensa32"]["version"] = "~2.50200.0"
         if "espidf" in frameworks:
             for p in self.packages:
                 if p in ("tool-cmake", "tool-ninja", "toolchain-%sulp" % mcu):
                     self.packages[p]["optional"] = False
                 elif p in ("tool-mconf", "tool-idf") and "windows" in get_systype():
                     self.packages[p]["optional"] = False
-            self.packages["toolchain-xtensa32"]["version"] = "~2.80400.0"
             if "arduino" in frameworks:
                 # Arduino component is not compatible with ESP-IDF >=4.1
                 self.packages["framework-espidf"]["version"] = "~3.40001.0"

@@ -50,8 +50,8 @@
     "toolchain-xtensa32": {
       "type": "toolchain",
       "owner": "platformio",
-      "version": "~2.50200.0",
-      "optionalVersions": ["~2.80400.0"]
+      "version": "~2.80400.0",
+      "optionalVersions": ["~2.50200.0"]
     },
     "toolchain-xtensa32s2": {
       "type": "toolchain",
