@@ -1102,6 +1102,8 @@ extra_components = [generate_default_component()]
 if env.subst("$PROJECT_SRC_DIR") != os.path.join(env.subst("$PROJECT_DIR"), "main"):
     extra_components.append(env.subst("$PROJECT_SRC_DIR"))
     if "arduino" in env.subst("$PIOFRAMEWORK"):
+        print("Warning! Arduino framework as an ESP-IDF component doesn't handle "
+              "the `variant` field! The default `esp32` variant will be used.")
         extra_components.append(ARDUINO_FRAMEWORK_DIR)
 
 print("Reading CMake configuration...")
