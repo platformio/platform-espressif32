@@ -38,6 +38,7 @@ from platformio import fs
 from platformio.proc import exec_command
 from platformio.util import get_systype
 from platformio.builder.tools.piolib import ProjectAsLibBuilder
+from platformio.package.version import get_original_version
 
 env = DefaultEnvironment()
 env.SConscript("_embed_files.py", exports="env")
@@ -829,7 +830,9 @@ def create_version_file():
     version_file = os.path.join(FRAMEWORK_DIR, "version.txt")
     if not os.path.isfile(version_file):
         with open(version_file, "w") as fp:
-            fp.write(platform.get_package_version("framework-espidf"))
+            fp.write(
+                get_original_version(platform.get_package_version("framework-espidf"))
+            )
 
 
 def generate_empty_partition_image(binary_path, image_size):
