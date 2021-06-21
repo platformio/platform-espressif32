@@ -27,6 +27,7 @@ import sys
 import os
 
 import click
+import semantic_version
 
 from SCons.Script import (
     ARGUMENTS,
@@ -38,7 +39,7 @@ from platformio import fs
 from platformio.proc import exec_command
 from platformio.util import get_systype
 from platformio.builder.tools.piolib import ProjectAsLibBuilder
-from platformio.package.version import get_original_version
+from platformio.package.version import get_original_version, pepver_to_semver
 
 env = DefaultEnvironment()
 env.SConscript("_embed_files.py", exports="env")
@@ -68,32 +69,9 @@ if "arduino" in env.subst("$PIOFRAMEWORK"):
     assert ARDUINO_FRAMEWORK_DIR and os.path.isdir(ARDUINO_FRAMEWORK_DIR)
 
 BUILD_DIR = env.subst("$BUILD_DIR")
+PROJECT_DIR = env.subst("$PROJECT_DIR")
+PROJECT_SRC_DIR = env.subst("$PROJECT_SRC_DIR")
 CMAKE_API_REPLY_PATH = os.path.join(".cmake", "api", "v1", "reply")
-
-try:
-    import future
-    import pyparsing
-    import cryptography
-except ImportError:
-    env.Execute(
-        env.VerboseAction(
-            '$PYTHONEXE -m pip install "cryptography>=2.1.4" "future>=0.15.2" "pyparsing>=2.0.3,<2.4.0" ',
-            "Installing ESP-IDF's Python dependencies",
-        )
-    )
-
-# a special "esp-windows-curses" python package is required on Windows for Menuconfig
-if "windows" in get_systype():
-    import pkg_resources
-
-    if "esp-windows-curses" not in {pkg.key for pkg in pkg_resources.working_set}:
-        env.Execute(
-            env.VerboseAction(
-                '$PYTHONEXE -m pip install "file://%s/tools/kconfig_new/esp-windows-curses" windows-curses'
-                % FRAMEWORK_DIR,
-                "Installing windows-curses package",
-            )
-        )
 
 
 def get_project_lib_includes(env):
@@ -116,11 +94,11 @@ def get_project_lib_includes(env):
 def is_cmake_reconfigure_required(cmake_api_reply_dir):
     cmake_cache_file = os.path.join(BUILD_DIR, "CMakeCache.txt")
     cmake_txt_files = [
-        os.path.join(env.subst("$PROJECT_DIR"), "CMakeLists.txt"),
-        os.path.join(env.subst("$PROJECT_SRC_DIR"), "CMakeLists.txt"),
+        os.path.join(PROJECT_DIR, "CMakeLists.txt"),
+        os.path.join(PROJECT_SRC_DIR, "CMakeLists.txt"),
     ]
     cmake_preconf_dir = os.path.join(BUILD_DIR, "config")
-    sdkconfig = os.path.join(env.subst("$PROJECT_DIR"), "sdkconfig")
+    sdkconfig = os.path.join(PROJECT_DIR, "sdkconfig")
 
     for d in (cmake_api_reply_dir, cmake_preconf_dir):
         if not os.path.isdir(d) or not os.listdir(d):
@@ -146,8 +124,8 @@ def is_proper_idf_project():
     return all(
         os.path.isfile(path)
         for path in (
-            os.path.join(env.subst("$PROJECT_DIR"), "CMakeLists.txt"),
-            os.path.join(env.subst("$PROJECT_SRC_DIR"), "CMakeLists.txt"),
+            os.path.join(PROJECT_DIR, "CMakeLists.txt"),
+            os.path.join(PROJECT_SRC_DIR, "CMakeLists.txt"),
         )
     )
 
@@ -161,9 +139,8 @@ def collect_src_files():
 
 
 def normalize_path(path):
-    project_dir = env.subst("$PROJECT_DIR")
-    if project_dir in path:
-        path = path.replace(project_dir, "${CMAKE_SOURCE_DIR}")
+    if PROJECT_DIR in path:
+        path = path.replace(PROJECT_DIR, "${CMAKE_SOURCE_DIR}")
     return fs.to_unix_path(path)
 
 
@@ -180,20 +157,20 @@ FILE(GLOB_RECURSE app_sources %s/*.*)
 idf_component_register(SRCS ${app_sources})
 """
 
-    if not os.listdir(os.path.join(env.subst("$PROJECT_SRC_DIR"))):
+    if not os.listdir(PROJECT_SRC_DIR):
         # create a default main file to make CMake happy during first init
-        with open(os.path.join(env.subst("$PROJECT_SRC_DIR"), "main.c"), "w") as fp:
+        with open(os.path.join(PROJECT_SRC_DIR, "main.c"), "w") as fp:
             fp.write("void app_main() {}")
 
-    project_dir = env.subst("$PROJECT_DIR")
+    project_dir = PROJECT_DIR
     if not os.path.isfile(os.path.join(project_dir, "CMakeLists.txt")):
         with open(os.path.join(project_dir, "CMakeLists.txt"), "w") as fp:
             fp.write(root_cmake_tpl % os.path.basename(project_dir))
 
-    project_src_dir = env.subst("$PROJECT_SRC_DIR")
+    project_src_dir = PROJECT_SRC_DIR
     if not os.path.isfile(os.path.join(project_src_dir, "CMakeLists.txt")):
         with open(os.path.join(project_src_dir, "CMakeLists.txt"), "w") as fp:
-            fp.write(prj_cmake_tpl % normalize_path(env.subst("$PROJECT_SRC_DIR")))
+            fp.write(prj_cmake_tpl % normalize_path(PROJECT_SRC_DIR))
 
 
 def get_cmake_code_model(src_dir, build_dir, extra_args=None):
@@ -431,7 +408,9 @@ def find_framework_service_files(search_path, sdk_config):
             continue
         for f in os.listdir(path):
             # Skip hardware specific files as they will be added later
-            if f == "linker.lf" and not os.path.basename(path).startswith("esp32"):
+            if f == "linker.lf" and not os.path.basename(path).startswith(
+                ("esp32", "riscv")
+            ):
                 result["lf_files"].append(os.path.join(path, f))
             elif f == "Kconfig.projbuild":
                 result["kconfig_build_files"].append(os.path.join(path, f))
@@ -506,7 +485,7 @@ def generate_project_ld_script(sdk_config, ignore_targets=None):
 
     args = {
         "script": os.path.join(FRAMEWORK_DIR, "tools", "ldgen", "ldgen.py"),
-        "config": os.path.join(env.subst("$PROJECT_DIR"), "sdkconfig"),
+        "config": os.path.join(PROJECT_DIR, "sdkconfig"),
         "fragments": " ".join(['"%s"' % f for f in project_files.get("lf_files")]),
         "kconfig": os.path.join(FRAMEWORK_DIR, "Kconfig"),
         "env_file": os.path.join("$BUILD_DIR", "config.env"),
@@ -704,7 +683,7 @@ def build_bootloader():
             "-DPYTHON_DEPS_CHECKED=1",
             "-DPYTHON=" + env.subst("$PYTHONEXE"),
             "-DIDF_PATH=" + FRAMEWORK_DIR,
-            "-DSDKCONFIG=" + os.path.join(env.subst("$PROJECT_DIR"), "sdkconfig"),
+            "-DSDKCONFIG=" + os.path.join(PROJECT_DIR, "sdkconfig"),
             "-DLEGACY_INCLUDE_COMMON_HEADERS=",
             "-DEXTRA_COMPONENT_DIRS="
             + os.path.join(FRAMEWORK_DIR, "components", "bootloader"),
@@ -983,7 +962,7 @@ def generate_mbedtls_bundle(sdk_config):
     crt_args.append("-q")
 
     # Use exec_command to change working directory
-    exec_command(cmd + crt_args, cwd=env.subst("$BUILD_DIR"))
+    exec_command(cmd + crt_args, cwd=BUILD_DIR)
     bundle_path = os.path.join("$BUILD_DIR", "x509_crt_bundle")
     env.Execute(
         env.VerboseAction(
@@ -1010,6 +989,72 @@ def generate_mbedtls_bundle(sdk_config):
             "Generating assembly for certificate bundle...",
         )
     )
+
+
+def install_python_deps():
+    def _get_installed_pip_packages():
+        result = {}
+        packages = {}
+        pip_output = subprocess.check_output(
+            [env.subst("$PYTHONEXE"), "-m", "pip", "list", "--format=json"]
+        )
+        try:
+            packages = json.loads(pip_output)
+        except:
+            print("Warning! Couldn't extract the list of installed Python packages.")
+            return {}
+        for p in packages:
+            result[p["name"]] = pepver_to_semver(p["version"])
+
+        return result
+
+    deps = {
+        "cryptography": ">=2.1.4",
+        "future": ">=0.15.2",
+        "pyparsing": ">=2.0.3,<2.4.0",
+        "kconfiglib": "==13.7.1",
+    }
+
+    installed_packages = _get_installed_pip_packages()
+    packages_to_install = []
+    for package, spec in deps.items():
+        if package not in installed_packages:
+            packages_to_install.append(package)
+        else:
+            version_spec = semantic_version.Spec(spec)
+            if not version_spec.match(installed_packages[package]):
+                packages_to_install.append(package)
+
+    if packages_to_install:
+        env.Execute(
+            env.VerboseAction(
+                (
+                    '"$PYTHONEXE" -m pip install -U --force-reinstall '
+                    + " ".join(['"%s%s"' % (p, deps[p]) for p in packages_to_install])
+                ),
+                "Installing ESP-IDF's Python dependencies",
+            )
+        )
+
+    # a special "esp-windows-curses" python package is required on Windows for Menuconfig
+    if "windows" in get_systype():
+        import pkg_resources
+
+        if "esp-windows-curses" not in {pkg.key for pkg in pkg_resources.working_set}:
+            env.Execute(
+                env.VerboseAction(
+                    '$PYTHONEXE -m pip install "file://%s/tools/kconfig_new/esp-windows-curses" windows-curses'
+                    % FRAMEWORK_DIR,
+                    "Installing windows-curses package",
+                )
+            )
+
+
+#
+# ESP-IDF requires Python packages with specific versions
+#
+
+install_python_deps()
 
 
 # ESP-IDF package doesn't contain .git folder, instead package version is specified
@@ -1079,6 +1124,12 @@ if any(" " in p for p in (FRAMEWORK_DIR, BUILD_DIR)):
     sys.stderr.write("Error: Detected a whitespace character in project paths.\n")
     env.Exit(1)
 
+if not os.path.isdir(PROJECT_SRC_DIR):
+    sys.stderr.write(
+        "Error: Missing the `%s` folder with project sources.\n"
+        % os.path.basename(PROJECT_SRC_DIR)
+    )
+    env.Exit(1)
 
 if env.subst("$SRC_FILTER"):
     print(
@@ -1088,7 +1139,7 @@ if env.subst("$SRC_FILTER"):
         )
     )
 
-if os.path.isfile(os.path.join(env.subst("$PROJECT_SRC_DIR"), "sdkconfig.h")):
+if os.path.isfile(os.path.join(PROJECT_SRC_DIR, "sdkconfig.h")):
     print(
         "Warning! Starting with ESP-IDF v4.0, new project structure is required: \n"
         "https://docs.platformio.org/en/latest/frameworks/espidf.html#project-structure"
@@ -1102,16 +1153,18 @@ if os.path.isfile(os.path.join(env.subst("$PROJECT_SRC_DIR"), "sdkconfig.h")):
 # default 'src' folder we need to add this as an extra component. If there is no 'main'
 # folder CMake won't generate dependencies properly
 extra_components = [generate_default_component()]
-if env.subst("$PROJECT_SRC_DIR") != os.path.join(env.subst("$PROJECT_DIR"), "main"):
-    extra_components.append(env.subst("$PROJECT_SRC_DIR"))
-    if "arduino" in env.subst("$PIOFRAMEWORK"):
-        print("Warning! Arduino framework as an ESP-IDF component doesn't handle "
-              "the `variant` field! The default `esp32` variant will be used.")
-        extra_components.append(ARDUINO_FRAMEWORK_DIR)
+if PROJECT_SRC_DIR != os.path.join(PROJECT_DIR, "main"):
+    extra_components.append(PROJECT_SRC_DIR)
+if "arduino" in env.subst("$PIOFRAMEWORK"):
+    print(
+        "Warning! Arduino framework as an ESP-IDF component doesn't handle "
+        "the `variant` field! The default `esp32` variant will be used."
+    )
+    extra_components.append(ARDUINO_FRAMEWORK_DIR)
 
 print("Reading CMake configuration...")
 project_codemodel = get_cmake_code_model(
-    env.subst("$PROJECT_DIR"),
+    PROJECT_DIR,
     BUILD_DIR,
     [
         "-DIDF_TARGET=" + idf_variant,
@@ -1132,7 +1185,7 @@ target_configs = load_target_configurations(
 
 sdk_config = get_sdk_configuration()
 
-project_target_name = "__idf_%s" % os.path.basename(env.subst("$PROJECT_SRC_DIR"))
+project_target_name = "__idf_%s" % os.path.basename(PROJECT_SRC_DIR)
 if project_target_name not in target_configs:
     sys.stderr.write("Error: Couldn't find the main target of the project!\n")
     env.Exit(1)
@@ -1160,7 +1213,7 @@ framework_components_map = get_components_map(
     [project_target_name, default_config_name],
 )
 
-build_components(env, framework_components_map, env.subst("$PROJECT_DIR"))
+build_components(env, framework_components_map, PROJECT_DIR)
 
 if not elf_config:
     sys.stderr.write("Error: Couldn't load the main firmware target of the project\n")
@@ -1223,12 +1276,7 @@ except:
 # Remove project source files from following build stages as they're
 # built as part of the framework
 def _skip_prj_source_files(node):
-    if (
-        node.srcnode()
-        .get_path()
-        .lower()
-        .startswith(env.subst("$PROJECT_SRC_DIR").lower())
-    ):
+    if node.srcnode().get_path().lower().startswith(PROJECT_SRC_DIR.lower()):
         return None
     return node
 
@@ -1281,16 +1329,6 @@ env.Prepend(
     ],
 )
 
-# USB stack for ESP32-S2 is implemented using tinyusb library. In IDF v4.2 it's added as
-# an INTERFACE library which means that CMake doesn't export build information for it
-# in File-API hence it's not present in components map. As a workaround we can build
-# the lib using project build environment with additional flags from CMakeLists.txt
-if (
-    sdk_config.get("USB_ENABLED", False)
-    and "__idf_tinyusb" not in framework_components_map
-):
-    build_tinyusb_lib(env)
-
 #
 # Generate mbedtls bundle
 #
@@ -1312,7 +1350,7 @@ env["BUILDERS"]["ElfToBin"].action = action
 # Compile ULP sources in 'ulp' folder
 #
 
-ulp_dir = os.path.join(env.subst("$PROJECT_DIR"), "ulp")
+ulp_dir = os.path.join(PROJECT_DIR, "ulp")
 if os.path.isdir(ulp_dir) and os.listdir(ulp_dir):
     env.SConscript("ulp.py", exports="env project_config idf_variant")
 

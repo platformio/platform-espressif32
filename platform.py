@@ -47,8 +47,10 @@ class Espressif32Platform(PlatformBase):
         # ESP32-S2 toolchain is identical for both Arduino and ESP-IDF
         if mcu == "esp32s2":
             self.packages.pop("toolchain-xtensa32", None)
+            self.packages.pop("toolchain-esp32ulp", None)
             self.packages["toolchain-xtensa32s2"]["optional"] = False
             self.packages["toolchain-esp32s2ulp"]["optional"] = False
+            self.packages["tool-esptoolpy"]["version"] = "~1.30100.0"
 
         build_core = variables.get(
             "board_build.core", board_config.get("build.core", "arduino")
