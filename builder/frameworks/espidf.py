@@ -51,9 +51,16 @@ idf_variant = mcu.lower()
 
 FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
 TOOLCHAIN_DIR = platform.get_package_dir(
-    "toolchain-xtensa%s" % ("32s2" if mcu == "esp32s2" else "32")
+    "toolchain-%s"
+    % (
+        "riscv-esp"
+        if mcu == "esp32c3"
+        else ("xtensa32s2" if mcu == "esp32s2" else "xtensa32")
+    )
 )
+
 assert os.path.isdir(FRAMEWORK_DIR)
+assert os.path.isdir(TOOLCHAIN_DIR)
 
 # Arduino framework as a component is not compatible with ESP-IDF >=4.1
 if "arduino" in env.subst("$PIOFRAMEWORK"):
@@ -207,11 +214,15 @@ def populate_idf_env_vars(idf_env):
     idf_env["IDF_PATH"] = FRAMEWORK_DIR
     additional_packages = [
         os.path.join(TOOLCHAIN_DIR, "bin"),
-        os.path.join(platform.get_package_dir("toolchain-%sulp" % mcu), "bin"),
         platform.get_package_dir("tool-ninja"),
         os.path.join(platform.get_package_dir("tool-cmake"), "bin"),
         os.path.dirname(env.subst("$PYTHONEXE")),
     ]
+
+    if mcu != "esp32c3":
+        additional_packages.append(
+            os.path.join(platform.get_package_dir("toolchain-%sulp" % mcu), "bin"),
+        )
 
     if "windows" in get_systype():
         additional_packages.append(platform.get_package_dir("tool-mconf"))
@@ -416,6 +427,11 @@ def find_framework_service_files(search_path, sdk_config):
                 result["kconfig_build_files"].append(os.path.join(path, f))
             elif f == "Kconfig":
                 result["kconfig_files"].append(os.path.join(path, f))
+
+    if mcu == "esp32c3":
+        result["lf_files"].append(
+            os.path.join(FRAMEWORK_DIR, "components", "riscv", "linker.lf")
+        )
 
     result["lf_files"].extend(
         [
@@ -892,46 +908,6 @@ def get_app_partition_offset(pt_table, pt_offset):
     return app_params.get("offset", "0x10000")
 
 
-def build_tinyusb_lib(env):
-    tinyusb_dir = os.path.join(FRAMEWORK_DIR, "components", "tinyusb")
-    if not os.path.isdir(tinyusb_dir):
-        return
-
-    envsafe = env.Clone()
-    envsafe.Replace(
-        CFLAGS=[],
-        CXXFLAGS=[],
-        CCFLAGS=["-mlongcalls"],
-        CPPDEFINES=[
-            "HAVE_CONFIG_H",
-            ("MBEDTLS_CONFIG_FILE", '\\"mbedtls/esp_config.h\\"'),
-            "UNITY_INCLUDE_CONFIG_H",
-            "WITH_POSIX",
-            ("CFG_TUSB_MCU", "OPT_MCU_ESP32_S2"),
-        ],
-    )
-
-    envsafe.BuildSources(
-        os.path.join("$BUILD_DIR", "tinyusb"),
-        tinyusb_dir,
-        src_filter=[
-            "-<*>",
-            "+<port/common/src/descriptors_control.c>",
-            "+<port/common/src/usb_descriptors.c>",
-            "+<port/common/src/usbd.c>",
-            "+<port/esp32s2/src/device_controller_driver.c>",
-            "+<port/esp32s2/src/tinyusb.c>",
-            "+<tinyusb/src/common/tusb_fifo.c>",
-            "+<tinyusb/src/device/usbd_control.c>",
-            "+<tinyusb/src/class/msc/msc_device.c>",
-            "+<tinyusb/src/class/cdc/cdc_device.c>",
-            "+<tinyusb/src/class/hid/hid_device.c>",
-            "+<tinyusb/src/class/midi/midi_device.c>",
-            "+<tinyusb/src/tusb.c>",
-        ],
-    )
-
-
 def generate_mbedtls_bundle(sdk_config):
     bundle_path = os.path.join("$BUILD_DIR", "x509_crt_bundle")
     if os.path.isfile(env.subst(bundle_path)):
@@ -1319,7 +1295,9 @@ env.Prepend(
     LIBS=libs,
     FLASH_EXTRA_IMAGES=[
         (
-            board.get("upload.bootloader_offset", "0x1000"),
+            board.get(
+                "upload.bootloader_offset", "0x0" if mcu == "esp32c3" else "0x1000"
+            ),
             os.path.join("$BUILD_DIR", "bootloader.bin"),
         ),
         (
@@ -1351,7 +1329,7 @@ env["BUILDERS"]["ElfToBin"].action = action
 #
 
 ulp_dir = os.path.join(PROJECT_DIR, "ulp")
-if os.path.isdir(ulp_dir) and os.listdir(ulp_dir):
+if os.path.isdir(ulp_dir) and os.listdir(ulp_dir) and mcu != "esp32c3":
     env.SConscript("ulp.py", exports="env project_config idf_variant")
 
 #

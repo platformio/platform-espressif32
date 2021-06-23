@@ -71,6 +71,12 @@
       "owner": "platformio",
       "version": "~1.22851.0"
     },
+    "toolchain-riscv-esp": {
+      "type": "toolchain",
+      "optional": true,
+      "owner": "platformio",
+      "version": "~1.80400.0"
+    },
     "framework-arduinoespressif32": {
       "type": "framework",
       "optional": true,
