@@ -232,6 +232,11 @@ def populate_idf_env_vars(idf_env):
 
     idf_env["PATH"] = os.pathsep.join(additional_packages + [idf_env["PATH"]])
 
+    # Some users reported that the `IDF_TOOLS_PATH` var can seep into the
+    # underlying build system. Unsetting it is a safe workaround.
+    if "IDF_TOOLS_PATH" in idf_env:
+        del idf_env["IDF_TOOLS_PATH"]
+
 
 def get_target_config(project_configs, target_index, cmake_api_reply_dir):
     target_json = project_configs.get("targets")[target_index].get("jsonFile", "")
