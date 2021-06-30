@@ -111,8 +111,7 @@
     "tool-esptoolpy": {
       "type": "uploader",
       "owner": "platformio",
-      "version": "~1.30000.0",
-      "optionalVersions": ["~1.30100.0"]
+      "version": "~1.30100.0"
     },
     "tool-mbctool": {
       "optional": true,

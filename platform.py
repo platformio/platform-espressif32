@@ -41,7 +41,6 @@ class Espressif32Platform(PlatformBase):
                 elif p in ("tool-mconf", "tool-idf") and "windows" in get_systype():
                     self.packages[p]["optional"] = False
             self.packages["toolchain-xtensa32"]["version"] = "~2.80400.0"
-            self.packages["tool-esptoolpy"]["version"] = "~1.30100.0"
             if "arduino" in frameworks:
                 # Arduino component is not compatible with ESP-IDF >=4.1
                 self.packages["framework-espidf"]["version"] = "~3.40001.0"
