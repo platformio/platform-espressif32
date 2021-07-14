@@ -45,12 +45,12 @@ class Espressif32Platform(PlatformBase):
                 # Arduino component is not compatible with ESP-IDF >=4.1
                 self.packages["framework-espidf"]["version"] = "~3.40001.0"
         if mcu in ("esp32s2", "esp32c3"):
-            self.packages.pop("toolchain-xtensa32", None)
+            self.packages.pop("toolchain-xtensa-esp32", None)
             self.packages.pop("toolchain-esp32ulp", None)
             # RISC-V based toolchain for ESP32C3 and ESP32S2 ULP
-            self.packages["toolchain-riscv-esp"]["optional"] = False
+            self.packages["toolchain-riscv32-esp"]["optional"] = False
             if mcu == "esp32s2":
-                self.packages["toolchain-xtensa32s2"]["optional"] = False
+                self.packages["toolchain-xtensa-esp32s2"]["optional"] = False
                 self.packages["toolchain-esp32s2ulp"]["optional"] = False
 
         build_core = variables.get(
