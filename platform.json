@@ -47,16 +47,15 @@
     }
   },
   "packages": {
-    "toolchain-xtensa32": {
+    "toolchain-xtensa-esp32": {
       "type": "toolchain",
-      "owner": "platformio",
-      "version": "~2.50200.0",
-      "optionalVersions": ["~2.80400.0"]
+      "owner": "espressif",
+      "version": "~1.80400.0"
     },
-    "toolchain-xtensa32s2": {
+    "toolchain-xtensa-esp32s2": {
       "type": "toolchain",
       "optional": true,
-      "owner": "platformio",
+      "owner": "espressif",
       "version": "~1.80400.0"
     },
     "toolchain-esp32ulp": {
@@ -71,10 +70,10 @@
       "owner": "platformio",
       "version": "~1.22851.0"
     },
-    "toolchain-riscv-esp": {
+    "toolchain-riscv32-esp": {
       "type": "toolchain",
       "optional": true,
-      "owner": "platformio",
+      "owner": "espressif",
       "version": "~1.80400.0"
     },
     "framework-arduinoespressif32": {
