@@ -35,8 +35,6 @@ class Espressif32Platform(PlatformBase):
         if os.path.isdir("ulp"):
             self.packages["toolchain-esp32ulp"]["optional"] = False
 
-        if any(f in frameworks for f in ("arduino", "espidf")):
-            self.packages["toolchain-xtensa32"]["version"] = "~2.80400.0"
         if "espidf" in frameworks:
             for p in self.packages:
                 if p in ("tool-cmake", "tool-ninja", "toolchain-%sulp" % mcu):
