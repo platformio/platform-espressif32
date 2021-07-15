@@ -41,7 +41,7 @@ class Espressif32Platform(PlatformBase):
         xtensa_toolchain = "toolchain-xtensa32"
         xtensa32s2_toolchain = "toolchain-xtensa32s2"
         riscv_toolchain = "toolchain-riscv-esp"
-        if "arduino" in frameworks:
+        if len(frameworks) == 1 and "arduino" in frameworks:
             xtensa_toolchain = "toolchain-xtensa-esp32"
             xtensa32s2_toolchain = "toolchain-xtensa-esp32s2"
             riscv_toolchain = "toolchain-riscv32-esp"
@@ -54,6 +54,7 @@ class Espressif32Platform(PlatformBase):
                     self.packages[p]["optional"] = False
             self.packages[xtensa_toolchain]["version"] = "~2.80400.0"
             self.packages[xtensa_toolchain]["optional"] = False
+            self.packages["toolchain-xtensa-esp32"]["optional"] = True
             if "arduino" in frameworks:
                 # Arduino component is not compatible with ESP-IDF >=4.1
                 self.packages["framework-espidf"]["version"] = "~3.40001.0"
