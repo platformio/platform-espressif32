@@ -50,13 +50,13 @@
     "toolchain-xtensa-esp32": {
       "type": "toolchain",
       "owner": "espressif",
-      "version": "~1.80400.0"
+      "version": "~8.4.0"
     },
     "toolchain-xtensa-esp32s2": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "~1.80400.0"
+      "version": "~8.4.0"
     },
     "toolchain-esp32ulp": {
       "type": "toolchain",
@@ -74,7 +74,7 @@
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "~1.80400.0"
+      "version": "~8.4.0"
     },
     "framework-arduinoespressif32": {
       "type": "framework",
