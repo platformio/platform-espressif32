@@ -24,7 +24,6 @@ import requests
 from platformio import fs
 from platformio.managers.platform import PlatformBase
 from platformio.util import get_systype
-from platformio.exception import UserSideException
 
 
 class Espressif32Platform(PlatformBase):
@@ -38,6 +37,9 @@ class Espressif32Platform(PlatformBase):
 
         board_config = self.board_config(variables.get("board"))
         mcu = variables.get("board_build.mcu", board_config.get("build.mcu", "esp32"))
+        build_core = variables.get(
+            "board_build.core", board_config.get("build.core", "arduino")
+        ).lower()
         frameworks = variables.get("pioframework", [])
         if "buildfs" in targets:
             self.packages["tool-mkspiffs"]["optional"] = False
@@ -48,11 +50,16 @@ class Espressif32Platform(PlatformBase):
 
         # This logic is temporary as the platform is gradually being switched to the
         # toolchain packages from the Espressif organization.
-        xtensa_toolchain = "toolchain-xtensa32"
+        xtensa32_toolchain = "toolchain-xtensa32"
         xtensa32s2_toolchain = "toolchain-xtensa32s2"
         riscv_toolchain = "toolchain-riscv-esp"
-        if len(frameworks) == 1 and "arduino" in frameworks:
-            xtensa_toolchain = "toolchain-xtensa-esp32"
+        if len(frameworks) == 1 and "arduino" in frameworks and build_core == "esp32":
+            # Remove default toolchains so they won't conflict with upstream
+            self.packages.pop(xtensa32_toolchain, None)
+            self.packages.pop(xtensa32s2_toolchain, None)
+            self.packages.pop(riscv_toolchain, None)
+
+            xtensa32_toolchain = "toolchain-xtensa-esp32"
             xtensa32s2_toolchain = "toolchain-xtensa-esp32s2"
             riscv_toolchain = "toolchain-riscv32-esp"
 
@@ -77,7 +84,12 @@ class Espressif32Platform(PlatformBase):
                     and url_items.netloc.startswith("github")
                     and url_items.path.endswith(".git")
                 ):
-                    self.configure_upstream_arduino_packages(package_version)
+                    self.configure_upstream_arduino_packages(url_items)
+        else:
+            # Remove upstream packages
+            self.packages.pop("toolchain-xtensa-esp32", None)
+            self.packages.pop("toolchain-xtensa-esp32s2", None)
+            self.packages.pop("toolchain-riscv32-esp", None)
 
         if "espidf" in frameworks:
             for p in self.packages:
@@ -85,15 +97,15 @@ class Espressif32Platform(PlatformBase):
                     self.packages[p]["optional"] = False
                 elif p in ("tool-mconf", "tool-idf") and "windows" in get_systype():
                     self.packages[p]["optional"] = False
-            self.packages[xtensa_toolchain]["version"] = "~2.80400.0"
-            self.packages[xtensa_toolchain]["optional"] = False
-            self.packages["toolchain-xtensa-esp32"]["optional"] = True
+            self.packages[xtensa32_toolchain]["version"] = "~2.80400.0"
+            self.packages[xtensa32_toolchain]["optional"] = False
+
             if "arduino" in frameworks:
                 # Arduino component is not compatible with ESP-IDF >=4.1
                 self.packages["framework-espidf"]["version"] = "~3.40001.0"
 
         if mcu in ("esp32s2", "esp32c3"):
-            self.packages.pop(xtensa_toolchain, None)
+            self.packages.pop(xtensa32_toolchain, None)
             self.packages.pop("toolchain-esp32ulp", None)
             # RISC-V based toolchain for ESP32C3 and ESP32S2 ULP
             self.packages[riscv_toolchain]["optional"] = False
@@ -101,12 +113,9 @@ class Espressif32Platform(PlatformBase):
                 self.packages[xtensa32s2_toolchain]["optional"] = False
                 self.packages["toolchain-esp32s2ulp"]["optional"] = False
 
-        build_core = variables.get(
-            "board_build.core", board_config.get("build.core", "arduino")
-        ).lower()
         if "arduino" in frameworks and build_core == "mbcwb":
             # Briki MCB core packages depend on previous toolchain packages
-            self.packages["toolchain-xtensa-esp32"]["optional"] = True
+            self.packages.pop("toolchain-xtensa-esp32", None)
             self.packages["toolchain-xtensa32"]["optional"] = False
             self.packages["toolchain-xtensa32"]["version"] = "~2.50200.0"
             self.packages["framework-arduinoespressif32"]["optional"] = True
@@ -116,7 +125,6 @@ class Espressif32Platform(PlatformBase):
 
         if set(("simba", "pumbaa")) & set(frameworks):
             # Legacy frameworks depend on previous toolchain packages
-            self.packages["toolchain-xtensa-esp32"]["optional"] = True
             self.packages["toolchain-xtensa32"]["optional"] = False
             self.packages["toolchain-xtensa32"]["version"] = "~2.50200.0"
 
@@ -309,9 +317,7 @@ class Espressif32Platform(PlatformBase):
             assert original_version
             match = re.match(r"^gcc(\d+)_(\d+)_(\d+)\-esp\-(.+)$", original_version)
             if not match:
-                raise ValueError(
-                    "Bad package version `%s`" % original_version
-                )
+                raise ValueError("Bad package version `%s`" % original_version)
             assert len(match.groups()) == 4
             return "%s.%s.%s+%s" % (match.groups())
 
@@ -332,9 +338,8 @@ class Espressif32Platform(PlatformBase):
         return result
 
     @staticmethod
-    def download_remote_package_index(package_url):
-        def _prepare_url_for_index_file(package_url):
-            url_items = urllib.parse.urlparse(package_url)
+    def download_remote_package_index(url_items):
+        def _prepare_url_for_index_file(url_items):
             tag = "master"
             if url_items.fragment:
                 tag = url_items.fragment
@@ -344,7 +349,7 @@ class Espressif32Platform(PlatformBase):
                 % (url_items.path.replace(".git", ""), tag)
             )
 
-        index_file_url = _prepare_url_for_index_file(package_url)
+        index_file_url = _prepare_url_for_index_file(url_items)
         if not index_file_url:
             return {}
 
@@ -365,10 +370,11 @@ class Espressif32Platform(PlatformBase):
                 continue
             if toolchain_package not in self.packages:
                 self.packages[toolchain_package] = dict()
+            print("* Adding toolchain %s with version %s" % (toolchain_package, version))
             self.packages[toolchain_package]["version"] = version
             self.packages[toolchain_package]["owner"] = "espressif"
 
-    def configure_upstream_arduino_packages(self, package_url):
+    def configure_upstream_arduino_packages(self, url_itmes):
         try:
             framework_index_file = os.path.join(
                 self.get_package_dir("framework-arduinoespressif32") or "",
@@ -379,8 +385,9 @@ class Espressif32Platform(PlatformBase):
                 with open(framework_index_file) as fp:
                     self.configure_arduino_toolchains(json.load(fp))
             else:
+                print("Configuring from remote")
                 self.configure_arduino_toolchains(
-                    self.download_remote_package_index(package_url)
+                    self.download_remote_package_index(url_itmes)
                 )
         except Exception as e:
             sys.stderr.write(
