@@ -28,15 +28,21 @@
 */
 
 // redefine the AWS IoT log functions to call into the IDF log layer
+#undef IOT_DEBUG
 #define IOT_DEBUG(format, ...) ESP_LOGD("aws_iot", format, ##__VA_ARGS__)
+#undef IOT_INFO
 #define IOT_INFO(format, ...) ESP_LOGI("aws_iot", format, ##__VA_ARGS__)
+#undef IOT_WARN
 #define IOT_WARN(format, ...) ESP_LOGW("aws_iot", format, ##__VA_ARGS__)
+#undef IOT_ERROR
 #define IOT_ERROR(format, ...) ESP_LOGE("aws_iot", format, ##__VA_ARGS__)
 
 /* Function tracing macros used in AWS IoT SDK,
    mapped to "verbose" level output
 */
+#undef FUNC_ENTRY
 #define FUNC_ENTRY ESP_LOGV("aws_iot", "FUNC_ENTRY:   %s L#%d \n", __func__, __LINE__)
+#undef FUNC_EXIT_RC
 #define FUNC_EXIT_RC(x) \
     do {                                                                \
         ESP_LOGV("aws_iot", "FUNC_EXIT:   %s L#%d Return Code : %d \n", __func__, __LINE__, x); \
