@@ -109,7 +109,7 @@ extern "C" {
  * @return `IoT_Error_t`: See `aws_iot_error.h`
  */
 /* @[declare_mqtt_init] */
-IoT_Error_t aws_iot_mqtt_init(AWS_IoT_Client *pClient, const IoT_Client_Init_Params *pInitParams);
+IoT_Error_t aws_iot_mqtt_init(AWS_IoT_Client *pClient, IoT_Client_Init_Params *pInitParams);
 /* @[declare_mqtt_init] */
 
 /**
@@ -140,7 +140,7 @@ IoT_Error_t aws_iot_mqtt_free( AWS_IoT_Client *pClient );
  * @return `IoT_Error_t`: See `aws_iot_error.h`
  */
 /* @[declare_mqtt_connect] */
-IoT_Error_t aws_iot_mqtt_connect(AWS_IoT_Client *pClient, const IoT_Client_Connect_Params *pConnectParams);
+IoT_Error_t aws_iot_mqtt_connect(AWS_IoT_Client *pClient, IoT_Client_Connect_Params *pConnectParams);
 /* @[declare_mqtt_connect] */
 
 /**

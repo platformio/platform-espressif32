@@ -134,7 +134,7 @@ extern const IoT_MQTT_Will_Options iotMqttWillOptionsDefault;
 typedef struct {
 	char struct_id[4];			///< The eyecatcher for this structure.  must be MQTC
 	MQTT_Ver_t MQTTVersion;			///< Desired MQTT version used during connection
-	const char *pClientID;                	///< Pointer to a string defining the MQTT client ID (this needs to be unique \b per \b device across your AWS account)
+	char *pClientID;                	///< Pointer to a string defining the MQTT client ID (this needs to be unique \b per \b device across your AWS account)
 	uint16_t clientIDLen;			///< Client Id Length. 16 bit unsigned integer
 	uint16_t keepAliveIntervalInSec;	///< MQTT keep alive interval in seconds.  Defines inactivity time allowed before determining the connection has been lost.
 	bool isCleanSession;			///< MQTT clean session.  True = this session is to be treated as clean.  Previous server state is cleared and no stated is retained from this connection.
@@ -171,9 +171,9 @@ typedef struct {
 	bool enableAutoReconnect;			///< Set to true to enable auto reconnect
 	char *pHostURL;					///< Pointer to a string defining the endpoint for the MQTT service
 	uint16_t port;					///< MQTT service listening port
-	const char *pRootCALocation;				///< Pointer to a string defining the Root CA file (full file, not path)
-	const char *pDeviceCertLocation;			///< Pointer to a string defining the device identity certificate file (full file, not path)
-	const char *pDevicePrivateKeyLocation;        	///< Pointer to a string defining the device private key file (full file, not path)
+	char *pRootCALocation;				///< Pointer to a string defining the Root CA file (full file, not path)
+	char *pDeviceCertLocation;			///< Pointer to a string defining the device identity certificate file (full file, not path)
+	char *pDevicePrivateKeyLocation;        	///< Pointer to a string defining the device private key file (full file, not path)
 	uint32_t mqttPacketTimeout_ms;			///< Timeout for reading a complete MQTT packet. In milliseconds
 	uint32_t mqttCommandTimeout_ms;			///< Timeout for MQTT blocking calls. In milliseconds
 	uint32_t tlsHandshakeTimeout_ms;		///< TLS handshake timeout.  In milliseconds
@@ -266,6 +266,7 @@ typedef struct _ClientStatus {
 typedef struct _ClientData {
 	uint16_t nextPacketId; ///< Packet ID to use for the next generated packet
 
+	/* Packet timeout is unused. See https://github.com/aws/aws-iot-device-sdk-embedded-C/pull/1475 */
 	uint32_t packetTimeoutMs; ///< Timeout for reading incoming packets from the network
 	uint32_t commandTimeoutMs; ///< Timeout for processing outgoing MQTT packets
 	uint16_t keepAliveInterval; ///< Maximum interval between control packets
@@ -367,7 +368,7 @@ uint16_t aws_iot_mqtt_get_next_packet_id(AWS_IoT_Client *pClient);
  * or @ref mqtt_function_yield.
  */
 /* @[declare_mqtt_set_connect_params] */
-IoT_Error_t aws_iot_mqtt_set_connect_params(AWS_IoT_Client *pClient, const IoT_Client_Connect_Params *pNewConnectParams);
+IoT_Error_t aws_iot_mqtt_set_connect_params(AWS_IoT_Client *pClient, IoT_Client_Connect_Params *pNewConnectParams);
 /* @[declare_mqtt_set_connect_params] */
 
 /**

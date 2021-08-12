@@ -48,6 +48,7 @@ extern "C" {
 	printf("\n"); \
 	}
 #else
+#undef IOT_DEBUG
 #define IOT_DEBUG(...)
 #endif
 
@@ -71,9 +72,12 @@ extern "C" {
 	return x; \
 	}
 #else
+#undef FUNC_ENTRY
 #define FUNC_ENTRY
 
+#undef FUNC_EXIT
 #define FUNC_EXIT
+#undef FUNC_EXIT_RC
 #define FUNC_EXIT_RC(x) { return x; }
 #endif
 
@@ -89,6 +93,7 @@ extern "C" {
 	printf("\n"); \
 	}
 #else
+#undef IOT_INFO
 #define IOT_INFO(...)
 #endif
 
@@ -105,6 +110,7 @@ extern "C" {
 	printf("\n"); \
 	}
 #else
+#undef IOT_WARN
 #define IOT_WARN(...)
 #endif
 
@@ -121,6 +127,7 @@ extern "C" {
 	printf("\n"); \
 	}
 #else
+#undef IOT_ERROR
 #define IOT_ERROR(...)
 #endif
 

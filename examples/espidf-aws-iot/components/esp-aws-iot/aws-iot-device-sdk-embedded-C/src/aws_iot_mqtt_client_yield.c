@@ -241,6 +241,11 @@ static IoT_Error_t _aws_iot_mqtt_internal_yield(AWS_IoT_Client *pClient, uint32_
 
 		if(NETWORK_DISCONNECTED_ERROR == yieldRc) {
 			pClient->clientData.counterNetworkDisconnected++;
+			/* Always clear resubscribe flags. */
+			for(itr = 0; itr < AWS_IOT_MQTT_NUM_SUBSCRIBE_HANDLERS; itr++) {
+				pClient->clientData.messageHandlers[itr].resubscribed = 0;
+			}
+
 			if(1 == pClient->clientStatus.isAutoReconnectEnabled) {
 				yieldRc = aws_iot_mqtt_set_client_state(pClient, CLIENT_STATE_DISCONNECTED_ERROR,
 														CLIENT_STATE_PENDING_RECONNECT);
@@ -250,10 +255,6 @@ static IoT_Error_t _aws_iot_mqtt_internal_yield(AWS_IoT_Client *pClient, uint32_
 
 				pClient->clientData.currentReconnectWaitInterval = AWS_IOT_MQTT_MIN_RECONNECT_WAIT_INTERVAL;
 				countdown_ms(&(pClient->reconnectDelayTimer), pClient->clientData.currentReconnectWaitInterval);
-
-				for(itr = 0; itr < AWS_IOT_MQTT_NUM_SUBSCRIBE_HANDLERS; itr++) {
-					pClient->clientData.messageHandlers[itr].resubscribed = 0;
-				}
 
 				/* Depending on timer values, it is possible that yield timer has expired
 				 * Set to rc to attempting reconnect to inform client that autoreconnect
