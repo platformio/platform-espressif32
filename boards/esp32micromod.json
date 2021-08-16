@@ -29,8 +29,7 @@
   },
   "frameworks": [
     "arduino",
-    "espidf",
-    "sparkfun-esp32"
+    "espidf"
   ],
   "upload": {
     "flash_size": "4MB",
