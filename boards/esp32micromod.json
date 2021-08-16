@@ -8,7 +8,7 @@
     "core": "esp32",
     "variant": "esp32micromod",
     "flash_mode": "dio",
-    "f_flash": "400000000L",
+    "f_flash": "40000000L",
     "flash_size": "4MB",
     "f_cpu": "240000000L",
     "boot": "dio",
