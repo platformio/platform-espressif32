@@ -32,10 +32,8 @@
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
     "maximum_size": 4194304,
-    "use_1200bps_touch": true,
-    "wait_for_upload_port": true,
-    "upload_command": "esptool_py",
-    "upload_protocol": "custom"
+    "require_upload_port": true,
+    "speed": 460800
   },
   "name": "SparkFun ESP32 MicroMod",
   "vendor": "SparkFun Electronics",
