@@ -26,8 +26,10 @@
   },
   "frameworks": [
     "arduino",
-    "espidf"
+    "espidf",
+    "arduino-esp32"
   ],
+  "name": "SparkFun ESP32 MicroMod",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
@@ -35,7 +37,6 @@
     "require_upload_port": true,
     "speed": 460800
   },
-  "name": "SparkFun ESP32 MicroMod",
   "vendor": "SparkFun Electronics",
   "url": "https://www.sparkfun.com/products/16781"
 }
