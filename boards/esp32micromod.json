@@ -1,0 +1,47 @@
+{
+  "build": {
+    "arduino": {
+      "ldscript": "esp32_out.ld",
+      "partitions": "default.csv"
+    },
+    "mcu": "esp32",
+    "core": "esp32",
+    "variant": "esp32micromod",
+    "flash_mode": "dio",
+    "f_flash": "400000000L",
+    "flash_size": "4MB",
+    "f_cpu": "240000000L",
+    "boot": "dio",
+    "extra_flags": [
+      "-DESP32_MICROMOD",
+      "-DBOARD_HAS_PSRAM",
+      "-mfix-esp32-psram-cache-issue"
+    ]
+  },
+  "connectivity": [
+    "wifi",
+    "bluetooth",
+    "ethernet",
+    "can"
+  ],
+  "debug": {
+    "openocd_board": "esp-wroom-32.cfg"
+  },
+  "frameworks": [
+    "arduino",
+    "espidf",
+    "sparkfun-esp32"
+  ],
+  "upload": {
+    "flash_size": "4MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 4194304,
+    "use_1200bps_touch": true,
+    "wait_for_upload_port": true,
+    "upload_command": "esptool_py",
+    "upload_protocol": "custom"
+  },
+  "name": "SparkFun ESP32 MicroMod",
+  "vendor": "SparkFun Electronics",
+  "url": "https://www.sparkfun.com/products/16781"
+}
