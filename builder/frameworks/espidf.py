@@ -838,9 +838,8 @@ def create_version_file():
     version_file = os.path.join(FRAMEWORK_DIR, "version.txt")
     if not os.path.isfile(version_file):
         with open(version_file, "w") as fp:
-            fp.write(
-                get_original_version(platform.get_package_version("framework-espidf"))
-            )
+            package_version = platform.get_package_version("framework-espidf")
+            fp.write(get_original_version(package_version) or package_version)
 
 
 def generate_empty_partition_image(binary_path, image_size):
