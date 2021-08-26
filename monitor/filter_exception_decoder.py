@@ -31,53 +31,74 @@ class Esp32ExceptionDecoder(DeviceMonitorFilter):
 
     def __call__(self):
         self.buffer = ""
-        self.backtrace_re = re.compile(
-            r"^Backtrace: ?((0x[0-9a-fA-F]+:0x[0-9a-fA-F]+ ?)+)\s*"
-        )
+        # regex matches potential PC value (0x4xxxxxxx)
+        # Logic identical to https://github.com/espressif/esp-idf/blob/master/tools/idf_monitor_base/constants.py#L56
+        self.pcaddr_re = re.compile(r'0x4[0-9a-f]{7}', re.IGNORECASE)
 
         self.firmware_path = None
         self.addr2line_path = None
         self.enabled = self.setup_paths()
 
-        if self.config.get("env:" + self.environment, "build_type") != "debug":
-            print(
+        return self
+
+    def setup_paths(self):
+        self.project_dir = path_to_unicode(os.path.abspath(self.project_dir))
+
+        self.project_strip_dir = os.environ.get("esp32_exception_decoder_project_strip_dir")
+        self.firmware_path = os.environ.get("esp32_exception_decoder_firmware_path")
+        self.addr2line_path = os.environ.get("esp32_exception_decoder_addr2line_path")
+
+        if self.project_strip_dir is None:
+            self.project_strip_dir = self.project_dir
+
+        try:
+            if self.firmware_path is None or self.addr2line_path is None:
+                # Only load if necessary, as the call is expensive
+                data = load_project_ide_data(self.project_dir, self.environment)
+
+            if self.firmware_path is None:
+                # Only do this check when the firmware path is not externally provided
+                if self.config.get("env:" + self.environment, "build_type") != "debug":
+                    print(
                 """
 Please build project in debug configuration to get more details about an exception.
 See https://docs.platformio.org/page/projectconf/build_configurations.html
 
 """
-            )
+                    )
+                self.firmware_path = data["prog_path"]
 
-        return self
-
-    def setup_paths(self):
-        self.project_dir = path_to_unicode(os.path.abspath(self.project_dir))
-        try:
-            data = load_project_ide_data(self.project_dir, self.environment)
-            self.firmware_path = data["prog_path"]
             if not os.path.isfile(self.firmware_path):
                 sys.stderr.write(
-                    "%s: firmware at %s does not exist, rebuild the project?\n"
+                    "%s: disabling, firmware at %s does not exist, rebuild the project?\n"
                     % (self.__class__.__name__, self.firmware_path)
                 )
                 return False
 
-            cc_path = data.get("cc_path", "")
-            if "-gcc" in cc_path:
-                path = cc_path.replace("-gcc", "-addr2line")
-                if os.path.isfile(path):
-                    self.addr2line_path = path
-                    return True
+            if self.addr2line_path is None:
+                cc_path = data.get("cc_path", "")
+                if "-gcc" in cc_path:
+                    self.addr2line_path = cc_path.replace("-gcc", "-addr2line")
+                else:
+                    sys.stderr.write(
+                        "%s: disabling, failed to find addr2line.\n" % self.__class__.__name__
+                    )
+                    return False
+
+            if not os.path.isfile(self.addr2line_path):
+                sys.stderr.write(
+                    "%s: disabling, addr2line at %s does not exist\n"
+                    % (self.__class__.__name__, self.addr2line_path)
+                )
+                return False
+
+            return True
         except PlatformioException as e:
             sys.stderr.write(
                 "%s: disabling, exception while looking for addr2line: %s\n"
                 % (self.__class__.__name__, e)
             )
             return False
-        sys.stderr.write(
-            "%s: disabling, failed to find addr2line.\n" % self.__class__.__name__
-        )
-        return False
 
     def rx(self, text):
         if not self.enabled:
@@ -97,14 +118,17 @@ See https://docs.platformio.org/page/projectconf/build_configurations.html
                 self.buffer = ""
             last = idx + 1
 
-            m = self.backtrace_re.match(line)
-            if m is None:
-                continue
+            # Output each trace on a separate line below ours
+            # Logic identical to https://github.com/espressif/esp-idf/blob/master/tools/idf_monitor_base/logger.py#L131
+            for m in re.finditer(self.pcaddr_re, line):
+                if m is None:
+                    continue
 
-            trace = self.get_backtrace(m)
-            if len(trace) != "":
-                text = text[: idx + 1] + trace + text[idx + 1 :]
-                last += len(trace)
+                trace = self.get_backtrace(m)
+                if len(trace) != "":
+                    text = text[: last] + trace + text[last :]
+                    last += len(trace)
+
         return text
 
     def get_backtrace(self, match):
@@ -114,19 +138,20 @@ See https://docs.platformio.org/page/projectconf/build_configurations.html
         if PY2:
             args = [a.encode(enc) for a in args]
         try:
-            for i, addr in enumerate(match.group(1).split()):
-                if PY2:
-                    addr = addr.encode(enc)
-                output = (
-                    subprocess.check_output(args + [addr])
-                    .decode(enc)
-                    .strip()
-                )
-                output = output.replace(
-                    "\n", "\n     "
-                )  # newlines happen with inlined methods
-                output = self.strip_project_dir(output)
-                trace += "  #%-2d %s in %s\n" % (i, addr, output)
+            addr = match.group()
+            if PY2:
+                addr = addr.encode(enc)
+            output = (
+                subprocess.check_output(args + [addr])
+                .decode(enc)
+                .strip()
+            )
+            output = output.replace(
+                "\n", "\n     "
+            )  # newlines happen with inlined methods
+            output = self.strip_project_dir(output)
+            # Output the trace in yellow color so that it is easier to spot
+            trace += "\033[33m=> %s: %s\033[0m\n" % (addr, output)
         except subprocess.CalledProcessError as e:
             sys.stderr.write(
                 "%s: failed to call %s: %s\n"
@@ -136,8 +161,8 @@ See https://docs.platformio.org/page/projectconf/build_configurations.html
 
     def strip_project_dir(self, trace):
         while True:
-            idx = trace.find(self.project_dir)
+            idx = trace.find(self.project_strip_dir)
             if idx == -1:
                 break
-            trace = trace[:idx] + trace[idx + len(self.project_dir) + 1 :]
+            trace = trace[:idx] + trace[idx + len(self.project_strip_dir) + 1 :]
         return trace
