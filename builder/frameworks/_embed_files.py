@@ -28,15 +28,10 @@ board = env.BoardConfig()
 
 
 def extract_files(cppdefines, files_type):
-    files = []
-    if "build." + files_type in board:
-        files.extend(
-            [
-                join("$PROJECT_DIR", f)
-                for f in board.get("build." + files_type, "").split()
-                if f
-            ]
-        )
+    result = []
+    files = env.GetProjectOption("board_build.%s" % files_type, "").splitlines()
+    if files:
+        result.extend([join("$PROJECT_DIR", f.strip()) for f in files if f])
     else:
         files_define = "COMPONENT_" + files_type.upper()
         for define in cppdefines:
@@ -58,13 +53,13 @@ def extract_files(cppdefines, files_type):
             for f in value.split(":"):
                 if not f:
                     continue
-                files.append(join("$PROJECT_DIR", f))
+                result.append(join("$PROJECT_DIR", f))
 
-    for f in files:
+    for f in result:
         if not isfile(env.subst(f)):
             print('Warning! Could not find file "%s"' % basename(f))
 
-    return files
+    return result
 
 
 def remove_config_define(cppdefines, files_type):
