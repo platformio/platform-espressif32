@@ -152,6 +152,32 @@ env.Append(
             emitter=transform_to_asm,
             single_source=True,
         ),
+        BinToAsm=Builder(
+            action=env.VerboseAction(
+                " ".join(
+                    [
+                        join(
+                            env.PioPlatform().get_package_dir("tool-cmake") or "",
+                            "bin",
+                            "cmake",
+                        ),
+                        "-DDATA_FILE=$SOURCE",
+                        "-DSOURCE_FILE=$TARGET",
+                        "-P",
+                        join(
+                            env.PioPlatform().get_package_dir("framework-espidf") or "",
+                            "tools",
+                            "cmake",
+                            "scripts",
+                            "data_file_embed_asm.cmake",
+                        ),
+                    ]
+                ),
+                "Generating assembly for $TARGET",
+            ),
+            emitter=transform_to_asm,
+            single_source=True,
+        ),
     )
 )
 
@@ -166,7 +192,10 @@ for files_type in ("embed_txtfiles", "embed_files"):
 
     files = extract_files(flags, files_type)
     if "espidf" in env.subst("$PIOFRAMEWORK"):
-        env.Requires(join("$BUILD_DIR", "${PROGNAME}.elf"), env.TxtToAsm(files))
+        if files_type == "embed_txtfiles":
+            env.Requires(join("$BUILD_DIR", "${PROGNAME}.elf"), env.TxtToAsm(files))
+        else:
+            env.Requires(join("$BUILD_DIR", "${PROGNAME}.elf"), env.BinToAsm(files))
     else:
         embed_files(files, files_type)
         remove_config_define(flags, files_type)
