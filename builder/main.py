@@ -71,8 +71,13 @@ def _parse_partitions(env):
                 "flags": tokens[5] if len(tokens) > 5 else None
             }
             result.append(partition)
-            next_offset = (_parse_size(partition['offset']) +
-                           _parse_size(partition['size']))
+            next_offset = _parse_size(partition["offset"]) + _parse_size(
+                partition["size"]
+            )
+
+            bound = 0x10000 if partition["type"] in ("0", "app") else 4
+            next_offset = (next_offset + bound - 1) & ~(bound - 1)
+
     return result
 
 
