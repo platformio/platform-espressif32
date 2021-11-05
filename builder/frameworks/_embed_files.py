@@ -125,7 +125,7 @@ env.Append(
             ),
             suffix=".txt.o",
         ),
-        TxtToAsm=Builder(
+        FileToAsm=Builder(
             action=env.VerboseAction(
                 " ".join(
                     [
@@ -136,7 +136,7 @@ env.Append(
                         ),
                         "-DDATA_FILE=$SOURCE",
                         "-DSOURCE_FILE=$TARGET",
-                        "-DFILE_TYPE=TEXT",
+                        "-DFILE_TYPE=$FILE_TYPE",
                         "-P",
                         join(
                             env.PioPlatform().get_package_dir("framework-espidf") or "",
@@ -166,7 +166,13 @@ for files_type in ("embed_txtfiles", "embed_files"):
 
     files = extract_files(flags, files_type)
     if "espidf" in env.subst("$PIOFRAMEWORK"):
-        env.Requires(join("$BUILD_DIR", "${PROGNAME}.elf"), env.TxtToAsm(files))
+        env.Requires(
+            join("$BUILD_DIR", "${PROGNAME}.elf"),
+            env.FileToAsm(
+                files,
+                FILE_TYPE="TEXT" if files_type == "embed_txtfiles" else "BINARY",
+            ),
+        )
     else:
         embed_files(files, files_type)
         remove_config_define(flags, files_type)
