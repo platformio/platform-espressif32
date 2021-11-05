@@ -53,9 +53,9 @@ FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
 TOOLCHAIN_DIR = platform.get_package_dir(
     "toolchain-%s"
     % (
-        "riscv-esp"
+        "riscv32-esp"
         if mcu == "esp32c3"
-        else ("xtensa32s2" if mcu == "esp32s2" else "xtensa32")
+        else ("xtensa-esp32s2" if mcu == "esp32s2" else "xtensa-esp32")
     )
 )
 
@@ -997,7 +997,8 @@ def install_python_deps():
         return result
 
     deps = {
-        "cryptography": ">=2.1.4",
+        # https://github.com/platformio/platform-espressif32/issues/635
+        "cryptography": ">=2.1.4,<35.0.0",
         "future": ">=0.15.2",
         "pyparsing": ">=2.0.3,<2.4.0",
         "kconfiglib": "==13.7.1",
