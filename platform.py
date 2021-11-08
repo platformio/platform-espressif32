@@ -59,9 +59,12 @@ class Espressif32Platform(PlatformBase):
                 if (
                     p.startswith("toolchain")
                     and "ulp" not in p
-                    and self.packages[p]["owner"] != "espressif"
                 ):
-                    del self.packages[p]
+                    if self.packages[p]["owner"] == "espressif":
+                        self.packages[p]["optional"] = False
+                    else:
+                        del self.packages[p]
+
                 if p in ("tool-cmake", "tool-ninja", "toolchain-%sulp" % mcu):
                     self.packages[p]["optional"] = False
                 elif p in ("tool-mconf", "tool-idf") and "windows" in get_systype():
