@@ -64,6 +64,7 @@ assert os.path.isdir(TOOLCHAIN_DIR)
 
 # Arduino framework as a component is not compatible with ESP-IDF >=4.1
 if "arduino" in env.subst("$PIOFRAMEWORK"):
+    TOOLCHAIN_DIR = platform.get_package_dir("toolchain-xtensa32")
     ARDUINO_FRAMEWORK_DIR = platform.get_package_dir("framework-arduinoespressif32")
     # Possible package names in 'package@version' format is not compatible with CMake
     if "@" in os.path.basename(ARDUINO_FRAMEWORK_DIR):
