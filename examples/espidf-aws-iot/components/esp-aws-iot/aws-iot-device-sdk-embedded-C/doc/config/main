@@ -1,0 +1,30 @@
+# Include common configuration options.
+@INCLUDE_PATH = doc/config
+@INCLUDE = common
+
+# Basic project information.
+PROJECT_NAME = "Main"
+
+# Library documentation output directory.
+HTML_OUTPUT = main
+
+# Generate Doxygen tag file for this library.
+GENERATE_TAGFILE = doc/tag/main.tag
+
+# Files to show on the main page.
+INPUT = README.md \
+        CHANGELOG.md \
+        PortingGuide.md \
+        doc/architecture.txt
+
+# Path to architecture image.
+IMAGE_PATH += doc/
+
+# Use repository README as main page.
+USE_MDFILE_AS_MAINPAGE = README.md
+
+# Don't automatically link to library symbols.
+AUTOLINK_SUPPORT = NO
+
+# Use the Main page layout file
+LAYOUT_FILE = doc/config/layout_main.xml

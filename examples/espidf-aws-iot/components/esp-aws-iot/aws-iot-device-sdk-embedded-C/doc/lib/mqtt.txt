@@ -1,0 +1,61 @@
+/**
+@mainpage
+@anchor mqtt
+@brief MQTT v3.1.1 client library.
+
+MQTT is a standardized publish subscribe protocol popular on embedded devices. The MQTT library provided with this SDK implements a subset of the MQTT v3.1.1 protocol. The sample application for Linux `subscribe_publish_sample.c` is provided as a starting point for using this library.
+
+The interface for communication over MQTT is provided in the file `aws_iot_mqtt_interface.h`.
+- MQTT client context management: @ref mqtt_function_init and @ref mqtt_function_free
+- Connection management: @ref mqtt_function_connect and @ref mqtt_function_disconnect
+- Publishing messages to the server: @ref mqtt_function_publish
+- Managing subscriptions: @ref mqtt_function_subscribe and @ref mqtt_function_unsubscribe
+- Process incoming messages, reconnections, and keep-alive: @ref mqtt_function_yield
+
+@note In a multithreaded environment, always ensure that calls to this library's functions are serialized, such as with a lock or a queue. This library is not thread safe.
+
+@note This library does not support QoS 2 or retained messages.
+
+@section mqtt_configuration Configuration
+@brief The following configuration settings are associated with this MQTT library.
+- `AWS_IOT_MQTT_TX_BUF_LEN` <br>
+Size of buffer for outgoing messages.
+- `AWS_IOT_MQTT_RX_BUF_LEN` <br>
+Size of buffer for incoming messages. Messages longer than this will be dropped.
+- `AWS_IOT_MQTT_NUM_SUBSCRIBE_HANDLERS` <br>
+Number of subscriptions that may be registered simultaneously.
+- `AWS_IOT_MQTT_MIN_RECONNECT_WAIT_INTERVAL` <br>
+The initial wait time before the first reconnect attempt. See @ref mqtt_autoreconnect.
+- `AWS_IOT_MQTT_MAX_RECONNECT_WAIT_INTERVAL` <br>
+The maximum wait time between reconnect attempts. See @ref mqtt_autoreconnect.
+*/
+
+/**
+@page mqtt_autoreconnect Auto-reconnect
+@brief This page describes the auto-reconnect mechanism of the MQTT library.
+
+The auto-reconnect mechanism can be enabled through the following methods:
+- Set #IoT_Client_Init_Params.enableAutoReconnect to `true` when calling @ref mqtt_function_init.
+- Call @ref mqtt_function_autoreconnect_set_status with `newStatus` set to `true`. @ref mqtt_function_autoreconnect_set_status must only be called after @ref mqtt_function_connect.
+
+Once enabled, this feature will attempt to reconnect to the server if the library detects a disconnection. The reconnections are handled through @ref mqtt_function_yield. In addition to re-establishing the network connection and MQTT session, all the previous subscriptions will be re-established. This restores the client-side subscriptions for both clean and persistent MQTT sessions.
+
+The following events are considered disconnects:
+- Fatal errors returned from the TLS layer.
+- Failure to send a ping request.
+- Failure to receive a timely ping response.
+
+On all disconnect events, the #iot_disconnect_handler for an MQTT client will be called.
+
+Reconnect attempts are made with an exponential backoff strategy.
+- `AWS_IOT_MQTT_MIN_RECONNECT_WAIT_INTERVAL` <br>
+The initial wait time before the first reconnect attempt.
+- `AWS_IOT_MQTT_MAX_RECONNECT_WAIT_INTERVAL` <br>
+The maximum wait time between reconnect attempts.
+
+If a reconnect attempt after `AWS_IOT_MQTT_MAX_RECONNECT_WAIT_INTERVAL` fails, @ref mqtt_function_yield will return `NETWORK_RECONNECT_TIMED_OUT`. There will be no more reconnect attempts. If an application still wants to re-connect, it should call @ref mqtt_function_attempt_reconnect.
+
+Calling @ref mqtt_function_attempt_reconnect performs a single reconnect and resubscribe attempt. It is equivalent to a manual reconnect attempt.
+
+@note Since reconnects are handled by @ref mqtt_function_yield and a new TLS handshake for reconnection may take a significant amount of time, calls to @ref mqtt_function_yield that handle reconnections may block for longer than usual.
+*/

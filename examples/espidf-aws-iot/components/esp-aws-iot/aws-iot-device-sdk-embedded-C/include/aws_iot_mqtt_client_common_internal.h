@@ -47,6 +47,7 @@ extern "C" {
 #include <stddef.h>
 #include <string.h>
 
+#include "aws_iot_log.h"
 #include "aws_iot_mqtt_client_interface.h"
 
 /** Types of MQTT messages */

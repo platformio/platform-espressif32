@@ -52,9 +52,9 @@ extern "C" {
 typedef struct {
 	char *pHost; ///< This will be unique to a customer and can be retrieved from the console
 	uint16_t port; ///< Network port for TCP/IP socket
-	const char *pRootCA; ///< Location with the Filename of the Root CA
-	const char *pClientCRT; ///< Location of Device certs signed by AWS IoT service
-	const char *pClientKey; ///< Location of Device private key
+	char *pRootCA; ///< Location with the Filename of the Root CA
+	char *pClientCRT; ///< Location of Device certs signed by AWS IoT service
+	char *pClientKey; ///< Location of Device private key
 	bool enableAutoReconnect;        ///< Set to true to enable auto reconnect
 	iot_disconnect_handler disconnectHandler;    ///< Callback to be invoked upon connection loss.
 } ShadowInitParameters_t;
@@ -69,8 +69,8 @@ typedef struct {
  *
  */
 typedef struct {
-	const char *pMyThingName; ///< Every device has a Thing Shadow and this is the placeholder for name
-	const char *pMqttClientId; ///< Currently the Shadow uses MQTT to connect and it is important to ensure we have unique client id
+	char *pMyThingName; ///< Every device has a Thing Shadow and this is the placeholder for name
+	char *pMqttClientId; ///< Currently the Shadow uses MQTT to connect and it is important to ensure we have unique client id
 	uint16_t mqttClientIdLen; ///< Currently the Shadow uses MQTT to connect and it is important to ensure we have unique client id
 	pApplicationHandler_t deleteActionHandler;	///< Callback to be invoked when Thing shadow for this device is deleted
 } ShadowConnectParameters_t;
@@ -111,7 +111,7 @@ IoT_Error_t aws_iot_shadow_free(AWS_IoT_Client *pClient);
  * @param pClient A new MQTT Client to be used as the protocol layer. Will be initialized with pParams.
  * @return An IoT Error Type defining successful/failed Initialization
  */
-IoT_Error_t aws_iot_shadow_init(AWS_IoT_Client *pClient, const ShadowInitParameters_t *pParams);
+IoT_Error_t aws_iot_shadow_init(AWS_IoT_Client *pClient, ShadowInitParameters_t *pParams);
 
 /**
  * @brief Connect to the AWS IoT Thing Shadow service over MQTT
@@ -122,7 +122,7 @@ IoT_Error_t aws_iot_shadow_init(AWS_IoT_Client *pClient, const ShadowInitParamet
  * @param pParams	Shadow Conenction parameters like TLS cert location
  * @return An IoT Error Type defining successful/failed Connection
  */
-IoT_Error_t aws_iot_shadow_connect(AWS_IoT_Client *pClient, const ShadowConnectParameters_t *pParams);
+IoT_Error_t aws_iot_shadow_connect(AWS_IoT_Client *pClient, ShadowConnectParameters_t *pParams);
 
 /**
  * @brief Yield function to let the background tasks of MQTT and Shadow

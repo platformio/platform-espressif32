@@ -35,7 +35,7 @@
 #include "freertos/event_groups.h"
 #include "esp_system.h"
 #include "esp_wifi.h"
-#include "esp_event_loop.h"
+#include "esp_event.h"
 #include "esp_log.h"
 #include "esp_vfs_fat.h"
 #include "driver/sdmmc_host.h"
@@ -109,25 +109,37 @@ char HostAddress[255] = AWS_IOT_MQTT_HOST;
 uint32_t port = AWS_IOT_MQTT_PORT;
 
 
-static esp_err_t event_handler(void *ctx, system_event_t *event)
+static void event_handler(void* handler_args, esp_event_base_t base, int32_t id, void* event_data)
 {
-    switch(event->event_id) {
-    case SYSTEM_EVENT_STA_START:
-        esp_wifi_connect();
-        break;
-    case SYSTEM_EVENT_STA_GOT_IP:
-        xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
-        break;
-    case SYSTEM_EVENT_STA_DISCONNECTED:
-        /* This is a workaround as ESP32 WiFi libs don't currently
-           auto-reassociate. */
-        esp_wifi_connect();
-        xEventGroupClearBits(wifi_event_group, CONNECTED_BIT);
-        break;
-    default:
-        break;
+    ESP_LOGI(TAG, "event_handler: %s:%d", base, id);
+
+    if(base == WIFI_EVENT) {
+        switch(id) {
+        case WIFI_EVENT_STA_START:
+            esp_wifi_connect();
+            break;
+        case WIFI_EVENT_STA_CONNECTED:
+            break;
+        case WIFI_EVENT_STA_DISCONNECTED:
+            /* This is a workaround as ESP32 WiFi libs don't currently
+            auto-reassociate. */
+            esp_wifi_connect();
+            xEventGroupClearBits(wifi_event_group, CONNECTED_BIT);
+            break;
+        default:
+            break;
+        }
     }
-    return ESP_OK;
+    else if(base == IP_EVENT) {
+        switch(id) {
+        case IP_EVENT_STA_GOT_IP:
+            {
+                ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
+                ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
+                xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
+            }
+        }
+    }
 }
 
 void iot_subscribe_callback_handler(AWS_IoT_Client *pClient, char *topicName, uint16_t topicNameLen,
@@ -178,9 +190,9 @@ void aws_iot_task(void *param) {
     mqttInitParams.port = port;
 
 #if defined(CONFIG_EXAMPLE_EMBEDDED_CERTS)
-    mqttInitParams.pRootCALocation = (const char *)aws_root_ca_pem_start;
-    mqttInitParams.pDeviceCertLocation = (const char *)certificate_pem_crt_start;
-    mqttInitParams.pDevicePrivateKeyLocation = (const char *)private_pem_key_start;
+    mqttInitParams.pRootCALocation = (char *)aws_root_ca_pem_start;
+    mqttInitParams.pDeviceCertLocation = (char *)certificate_pem_crt_start;
+    mqttInitParams.pDevicePrivateKeyLocation = (char *)private_pem_key_start;
 
 #elif defined(CONFIG_EXAMPLE_FILESYSTEM_CERTS)
     mqttInitParams.pRootCALocation = ROOT_CA_PATH;
@@ -228,7 +240,7 @@ void aws_iot_task(void *param) {
     connectParams.clientIDLen = (uint16_t) strlen(CONFIG_AWS_EXAMPLE_CLIENT_ID);
     connectParams.isWillMsgPresent = false;
 
-    ESP_LOGI(TAG, "Connecting to AWS...");
+    ESP_LOGI(TAG, "Connecting to AWS with client ID '%s'", connectParams.pClientID);
     do {
         rc = aws_iot_mqtt_connect(&client, &connectParams);
         if(SUCCESS != rc) {
@@ -298,9 +310,23 @@ void aws_iot_task(void *param) {
 
 static void initialise_wifi(void)
 {
-    tcpip_adapter_init();
     wifi_event_group = xEventGroupCreate();
-    ESP_ERROR_CHECK( esp_event_loop_init(event_handler, NULL) );
+    ESP_ERROR_CHECK(esp_netif_init());
+
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    esp_netif_create_default_wifi_sta();
+
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
+                                                        ESP_EVENT_ANY_ID,
+                                                        &event_handler,
+                                                        NULL,
+                                                        NULL));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT,
+                                                        IP_EVENT_STA_GOT_IP,
+                                                        &event_handler,
+                                                        NULL,
+                                                        NULL));
+
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
     ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
