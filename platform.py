@@ -54,17 +54,18 @@ class Espressif32Platform(PlatformBase):
                 xtensa32s2_toolchain = "toolchain-xtensa-esp32s2"
                 riscv_toolchain = "toolchain-riscv32-esp"
 
-            for p in self.packages.copy():
-                # Disable old toolchains used by default
-                if (
-                    p.startswith("toolchain")
-                    and "ulp" not in p
-                ):
-                    if self.packages[p]["owner"] == "espressif":
-                        self.packages[p]["optional"] = False
-                    else:
-                        del self.packages[p]
+                for p in self.packages.copy():
+                    # Disable old toolchains used by default
+                    if (
+                        p.startswith("toolchain")
+                        and "ulp" not in p
+                    ):
+                        if self.packages[p]["owner"] == "espressif":
+                            self.packages[p]["optional"] = False
+                        else:
+                            del self.packages[p]
 
+            for p in self.packages:
                 if p in ("tool-cmake", "tool-ninja", "toolchain-%sulp" % mcu):
                     self.packages[p]["optional"] = False
                 elif p in ("tool-mconf", "tool-idf") and "windows" in get_systype():
