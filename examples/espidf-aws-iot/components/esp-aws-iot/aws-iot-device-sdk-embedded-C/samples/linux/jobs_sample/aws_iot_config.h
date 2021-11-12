@@ -70,4 +70,9 @@
 
 #define DISABLE_METRICS false ///< Disable the collection of metrics by setting this to true
 
+// TLS configs
+#define IOT_SSL_READ_TIMEOUT_MS 3 ///< Timeout associated with underlying socket of TLS connection (set by mbedtls_ssl_conf_read_timeout)
+#define IOT_SSL_READ_RETRY_TIMEOUT_MS 10 ///< Minimum elapsed time before returning from iot_tls_read when pending data has not yet been received
+#define IOT_SSL_WRITE_RETRY_TIMEOUT_MS 10 ///< Minimum elapsed time before returning from iot_tls_write when pending data has not yet been written
+
 #endif /* SRC_JOBS_IOT_JOB_CONFIG_H_ */

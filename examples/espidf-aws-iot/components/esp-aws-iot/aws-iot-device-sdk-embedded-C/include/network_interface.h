@@ -48,10 +48,10 @@ typedef struct Network Network;
  * TLS networking layer to create a TLS secured socket.
  */
 typedef struct {
-	const char *pRootCALocation;                ///< Pointer to string containing the filename (including path) of the root CA file.
-	const char *pDeviceCertLocation;            ///< Pointer to string containing the filename (including path) of the device certificate.
-	const char *pDevicePrivateKeyLocation;    ///< Pointer to string containing the filename (including path) of the device private key file.
-	const char *pDestinationURL;                ///< Pointer to string containing the endpoint of the MQTT service.
+	char *pRootCALocation;                ///< Pointer to string containing the filename (including path) of the root CA file.
+	char *pDeviceCertLocation;            ///< Pointer to string containing the filename (including path) of the device certificate.
+	char *pDevicePrivateKeyLocation;    ///< Pointer to string containing the filename (including path) of the device private key file.
+	char *pDestinationURL;                ///< Pointer to string containing the endpoint of the MQTT service.
 	uint16_t DestinationPort;            ///< Integer defining the connection port of the MQTT service.
 	uint32_t timeout_ms;                ///< Unsigned integer defining the TLS handshake timeout value in milliseconds.
 	bool ServerVerificationFlag;        ///< Boolean.  True = perform server certificate hostname validation.  False = skip validation \b NOT recommended.
@@ -93,8 +93,8 @@ struct Network {
  *
  * @return IoT_Error_t - successful initialization or TLS error
  */
-IoT_Error_t iot_tls_init(Network *pNetwork, const char *pRootCALocation, const char *pDeviceCertLocation,
-						 const char *pDevicePrivateKeyLocation, const char *pDestinationURL,
+IoT_Error_t iot_tls_init(Network *pNetwork, char *pRootCALocation, char *pDeviceCertLocation,
+						 char *pDevicePrivateKeyLocation, char *pDestinationURL,
 						 uint16_t DestinationPort, uint32_t timeout_ms, bool ServerVerificationFlag);
 
 /**

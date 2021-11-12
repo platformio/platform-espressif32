@@ -31,6 +31,15 @@ def _get_board_f_flash(env):
     return str(int(int(frequency) / 1000000)) + "m"
 
 
+def _get_board_flash_mode(env):
+    mode = env.subst("$BOARD_FLASH_MODE")
+    if mode == "qio":
+        return "dio"
+    elif mode == "qout":
+        return "dout"
+    return mode
+
+
 def _parse_size(value):
     if isinstance(value, int):
         return value
@@ -71,8 +80,13 @@ def _parse_partitions(env):
                 "flags": tokens[5] if len(tokens) > 5 else None
             }
             result.append(partition)
-            next_offset = (_parse_size(partition['offset']) +
-                           _parse_size(partition['size']))
+            next_offset = _parse_size(partition["offset"]) + _parse_size(
+                partition["size"]
+            )
+
+            bound = 0x10000 if partition["type"] in ("0", "app") else 4
+            next_offset = (next_offset + bound - 1) & ~(bound - 1)
+
     return result
 
 
@@ -130,6 +144,7 @@ if mcu == "esp32c3":
 
 env.Replace(
     __get_board_f_flash=_get_board_f_flash,
+    __get_board_flash_mode=_get_board_flash_mode,
 
     AR="%s-elf-ar" % toolchain_arch,
     AS="%s-elf-as" % toolchain_arch,
@@ -302,7 +317,7 @@ elif upload_protocol == "esptool":
             "--before", "default_reset",
             "--after", "hard_reset",
             "write_flash", "-z",
-            "--flash_mode", "$BOARD_FLASH_MODE",
+            "--flash_mode", "${__get_board_flash_mode(__env__)}",
             "--flash_freq", "${__get_board_f_flash(__env__)}",
             "--flash_size", "detect"
         ],

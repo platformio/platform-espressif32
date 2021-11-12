@@ -54,7 +54,7 @@ typedef enum {
 extern const char *JOB_EXECUTION_QUEUED_STR;
 extern const char *JOB_EXECUTION_IN_PROGRESS_STR;
 extern const char *JOB_EXECUTION_FAILED_STR;
-extern const char *JOB_EXECUTION_SUCCESS_STR;
+extern const char *JOB_EXECUTION_SUCCEEDED_STR;
 extern const char *JOB_EXECUTION_CANCELED_STR;
 extern const char *JOB_EXECUTION_REJECTED_STR;
 
