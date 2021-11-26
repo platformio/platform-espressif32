@@ -21,7 +21,10 @@
     "wifi",
     "bluetooth",
     "ethernet",
-    "can"
+    "can",
+    "uart",
+    "i2c",
+    "spi"
   ],
   "debug": {
     "default_tool": "ftdi",
@@ -37,7 +40,7 @@
   "name": "Deneyap Kart",
   "upload": {
     "flash_size": "4MB",
-    "maximum_ram_size": 327680,
+    "maximum_ram_size": 8937472,
     "maximum_size": 4194304,
     "protocols": [
       "esptool",
