@@ -21,7 +21,7 @@
     "wifi",
     "bluetooth",
     "ethernet",
-    "can",
+    "adc",
     "uart",
     "i2c",
     "spi"
