@@ -31,7 +31,7 @@
     "maximum_ram_size": 327680,
     "maximum_size": 4194304,
     "require_upload_port": true,
-    "speed": 460800
+    "speed": 115200
   },
   "monitor": {
     "speed" : 115200
