@@ -341,7 +341,7 @@ def extract_link_args(target_config):
             if fragment.startswith("-l"):
                 link_args["LIBS"].extend(args)
             elif fragment.startswith("-L"):
-                lib_path = fragment.replace("-L", "").strip()
+                lib_path = fragment.replace("-L", "").strip().strip('"')
                 _add_to_libpath(lib_path, link_args)
             elif fragment.startswith("-") and not fragment.startswith("-l"):
                 # CMake mistakenly marks LINKFLAGS as libraries
@@ -455,17 +455,17 @@ def find_framework_service_files(search_path, sdk_config):
             os.path.join(
                 FRAMEWORK_DIR,
                 "components",
-                idf_variant,
-                "ld",
-                "%s_fragments.lf" % idf_variant,
-            ),
+                "esp_common",
+                "common.lf"),
+
             os.path.join(
                 FRAMEWORK_DIR,
                 "components",
-                idf_variant,
-                "linker.lf",
-            ),
+                "esp_common",
+                "soc.lf"),
+
             os.path.join(FRAMEWORK_DIR, "components", "newlib", "newlib.lf"),
+            os.path.join(FRAMEWORK_DIR, "components", "newlib", "system_libs.lf"),
         ]
     )
 
@@ -703,6 +703,20 @@ def find_lib_deps(components_map, elf_config, link_args, ignore_components=None)
 
     return result
 
+def fix_ld_paths(extra_flags):
+    peripheral_framework_path = os.path.join(FRAMEWORK_DIR, "components", "soc", idf_variant, "ld")
+    rom_framework_path = os.path.join(FRAMEWORK_DIR, "components", "esp_rom", idf_variant, "ld")
+    bl_framework_path = os.path.join(FRAMEWORK_DIR, "components", "bootloader", "subproject", "main", "ld", idf_variant)
+    
+    # ESP linker scripts changed path in ESP-IDF 4.4+, so add missing paths to linker's search path
+    try:
+        ld_index = extra_flags.index("%s.peripherals.ld" % idf_variant)
+        extra_flags[ld_index-1:ld_index-1] = [ "-L", peripheral_framework_path, "-L", rom_framework_path, "-L", bl_framework_path]
+    except:
+        print("Error while parsing the flags")
+
+    return extra_flags
+
 
 def build_bootloader():
     bootloader_src_dir = os.path.join(
@@ -747,12 +761,14 @@ def build_bootloader():
     build_components(bootloader_env, components_map, bootloader_src_dir, "bootloader")
     link_args = extract_link_args(elf_config)
     extra_flags = filter_args(link_args["LINKFLAGS"], ["-T", "-u"])
+    extra_flags = fix_ld_paths(extra_flags)
     link_args["LINKFLAGS"] = sorted(
         list(set(link_args["LINKFLAGS"]) - set(extra_flags))
     )
 
     bootloader_env.MergeFlags(link_args)
     bootloader_env.Append(LINKFLAGS=extra_flags)
+    print("Bootloader link args: ", link_args["LINKFLAGS"], "\n", extra_flags)
     bootloader_libs = find_lib_deps(components_map, elf_config, link_args)
 
     bootloader_env.Prepend(__RPATH="-Wl,--start-group ")
@@ -1065,11 +1081,15 @@ if not board.get("build.ldscript", ""):
         board.get(
             "build.esp-idf.ldscript",
             os.path.join(
-                FRAMEWORK_DIR, "components", idf_variant, "ld", "%s.ld" % idf_variant
+                FRAMEWORK_DIR, "components", "esp_system", "ld", idf_variant, "memory.ld.in"
             ),
         ),
         env.VerboseAction(
-            '$CC -I"$BUILD_DIR/config" -C -P -x  c -E $SOURCE -o $TARGET',
+            '$CC -I"$BUILD_DIR/config" -I"' + 
+            os.path.join(FRAMEWORK_DIR, "components", "esp_system", "ld") + 
+            '" -C -P -x  c -E $SOURCE -o $BUILD_DIR/memory.ld && cat $BUILD_DIR/memory.ld ' + 
+            os.path.join(FRAMEWORK_DIR, "components", "esp_system", "ld", idf_variant, "sections.ld.in") + 
+                ' > $TARGET',
             "Generating LD script $TARGET",
         ),
     )
@@ -1257,15 +1277,21 @@ libs = find_lib_deps(
 # Extra flags which need to be explicitly specified in LINKFLAGS section because SCons
 # cannot merge them correctly
 extra_flags = filter_args(link_args["LINKFLAGS"], ["-T", "-u"])
+extra_flags = fix_ld_paths(extra_flags)
 link_args["LINKFLAGS"] = sorted(list(set(link_args["LINKFLAGS"]) - set(extra_flags)))
 
-# remove the main linker script flags '-T esp32_out.ld'
+# remove the main linker script flags '-T memory.ld -T sections.ld' since they are concatenated in esp32_out.ld already
 try:
-    ld_index = extra_flags.index("%s_out.ld" % idf_variant)
+    ld_index = extra_flags.index("memory.ld")
     extra_flags.pop(ld_index)
     extra_flags.pop(ld_index - 1)
+    ld_index = extra_flags.index("sections.ld")
+    extra_flags.pop(ld_index)
+    extra_flags.pop(ld_index - 1)
+    pass
 except:
     print("Warning! Couldn't find the main linker script in the CMake code model.")
+print("LF:", link_args, " EF:", extra_flags)
 
 #
 # Process project sources
