@@ -464,6 +464,12 @@ def find_framework_service_files(search_path, sdk_config):
                 "esp_common",
                 "soc.lf"),
 
+            os.path.join(
+                FRAMEWORK_DIR,
+                "components",
+                "esp_system",
+                "app.lf"),
+
             os.path.join(FRAMEWORK_DIR, "components", "newlib", "newlib.lf"),
             os.path.join(FRAMEWORK_DIR, "components", "newlib", "system_libs.lf"),
         ]
@@ -515,14 +521,62 @@ def generate_project_ld_script(sdk_config, ignore_targets=None):
     libraries_list = create_custom_libraries_list(
         os.path.join(BUILD_DIR, "ldgen_libraries"), ignore_targets
     )
+    # Rework the memory template linker script, following components/esp_system/ld.cmake
+    args = {
+        "preprocess" : os.path.join(
+            TOOLCHAIN_DIR,
+            "bin",
+            env.subst("$CC")),
+        "ld_output": os.path.join("$BUILD_DIR", "memory.ld"),
+        "ld_dir": os.path.join(FRAMEWORK_DIR,
+            "components",
+            "esp_system",
+            "ld"),
+        "ld_input": os.path.join(
+            FRAMEWORK_DIR,
+            "components",
+            "esp_system",
+            "ld",
+            idf_variant,
+            "memory.ld.in",
+        ),
+        "project_output": os.path.join("$BUILD_DIR", "%s.project.ld" % idf_variant),
+        "config": os.path.join("$BUILD_DIR", "config"),
+        "flags" : '-C -P -x c -E -o ' 
+    }
+    
+    cmd = (
+        '"{preprocess}" {flags} "{ld_output}" -I "{config}" -I "{ld_dir}" "{ld_input}"'
+    ).format(**args)
+    
+    env.Command(
+        os.path.join("$BUILD_DIR", "memory.ld"),
+        os.path.join(
+            FRAMEWORK_DIR,
+            "components",
+            "esp_system",
+            "ld",
+            idf_variant,
+            "memory.ld.in",
+        ),
+        env.VerboseAction(cmd, "Generating memory linker script $TARGET"),
+    )
 
     args = {
         "script": os.path.join(FRAMEWORK_DIR, "tools", "ldgen", "ldgen.py"),
         "config": SDKCONFIG_PATH,
-        "fragments": " ".join(['"%s"' % f for f in project_files.get("lf_files")]),
+        "fragments": "".join(['%s;' % f for f in project_files.get("lf_files")]).strip(';'),
         "kconfig": os.path.join(FRAMEWORK_DIR, "Kconfig"),
         "env_file": os.path.join("$BUILD_DIR", "config.env"),
         "libraries_list": libraries_list,
+        "section_input": os.path.join(
+            FRAMEWORK_DIR,
+            "components",
+            "esp_system",
+            "ld",
+            idf_variant,
+            "sections.ld.in",
+        ),
         "objdump": os.path.join(
             TOOLCHAIN_DIR,
             "bin",
@@ -532,20 +586,21 @@ def generate_project_ld_script(sdk_config, ignore_targets=None):
 
     cmd = (
         '"$PYTHONEXE" "{script}" --input $SOURCE '
-        '--config "{config}" --fragments {fragments} --output $TARGET '
+        '--config "{config}" --fragments-list "{fragments}" --output $TARGET '
         '--kconfig "{kconfig}" --env-file "{env_file}" '
         '--libraries-file "{libraries_list}" '
         '--objdump "{objdump}"'
     ).format(**args)
 
     return env.Command(
-        os.path.join("$BUILD_DIR", "%s.project.ld" % idf_variant),
+        os.path.join("$BUILD_DIR", "sections.ld"),
         os.path.join(
             FRAMEWORK_DIR,
             "components",
-            idf_variant,
+            "esp_system",
             "ld",
-            "%s.project.ld.in" % idf_variant,
+            idf_variant,
+            "sections.ld.in",
         ),
         env.VerboseAction(cmd, "Generating project linker script $TARGET"),
     )
@@ -768,7 +823,6 @@ def build_bootloader():
 
     bootloader_env.MergeFlags(link_args)
     bootloader_env.Append(LINKFLAGS=extra_flags)
-    print("Bootloader link args: ", link_args["LINKFLAGS"], "\n", extra_flags)
     bootloader_libs = find_lib_deps(components_map, elf_config, link_args)
 
     bootloader_env.Prepend(__RPATH="-Wl,--start-group ")
@@ -1077,7 +1131,7 @@ create_version_file()
 
 if not board.get("build.ldscript", ""):
     linker_script = env.Command(
-        os.path.join("$BUILD_DIR", "%s_out.ld" % idf_variant),
+        os.path.join("$BUILD_DIR", "memory.ld"),
         board.get(
             "build.esp-idf.ldscript",
             os.path.join(
@@ -1087,15 +1141,13 @@ if not board.get("build.ldscript", ""):
         env.VerboseAction(
             '$CC -I"$BUILD_DIR/config" -I"' + 
             os.path.join(FRAMEWORK_DIR, "components", "esp_system", "ld") + 
-            '" -C -P -x  c -E $SOURCE -o $BUILD_DIR/memory.ld && cat $BUILD_DIR/memory.ld ' + 
-            os.path.join(FRAMEWORK_DIR, "components", "esp_system", "ld", idf_variant, "sections.ld.in") + 
-                ' > $TARGET',
+            '" -C -P -x  c -E $SOURCE -o $TARGET',
             "Generating LD script $TARGET",
         ),
     )
 
     env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", linker_script)
-    env.Replace(LDSCRIPT_PATH="%s_out.ld" % idf_variant)
+    env.Replace(LDSCRIPT_PATH="memory.ld")
 
 #
 # Generate partition table
@@ -1280,18 +1332,14 @@ extra_flags = filter_args(link_args["LINKFLAGS"], ["-T", "-u"])
 extra_flags = fix_ld_paths(extra_flags)
 link_args["LINKFLAGS"] = sorted(list(set(link_args["LINKFLAGS"]) - set(extra_flags)))
 
-# remove the main linker script flags '-T memory.ld -T sections.ld' since they are concatenated in esp32_out.ld already
+# remove the main linker script flags '-T memory.ld' since it already appears later on
 try:
     ld_index = extra_flags.index("memory.ld")
-    extra_flags.pop(ld_index)
-    extra_flags.pop(ld_index - 1)
-    ld_index = extra_flags.index("sections.ld")
     extra_flags.pop(ld_index)
     extra_flags.pop(ld_index - 1)
     pass
 except:
     print("Warning! Couldn't find the main linker script in the CMake code model.")
-print("LF:", link_args, " EF:", extra_flags)
 
 #
 # Process project sources
