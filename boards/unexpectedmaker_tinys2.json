@@ -1,34 +1,33 @@
 {
   "build": {
     "arduino":{
-      "ldscript": "esp32_out.ld"
+      "ldscript": "esp32s2_out.ld"
     },
     "core": "esp32",
-    "extra_flags": "-DARDUINO_TINYPICO -DBOARD_HAS_PSRAM -mfix-esp32-psram-cache-issue",
     "f_cpu": "240000000L",
     "f_flash": "40000000L",
     "flash_mode": "dio",
-    "mcu": "esp32",
-    "variant": "pico32"
+    "mcu": "esp32s2",
+    "variant": "um_tinys2"
   },
   "connectivity": [
-    "wifi",
-    "bluetooth",
-    "ethernet",
-    "can"
+    "wifi"
   ],
+  "debug": {
+    "openocd_target": "esp32s2.cfg"
+  },
   "frameworks": [
     "arduino",
     "espidf"
   ],
-  "name": "UM TinyPICO",
+  "name": "UM TinyS2",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
-    "maximum_size": 4194304,
+    "maximum_size": 2097152,
     "require_upload_port": true,
-    "speed": 460800
+    "speed": 921600
   },
-  "url": "https://www.tinypico.com",
+  "url": "https://tinys2.io",
   "vendor": "Unexpected Maker"
 }
