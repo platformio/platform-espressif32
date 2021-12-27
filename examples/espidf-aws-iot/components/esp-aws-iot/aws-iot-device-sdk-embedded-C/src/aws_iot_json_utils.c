@@ -31,7 +31,6 @@ extern "C" {
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#include <inttypes.h>
 
 #include "aws_iot_log.h"
 
@@ -80,16 +79,10 @@ IoT_Error_t parseUnsignedInteger8Value(uint8_t *i, const char *jsonString, jsmnt
 		return JSON_PARSE_ERROR;
 	}
 
-	uint32_t i_word;
-	if(('-' == (char) (jsonString[token->start])) || (1 != sscanf(jsonString + token->start, "%" SCNu32, &i_word))) {
+	if(('-' == (char) (jsonString[token->start])) || (1 != sscanf(jsonString + token->start, "%hhu", i))) {
 		IOT_WARN("Token was not an unsigned integer.");
 		return JSON_PARSE_ERROR;
 	}
-	if (i_word > UINT8_MAX) {
-		IOT_WARN("Token value %u exceeds 8 bits", i_word);
-		return JSON_PARSE_ERROR;
-	}
-	*i = i_word;
 
 	return SUCCESS;
 }
@@ -114,16 +107,10 @@ IoT_Error_t parseInteger16Value(int16_t *i, const char *jsonString, jsmntok_t *t
 		return JSON_PARSE_ERROR;
 	}
 
-	int32_t i_word;
-	if(1 != sscanf(jsonString + token->start, "%" SCNi32, &i_word)) {
+	if(1 != sscanf(jsonString + token->start, "%hi", i)) {
 		IOT_WARN("Token was not an integer.");
 		return JSON_PARSE_ERROR;
 	}
-	if(i_word < INT16_MIN || i_word > INT16_MAX) {
-		IOT_WARN("Token value %d out of range for 16-bit int", i_word);
-		return JSON_PARSE_ERROR;
-	}
-	*i = i_word;
 
 	return SUCCESS;
 }
@@ -134,16 +121,10 @@ IoT_Error_t parseInteger8Value(int8_t *i, const char *jsonString, jsmntok_t *tok
 		return JSON_PARSE_ERROR;
 	}
 
-	int32_t i_word;
-	if(1 != sscanf(jsonString + token->start, "%" SCNi32, &i_word)) {
+	if(1 != sscanf(jsonString + token->start, "%hhi", i)) {
 		IOT_WARN("Token was not an integer.");
 		return JSON_PARSE_ERROR;
 	}
-	if(i_word < INT8_MIN || i_word > INT8_MAX) {
-		IOT_WARN("Token value %d out of range for 8-bit int", i_word);
-		return JSON_PARSE_ERROR;
-	}
-	*i = i_word;
 
 	return SUCCESS;
 }

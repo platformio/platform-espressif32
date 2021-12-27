@@ -28,6 +28,15 @@ class Espressif32Platform(PlatformBase):
         board_config = self.board_config(variables.get("board"))
         mcu = variables.get("board_build.mcu", board_config.get("build.mcu", "esp32"))
         frameworks = variables.get("pioframework", [])
+
+        # Legacy toolchain names are default value. This logic is temporary as the
+        # platform is gradually being switched to the toolchain packages from the
+        # Espressif organization.
+
+        xtensa32_toolchain = "toolchain-xtensa32"
+        xtensa32s2_toolchain = "toolchain-xtensa32s2"
+        riscv_toolchain = "toolchain-riscv-esp"
+
         if "buildfs" in targets:
             self.packages["tool-mkspiffs"]["optional"] = False
         if variables.get("upload_protocol"):
@@ -35,20 +44,48 @@ class Espressif32Platform(PlatformBase):
         if os.path.isdir("ulp"):
             self.packages["toolchain-esp32ulp"]["optional"] = False
         if "espidf" in frameworks:
+            # Legacy setting for mixed IDF+Arduino projects
+            if "arduino" in frameworks:
+                self.packages[xtensa32_toolchain]["version"] = "~2.80400.0"
+                # Arduino component is not compatible with ESP-IDF >=4.1
+                self.packages["framework-espidf"]["version"] = "~3.40001.0"
+            else:
+                xtensa32_toolchain = "toolchain-xtensa-esp32"
+                xtensa32s2_toolchain = "toolchain-xtensa-esp32s2"
+                riscv_toolchain = "toolchain-riscv32-esp"
+
+                for p in self.packages.copy():
+                    # Disable old toolchains used by default
+                    if (
+                        p.startswith("toolchain")
+                        and "ulp" not in p
+                    ):
+                        if self.packages[p]["owner"] == "espressif":
+                            self.packages[p]["optional"] = False
+                        else:
+                            del self.packages[p]
+
             for p in self.packages:
                 if p in ("tool-cmake", "tool-ninja", "toolchain-%sulp" % mcu):
                     self.packages[p]["optional"] = False
                 elif p in ("tool-mconf", "tool-idf") and "windows" in get_systype():
                     self.packages[p]["optional"] = False
-            self.packages["toolchain-xtensa32"]["version"] = "~2.80400.0"
-            if "arduino" in frameworks:
-                # Arduino component is not compatible with ESP-IDF >=4.1
-                self.packages["framework-espidf"]["version"] = "~3.40001.0"
-        # ESP32-S2 toolchain is identical for both Arduino and ESP-IDF
-        if mcu == "esp32s2":
-            self.packages.pop("toolchain-xtensa32", None)
-            self.packages["toolchain-xtensa32s2"]["optional"] = False
-            self.packages["toolchain-esp32s2ulp"]["optional"] = False
+        else:
+            # Remove the latest toolchains from PATH for frameworks except IDF
+            for toolchain in (
+                "toolchain-xtensa-esp32",
+                "toolchain-xtensa-esp32s2",
+                "toolchain-riscv32-esp",
+            ):
+                self.packages.pop(toolchain, None)
+
+        if mcu in ("esp32s2", "esp32c3"):
+            self.packages.pop(xtensa32_toolchain, None)
+            self.packages.pop("toolchain-esp32ulp", None)
+            # RISC-V based toolchain for ESP32C3 and ESP32S2 ULP
+            self.packages[riscv_toolchain]["optional"] = False
+            if mcu == "esp32s2":
+                self.packages[xtensa32s2_toolchain]["optional"] = False
 
         build_core = variables.get(
             "board_build.core", board_config.get("build.core", "arduino")
@@ -204,7 +241,10 @@ class Espressif32Platform(PlatformBase):
 
         if "openocd" in debug_options["server"].get("executable", ""):
             debug_options["server"]["arguments"].extend(
-                ["-c", "adapter_khz %s" % (initial_debug_options.get("speed") or "5000")]
+                [
+                    "-c",
+                    "adapter_khz %s" % (initial_debug_options.get("speed") or "5000"),
+                ]
             )
 
         ignore_conds = [

@@ -45,50 +45,6 @@ extern "C" {
 #include "aws_iot_mqtt_client_interface.h"
 #include "aws_iot_mqtt_client_common_internal.h"
 
-/** connect flags byte */
-typedef union {
-	uint8_t all;    /**< all connect flags */
-#if defined(REVERSED)
-	struct
-	{
-		unsigned int username : 1;		/**< 3.1 user name */
-		unsigned int password : 1;		/**< 3.1 password */
-		unsigned int willRetain : 1;	/**< will retain setting */
-		unsigned int willQoS : 2;		/**< will QoS value */
-		unsigned int will : 1;			/**< will flag */
-		unsigned int cleansession : 1;	/**< clean session flag */
-		unsigned int : 1;				/**< unused */
-	} bits; /**< connect flags byte (reversed order) */
-#else
-	struct {
-		unsigned int : 1; /**< unused */
-		unsigned int cleansession : 1; /**< cleansession flag */
-		unsigned int will : 1; /**< will flag */
-		unsigned int willQoS : 2; /**< will QoS value */
-		unsigned int willRetain : 1; /**< will retain setting */
-		unsigned int password : 1; /**< 3.1 password */
-		unsigned int username : 1; /**< 3.1 user name */
-	} bits; /**< connect flags byte (normal order) */
-#endif
-} MQTT_Connect_Header_Flags;
-
-/** connack flags byte */
-typedef union {
-	uint8_t all;                            /**< all connack flags */
-#if defined(REVERSED)
-	struct
-	{
-		unsigned int sessionpresent : 1;	/**< session present flag */
-		unsigned int : 7;					/**< unused */
-	} bits; /**< connect flags byte (reverse order) */
-#else
-	struct {
-		unsigned int : 7; /**< unused */
-		unsigned int sessionpresent : 1; /**< session present flag */
-	} bits; /**< connect flags byte (normal order) */
-#endif
-} MQTT_Connack_Header_Flags;
-
 /** @brief Connect request response codes from server */
 typedef enum {
 	CONNACK_CONNECTION_ACCEPTED = 0, /**< Connection accepted */
@@ -149,7 +105,7 @@ static IoT_Error_t _aws_iot_mqtt_serialize_connect(unsigned char *pTxBuf, size_t
 	uint32_t len;
 	IoT_Error_t rc;
 	MQTTHeader header = {0};
-	MQTT_Connect_Header_Flags flags = {0};
+	uint8_t flags = 0u;
 
 	FUNC_ENTRY;
 
@@ -188,28 +144,28 @@ static IoT_Error_t _aws_iot_mqtt_serialize_connect(unsigned char *pTxBuf, size_t
 	aws_iot_mqtt_internal_write_char(&ptr, (unsigned char) pConnectParams->MQTTVersion);
 	//}
 
-	flags.all = 0;
+	flags = 0;
 	if (pConnectParams->isCleanSession)
 	{
-		flags.all |= 1 << 1;
+		flags |= 1 << 1;
 	}
 
 	if (pConnectParams->isWillMsgPresent)
 	{
-		flags.all |= 1 << 2;
-		flags.all |= (uint8_t) (pConnectParams->will.qos << 3);
-		flags.all |= (uint8_t) (pConnectParams->will.isRetained << 5);
+		flags |= 1 << 2;
+		flags |= (uint8_t) (pConnectParams->will.qos << 3);
+		flags |= (uint8_t) (pConnectParams->will.isRetained << 5);
 	}
 
 	if(pConnectParams->pPassword) {
-		flags.all |= 1 << 6;
+		flags |= 1 << 6;
 	}
 
 	if(pConnectParams->pUsername) {
-		flags.all |= 1 << 7;
+		flags |= 1 << 7;
 	}
 
-	aws_iot_mqtt_internal_write_char(&ptr, flags.all);
+	aws_iot_mqtt_internal_write_char(&ptr, flags);
 	aws_iot_mqtt_internal_write_uint_16(&ptr, pConnectParams->keepAliveIntervalInSec);
 
 	/* If the code have passed the check for incorrect values above, no client id was passed as argument */
@@ -252,7 +208,7 @@ static IoT_Error_t _aws_iot_mqtt_deserialize_connack(unsigned char *pSessionPres
 	unsigned char connack_rc_char;
 	uint32_t decodedLen, readBytesLen;
 	IoT_Error_t rc;
-	MQTT_Connack_Header_Flags flags = {0};
+	uint8_t flags = 0u;
 	MQTTHeader header = {0};
 
 	FUNC_ENTRY;
@@ -291,8 +247,9 @@ static IoT_Error_t _aws_iot_mqtt_deserialize_connack(unsigned char *pSessionPres
 		FUNC_EXIT_RC(MQTT_DECODE_REMAINING_LENGTH_ERROR);
 	}
 
-	flags.all = aws_iot_mqtt_internal_read_char(&curdata);
-	*pSessionPresent = flags.bits.sessionpresent;
+	flags = aws_iot_mqtt_internal_read_char(&curdata);
+	/* Session present is in the LSb. */
+	*pSessionPresent = (flags & 0x01);
 	connack_rc_char = aws_iot_mqtt_internal_read_char(&curdata);
 	switch(connack_rc_char) {
 		case CONNACK_CONNECTION_ACCEPTED:
@@ -374,7 +331,7 @@ static bool _aws_iot_mqtt_is_client_state_valid_for_connect(ClientState clientSt
  *
  * @return An IoT Error Type defining successful/failed connection
  */
-static IoT_Error_t _aws_iot_mqtt_internal_connect(AWS_IoT_Client *pClient, const IoT_Client_Connect_Params *pConnectParams) {
+static IoT_Error_t _aws_iot_mqtt_internal_connect(AWS_IoT_Client *pClient, IoT_Client_Connect_Params *pConnectParams) {
 	Timer connect_timer;
 	IoT_Error_t connack_rc = FAILURE;
 	char sessionPresent = 0;
@@ -449,7 +406,7 @@ static IoT_Error_t _aws_iot_mqtt_internal_connect(AWS_IoT_Client *pClient, const
  *
  * @return An IoT Error Type defining successful/failed connection
  */
-IoT_Error_t aws_iot_mqtt_connect(AWS_IoT_Client *pClient, const IoT_Client_Connect_Params *pConnectParams) {
+IoT_Error_t aws_iot_mqtt_connect(AWS_IoT_Client *pClient, IoT_Client_Connect_Params *pConnectParams) {
 	IoT_Error_t rc, disconRc;
 	ClientState clientState;
 	FUNC_ENTRY;

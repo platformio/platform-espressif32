@@ -80,8 +80,13 @@ def _parse_partitions(env):
                 "flags": tokens[5] if len(tokens) > 5 else None
             }
             result.append(partition)
-            next_offset = (_parse_size(partition['offset']) +
-                           _parse_size(partition['size']))
+            next_offset = _parse_size(partition["offset"]) + _parse_size(
+                partition["size"]
+            )
+
+            bound = 0x10000 if partition["type"] in ("0", "app") else 4
+            next_offset = (next_offset + bound - 1) & ~(bound - 1)
+
     return result
 
 
@@ -133,20 +138,23 @@ env.SConscript("compat.py", exports="env")
 platform = env.PioPlatform()
 board = env.BoardConfig()
 mcu = board.get("build.mcu", "esp32")
+toolchain_arch = "xtensa-%s" % mcu
+if mcu == "esp32c3":
+    toolchain_arch = "riscv32-esp"
 
 env.Replace(
     __get_board_f_flash=_get_board_f_flash,
     __get_board_flash_mode=_get_board_flash_mode,
 
-    AR="xtensa-%s-elf-ar" % mcu,
-    AS="xtensa-%s-elf-as" % mcu,
-    CC="xtensa-%s-elf-gcc" % mcu,
-    CXX="xtensa-%s-elf-g++" % mcu,
-    GDB="xtensa-%s-elf-gdb" % mcu,
+    AR="%s-elf-ar" % toolchain_arch,
+    AS="%s-elf-as" % toolchain_arch,
+    CC="%s-elf-gcc" % toolchain_arch,
+    CXX="%s-elf-g++" % toolchain_arch,
+    GDB="%s-elf-gdb" % toolchain_arch,
     OBJCOPY=join(
         platform.get_package_dir("tool-esptoolpy") or "", "esptool.py"),
-    RANLIB="xtensa-%s-elf-ranlib" % mcu,
-    SIZETOOL="xtensa-%s-elf-size" % mcu,
+    RANLIB="%s-elf-ranlib" % toolchain_arch,
+    SIZETOOL="%s-elf-size" % toolchain_arch,
 
     ARFLAGS=["rc"],
 
@@ -225,7 +233,7 @@ else:
     target_elf = env.BuildProgram()
     if set(["buildfs", "uploadfs", "uploadfsota"]) & set(COMMAND_LINE_TARGETS):
         target_firm = env.DataToBin(
-            join("$BUILD_DIR", "${ESP32_SPIFFS_IMAGE_NAME}"), "$PROJECTDATA_DIR")
+            join("$BUILD_DIR", "${ESP32_SPIFFS_IMAGE_NAME}"), "$PROJECT_DATA_DIR")
         env.NoCache(target_firm)
         AlwaysBuild(target_firm)
     else:

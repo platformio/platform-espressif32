@@ -1,0 +1,32 @@
+/**
+@page architecture SDK Architecture and Design
+@brief This page documents the architecture and design goals of this SDK.
+
+The Embedded C SDK has a layered architecture. It is currently based on the MQTT protocol, but may support protocols like HTTP in the future.
+
+This SDK is primarily targeted for resource-constrained devices.
+
+@section architecture_considerations Considerations during design
+- Low memory footprint (around 6k of code size without TLS library for the MQTT layer)
+- Flexibility in picking and choosing functionality
+- Static memory only (no malloc)
+- Configurable resource usage (JSON tokens, MQTT subscription handlers, etc.)
+- Portability across RTOSes
+
+@section architecture_diagram Layered architecture
+@brief There are primarily 3 layers in the SDK as shown in the diagram below.
+
+@image html architecture.png
+
+@subsection architecture_tls TLS layer
+
+This SDK uses TLS sockets to talk to the server. We provide wrappers around mbed TLS (ARM) that allow the libraries to connect with AWS IoT Platform.
+
+@subsection architecture_mqtt AWS IoT MQTT client
+
+The MQTT library included in this SDK is a modification of the [Paho C MQTT client](https://www.eclipse.org/paho/clients/c/). MQTT is a standardized publish subscribe protocol popular on embedded devices. AWS IoT supports the MQTT protocol for communication with devices. This MQTT library can be used standalone or with other AWS IoT services such as Thing Shadows or Jobs.
+
+@subsection architecture_shadow Thing Shadow
+
+This SDK provides a client implementation for [AWS IoT Thing Shadows](https://docs.aws.amazon.com/iot/latest/developerguide/iot-device-shadows.html). A device's Shadow is a JSON document that is used to store and retrieve its current state information in the cloud regardless of whether it is connected to the Internet.
+*/

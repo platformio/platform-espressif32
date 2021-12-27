@@ -21,7 +21,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "TinyPICO",
+  "name": "Unexpected Maker TinyPICO",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
@@ -30,5 +30,5 @@
     "speed": 460800
   },
   "url": "https://www.tinypico.com",
-  "vendor": "TinyPICO"
+  "vendor": "Unexpected Maker"
 }

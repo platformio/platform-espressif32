@@ -76,8 +76,8 @@ For additional details about API parameters refer to the [API documentation](htt
 Define the `TLSDataParams` Struct as in `network_platform.h`
 This is used for data specific to the TLS library being used.
 
-`IoT_Error_t iot_tls_init(Network *pNetwork, char *pRootCALocation, const char *pDeviceCertLocation,
-  						 const char *pDevicePrivateKeyLocation, const char *pDestinationURL,
+`IoT_Error_t iot_tls_init(Network *pNetwork, char *pRootCALocation, char *pDeviceCertLocation,
+  						 char *pDevicePrivateKeyLocation, char *pDestinationURL,
   						 uint16_t DestinationPort, uint32_t timeout_ms, bool ServerVerificationFlag);`
 Initialize the network client / structure.
 
