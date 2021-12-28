@@ -1,6 +1,6 @@
-# Espressif 32: development platform for [PlatformIO](http://platformio.org)
+# Tasmota Espressif 32: development platform for [PlatformIO](http://platformio.org)
 
-[![Build Status](https://github.com/platformio/platform-espressif32/workflows/Examples/badge.svg)](https://github.com/platformio/platform-espressif32/actions)
+[![Examples](https://github.com/Jason2866/platform-espressif32/actions/workflows/examples.yml/badge.svg?branch=idf_v4.4%2Farduino_v2.0.2)](https://github.com/Jason2866/platform-espressif32/actions/workflows/examples.yml)
 
 Espressif Systems is a privately held fabless semiconductor company. They provide wireless communications and Wi-Fi chips which are widely used in mobile devices and the Internet of Things applications.
 
@@ -16,16 +16,7 @@ Espressif Systems is a privately held fabless semiconductor company. They provid
 
 ```ini
 [env:stable]
-platform = espressif32
-board = ...
-...
-```
-
-## Development version
-
-```ini
-[env:development]
-platform = https://github.com/platformio/platform-espressif32.git
+platform = todo
 board = ...
 ...
 ```

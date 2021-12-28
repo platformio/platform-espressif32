@@ -16,9 +16,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/platformio/platform-espressif32.git"
+    "url": "https://github.com/tasmota/platform-espressif32.git"
   },
-  "version": "3.4.0",
+  "version": "2.0.2",
   "frameworks": {
     "arduino": {
       "package": "framework-arduinoespressif32",
@@ -49,6 +49,7 @@
   "packages": {
     "toolchain-xtensa32": {
       "type": "toolchain",
+      "optional": true,
       "owner": "platformio",
       "version": "~2.50200.0",
       "optionalVersions": ["~2.80400.0"]
@@ -81,25 +82,37 @@
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "8.4.0+2021r1"
+      "version": "8.4.0+2021r2"
     },
     "toolchain-xtensa-esp32s2": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "8.4.0+2021r1"
+      "version": "8.4.0+2021r2"
     },
     "toolchain-riscv32-esp": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "8.4.0+2021r1"
+      "version": "8.4.0+2021r2"
+    },
+    "toolchain-esp32ulp": {
+      "type": "toolchain",
+      "optional": true,
+      "owner": "platformio",
+      "version": "~1.22851.0"
+    },
+    "toolchain-esp32s2ulp": {
+      "type": "toolchain",
+      "optional": true,
+      "owner": "platformio",
+      "version": "~1.22851.0"
     },
     "framework-arduinoespressif32": {
       "type": "framework",
       "optional": true,
-      "owner": "platformio",
-      "version": "~3.10006.0"
+      "owner": "tasmota",
+      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/555/framework-arduinoespressif32-release_v4.4-831152548.tar.gz"
     },
     "framework-arduino-mbcwb": {
       "type": "framework",
@@ -111,8 +124,7 @@
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~3.40301.0",
-      "optionalVersions": ["~3.40001.0"]
+      "version": "https://github.com/tasmota/esp-idf/releases/download/v4.4-2.0.2/esp-idf-v4.4-2.0.2.zip"
     },
     "framework-simba": {
       "type": "framework",
@@ -128,8 +140,8 @@
     },
     "tool-esptoolpy": {
       "type": "uploader",
-      "owner": "platformio",
-      "version": "~1.30100.0"
+      "owner": "tasmota",
+      "version": "https://github.com/tasmota/esptool/releases/download/v3.2/esptool-v3.2.zip"
     },
     "tool-mbctool": {
       "optional": true,
@@ -140,13 +152,18 @@
       "type": "debugger",
       "optional": true,
       "owner": "platformio",
-      "version": "~2.1000.0"
+      "version": "https://github.com/espressif/openocd-esp32.git"
     },
     "tool-mkspiffs": {
       "type": "uploader",
       "optional": true,
       "owner": "platformio",
       "version": "~2.230.0"
+    },
+    "tool-mklittlefs": {
+      "type": "uploader",
+      "owner": "platformio",
+      "version": "~1.203.0"
     },
     "tool-cmake": {
       "optional": true,

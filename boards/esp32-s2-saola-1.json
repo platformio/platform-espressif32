@@ -17,6 +17,7 @@
     "openocd_target": "esp32s2.cfg"
   },
   "frameworks": [
+    "arduino",
     "espidf"
   ],
   "name": "Espressif ESP32-S2-Saola-1",
