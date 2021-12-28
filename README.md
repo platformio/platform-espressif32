@@ -16,7 +16,7 @@ Espressif Systems is a privately held fabless semiconductor company. They provid
 
 ```ini
 [env:stable]
-platform = todo
+platform = https://github.com/Jason2866/platform-espressif32/releases/download/v2.0.2/platform-espressif32-2.0.2.zip
 board = ...
 ...
 ```
