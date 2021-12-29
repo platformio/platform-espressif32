@@ -58,8 +58,8 @@ static int _iot_tls_verify_cert(void *data, mbedtls_x509_crt *crt, int depth, ui
     return 0;
 }
 
-static void _iot_tls_set_connect_params(Network *pNetwork, const char *pRootCALocation, const char *pDeviceCertLocation,
-                                 const char *pDevicePrivateKeyLocation, const char *pDestinationURL,
+static void _iot_tls_set_connect_params(Network *pNetwork, char *pRootCALocation, char *pDeviceCertLocation,
+                                 char *pDevicePrivateKeyLocation, char *pDestinationURL,
                                  uint16_t destinationPort, uint32_t timeout_ms, bool ServerVerificationFlag) {
     pNetwork->tlsConnectParams.DestinationPort = destinationPort;
     pNetwork->tlsConnectParams.pDestinationURL = pDestinationURL;
@@ -70,8 +70,8 @@ static void _iot_tls_set_connect_params(Network *pNetwork, const char *pRootCALo
     pNetwork->tlsConnectParams.ServerVerificationFlag = ServerVerificationFlag;
 }
 
-IoT_Error_t iot_tls_init(Network *pNetwork, const char *pRootCALocation, const char *pDeviceCertLocation,
-                         const char *pDevicePrivateKeyLocation, const char *pDestinationURL,
+IoT_Error_t iot_tls_init(Network *pNetwork, char *pRootCALocation, char *pDeviceCertLocation,
+                         char *pDevicePrivateKeyLocation, char *pDestinationURL,
                          uint16_t destinationPort, uint32_t timeout_ms, bool ServerVerificationFlag) {
     _iot_tls_set_connect_params(pNetwork, pRootCALocation, pDeviceCertLocation, pDevicePrivateKeyLocation,
                                 pDestinationURL, destinationPort, timeout_ms, ServerVerificationFlag);

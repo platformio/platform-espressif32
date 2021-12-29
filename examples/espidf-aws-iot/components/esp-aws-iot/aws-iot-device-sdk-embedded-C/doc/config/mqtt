@@ -1,0 +1,21 @@
+# Include common configuration options.
+@INCLUDE_PATH = doc/config
+@INCLUDE = common
+
+# Basic project information.
+PROJECT_NAME = "MQTT"
+PROJECT_BRIEF = "MQTT v3.1.1 client library"
+
+# Library documentation output directory.
+HTML_OUTPUT = mqtt
+
+# Generate Doxygen tag file for this library.
+GENERATE_TAGFILE = doc/tag/mqtt.tag
+
+# Directories containing library source code.
+INPUT = doc/lib \
+        include/ \
+        src/
+
+# Library file names.
+FILE_PATTERNS = *mqtt*.c *mqtt*.h *mqtt*.txt

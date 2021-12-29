@@ -53,11 +53,15 @@ FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
 TOOLCHAIN_DIR = platform.get_package_dir(
     "toolchain-%s"
     % (
-        "riscv-esp"
+        "riscv32-esp"
         if mcu == "esp32c3"
-        else ("xtensa32s2" if mcu == "esp32s2" else "xtensa32")
+        else ("xtensa-esp32s2" if mcu == "esp32s2" else "xtensa-esp32")
     )
 )
+
+# Legacy toolchains for mixed IDF/Arduino projects
+if "arduino" in env.subst("$PIOFRAMEWORK"):
+    TOOLCHAIN_DIR = platform.get_package_dir("toolchain-xtensa32")
 
 assert os.path.isdir(FRAMEWORK_DIR)
 assert os.path.isdir(TOOLCHAIN_DIR)
@@ -838,9 +842,8 @@ def create_version_file():
     version_file = os.path.join(FRAMEWORK_DIR, "version.txt")
     if not os.path.isfile(version_file):
         with open(version_file, "w") as fp:
-            fp.write(
-                get_original_version(platform.get_package_version("framework-espidf"))
-            )
+            package_version = platform.get_package_version("framework-espidf")
+            fp.write(get_original_version(package_version) or package_version)
 
 
 def generate_empty_partition_image(binary_path, image_size):
@@ -998,7 +1001,8 @@ def install_python_deps():
         return result
 
     deps = {
-        "cryptography": ">=2.1.4",
+        # https://github.com/platformio/platform-espressif32/issues/635
+        "cryptography": ">=2.1.4,<35.0.0",
         "future": ">=0.15.2",
         "pyparsing": ">=2.0.3,<2.4.0",
         "kconfiglib": "==13.7.1",
@@ -1349,7 +1353,7 @@ env["BUILDERS"]["ElfToBin"].action = action
 
 ulp_dir = os.path.join(PROJECT_DIR, "ulp")
 if os.path.isdir(ulp_dir) and os.listdir(ulp_dir) and mcu != "esp32c3":
-    env.SConscript("ulp.py", exports="env project_config idf_variant")
+    env.SConscript("ulp.py", exports="env sdk_config project_config idf_variant")
 
 #
 # Process OTA partition and image

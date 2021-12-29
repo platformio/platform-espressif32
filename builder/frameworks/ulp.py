@@ -14,12 +14,13 @@
 
 import os
 
-from SCons.Script import Import
-
+from platformio import fs
 from platformio.util import get_systype
 from platformio.proc import where_is_program
 
-Import("env project_config idf_variant")
+from SCons.Script import Import
+
+Import("env sdk_config project_config idf_variant")
 
 ulp_env = env.Clone()
 platform = ulp_env.PioPlatform()
@@ -36,7 +37,8 @@ def prepare_ulp_env_vars(env):
     additional_packages = [
         os.path.join(
             platform.get_package_dir(
-                "toolchain-xtensa%s" % ("32s2" if idf_variant == "esp32s2" else "32")
+                "toolchain-xtensa-esp%s"
+                % ("32s2" if idf_variant == "esp32s2" else "32")
             ),
             "bin",
         ),
@@ -58,8 +60,9 @@ def prepare_ulp_env_vars(env):
 
 def collect_ulp_sources():
     return [
-        os.path.join(ulp_env.subst("$PROJECT_DIR"), "ulp", f)
+        fs.to_unix_path(os.path.join(ulp_env.subst("$PROJECT_DIR"), "ulp", f))
         for f in os.listdir(os.path.join(ulp_env.subst("$PROJECT_DIR"), "ulp"))
+        if f.endswith((".c", ".S", ".s"))
     ]
 
 
@@ -77,6 +80,8 @@ def get_component_includes(target_config):
 
 
 def generate_ulp_config(target_config):
+    riscv_ulp_enabled = sdk_config.get("ESP32S2_ULP_COPROC_RISCV", False)
+
     ulp_sources = collect_ulp_sources()
     cmd = (
         os.path.join(platform.get_package_dir("tool-cmake"), "bin", "cmake"),
@@ -87,15 +92,17 @@ def generate_ulp_config(target_config):
             "components",
             "ulp",
             "cmake",
-            "toolchain-%s-ulp.cmake" % idf_variant,
+            "toolchain-%s-ulp%s.cmake"
+            % (idf_variant, "-riscv" if riscv_ulp_enabled else ""),
         ),
         '-DULP_S_SOURCES="%s"' % ";".join(ulp_sources),
         "-DULP_APP_NAME=ulp_main",
         "-DCOMPONENT_DIR=" + os.path.join(ulp_env.subst("$PROJECT_DIR"), "ulp"),
         '-DCOMPONENT_INCLUDES="%s"' % ";".join(get_component_includes(target_config)),
-        "-DIDF_PATH=" + FRAMEWORK_DIR,
-        "-DSDKCONFIG=" + os.path.join(BUILD_DIR, "config", "sdkconfig.h"),
+        "-DIDF_PATH=" + fs.to_unix_path(FRAMEWORK_DIR),
+        "-DSDKCONFIG_HEADER=" + os.path.join(BUILD_DIR, "config", "sdkconfig.h"),
         "-DPYTHON=" + env.subst("$PYTHONEXE"),
+        "-DULP_COCPU_IS_RISCV=%s" % ("ON" if riscv_ulp_enabled else "OFF"),
         "-GNinja",
         "-B",
         ULP_BUILD_DIR,

@@ -18,7 +18,7 @@
     "type": "git",
     "url": "https://github.com/platformio/platform-espressif32.git"
   },
-  "version": "3.3.1",
+  "version": "3.4.0",
   "frameworks": {
     "arduino": {
       "package": "framework-arduinoespressif32",
@@ -95,6 +95,24 @@
       "owner": "platformio",
       "version": "~1.80400.0"
     },
+    "toolchain-xtensa-esp32": {
+      "type": "toolchain",
+      "optional": true,
+      "owner": "espressif",
+      "version": "8.4.0+2021r1"
+    },
+    "toolchain-xtensa-esp32s2": {
+      "type": "toolchain",
+      "optional": true,
+      "owner": "espressif",
+      "version": "8.4.0+2021r1"
+    },
+    "toolchain-riscv32-esp": {
+      "type": "toolchain",
+      "optional": true,
+      "owner": "espressif",
+      "version": "8.4.0+2021r1"
+    },
     "framework-arduinoespressif32": {
       "type": "framework",
       "optional": true,
@@ -111,7 +129,7 @@
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~3.40300.0",
+      "version": "~3.40301.0",
       "optionalVersions": ["~3.40001.0"]
     },
     "framework-simba": {
