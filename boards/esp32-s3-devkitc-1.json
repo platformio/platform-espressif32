@@ -1,0 +1,32 @@
+{
+  "build": {
+    "arduino":{
+      "ldscript": "esp32s3_out.ld"
+    },
+    "core": "esp32",
+    "f_cpu": "240000000L",
+    "f_flash": "80000000L",
+    "flash_mode": "dio",
+    "mcu": "esp32s3",
+    "variant": "esp32s3"
+  },
+  "connectivity": [
+    "wifi"
+  ],
+  "debug": {
+    "openocd_target": "esp32s3.cfg"
+  },
+  "frameworks": [
+    "espidf"
+  ],
+  "name": "Espressif ESP32-S3-DevKitC-1",
+  "upload": {
+    "flash_size": "8MB",
+    "maximum_ram_size": 524288,
+    "maximum_size": 8388608,
+    "require_upload_port": true,
+    "speed": 460800
+  },
+  "url": "https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1.html",
+  "vendor": "Espressif"
+}
