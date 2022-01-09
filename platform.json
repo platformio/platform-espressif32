@@ -89,6 +89,12 @@
       "owner": "espressif",
       "version": "8.4.0+2021r2-patch2"
     },
+    "toolchain-xtensa-esp32s3": {
+      "type": "toolchain",
+      "optional": true,
+      "owner": "espressif",
+      "version": "8.4.0+2021r2"
+    },
     "toolchain-riscv32-esp": {
       "type": "toolchain",
       "optional": true,
