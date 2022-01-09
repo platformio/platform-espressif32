@@ -452,24 +452,9 @@ def find_framework_service_files(search_path, sdk_config):
 
     result["lf_files"].extend(
         [
-            os.path.join(
-                FRAMEWORK_DIR,
-                "components",
-                "esp_common",
-                "common.lf"),
-
-            os.path.join(
-                FRAMEWORK_DIR,
-                "components",
-                "esp_common",
-                "soc.lf"),
-
-            os.path.join(
-                FRAMEWORK_DIR,
-                "components",
-                "esp_system",
-                "app.lf"),
-
+            os.path.join(FRAMEWORK_DIR, "components", "esp_common", "common.lf"),
+            os.path.join(FRAMEWORK_DIR, "components", "esp_common", "soc.lf"),
+            os.path.join(FRAMEWORK_DIR, "components", "esp_system", "app.lf"),
             os.path.join(FRAMEWORK_DIR, "components", "newlib", "newlib.lf"),
             os.path.join(FRAMEWORK_DIR, "components", "newlib", "system_libs.lf"),
         ]
@@ -528,7 +513,8 @@ def generate_project_ld_script(sdk_config, ignore_targets=None):
             "bin",
             env.subst("$CC")),
         "ld_output": os.path.join("$BUILD_DIR", "memory.ld"),
-        "ld_dir": os.path.join(FRAMEWORK_DIR,
+        "ld_dir": os.path.join(
+            FRAMEWORK_DIR,
             "components",
             "esp_system",
             "ld"),
@@ -540,15 +526,14 @@ def generate_project_ld_script(sdk_config, ignore_targets=None):
             idf_variant,
             "memory.ld.in",
         ),
-        "project_output": os.path.join("$BUILD_DIR", "%s.project.ld" % idf_variant),
         "config": os.path.join("$BUILD_DIR", "config"),
-        "flags" : '-C -P -x c -E -o ' 
+        "flags" : '-C -P -x c -E -o '
     }
-    
+
     cmd = (
         '"{preprocess}" {flags} "{ld_output}" -I "{config}" -I "{ld_dir}" "{ld_input}"'
     ).format(**args)
-    
+
     env.Command(
         os.path.join("$BUILD_DIR", "memory.ld"),
         os.path.join(
@@ -565,18 +550,10 @@ def generate_project_ld_script(sdk_config, ignore_targets=None):
     args = {
         "script": os.path.join(FRAMEWORK_DIR, "tools", "ldgen", "ldgen.py"),
         "config": SDKCONFIG_PATH,
-        "fragments": "".join(['%s;' % f for f in project_files.get("lf_files")]).strip(';'),
+        "fragments": " ".join(['"%s"' % f for f in project_files.get("lf_files")]),
         "kconfig": os.path.join(FRAMEWORK_DIR, "Kconfig"),
         "env_file": os.path.join("$BUILD_DIR", "config.env"),
         "libraries_list": libraries_list,
-        "section_input": os.path.join(
-            FRAMEWORK_DIR,
-            "components",
-            "esp_system",
-            "ld",
-            idf_variant,
-            "sections.ld.in",
-        ),
         "objdump": os.path.join(
             TOOLCHAIN_DIR,
             "bin",
@@ -586,7 +563,7 @@ def generate_project_ld_script(sdk_config, ignore_targets=None):
 
     cmd = (
         '"$PYTHONEXE" "{script}" --input $SOURCE '
-        '--config "{config}" --fragments-list "{fragments}" --output $TARGET '
+        '--config "{config}" --fragments {fragments} --output $TARGET '
         '--kconfig "{kconfig}" --env-file "{env_file}" '
         '--libraries-file "{libraries_list}" '
         '--objdump "{objdump}"'
@@ -762,7 +739,7 @@ def fix_ld_paths(extra_flags):
     peripheral_framework_path = os.path.join(FRAMEWORK_DIR, "components", "soc", idf_variant, "ld")
     rom_framework_path = os.path.join(FRAMEWORK_DIR, "components", "esp_rom", idf_variant, "ld")
     bl_framework_path = os.path.join(FRAMEWORK_DIR, "components", "bootloader", "subproject", "main", "ld", idf_variant)
-    
+
     # ESP linker scripts changed path in ESP-IDF 4.4+, so add missing paths to linker's search path
     try:
         ld_index = extra_flags.index("%s.peripherals.ld" % idf_variant)
@@ -1139,8 +1116,8 @@ if not board.get("build.ldscript", ""):
             ),
         ),
         env.VerboseAction(
-            '$CC -I"$BUILD_DIR/config" -I"' + 
-            os.path.join(FRAMEWORK_DIR, "components", "esp_system", "ld") + 
+            '$CC -I"$BUILD_DIR/config" -I"' +
+            os.path.join(FRAMEWORK_DIR, "components", "esp_system", "ld") +
             '" -C -P -x  c -E $SOURCE -o $TARGET',
             "Generating LD script $TARGET",
         ),
