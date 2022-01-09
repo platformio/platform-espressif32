@@ -75,17 +75,26 @@ class Espressif32Platform(PlatformBase):
             for toolchain in (
                 "toolchain-xtensa-esp32",
                 "toolchain-xtensa-esp32s2",
+                "toolchain-xtensa-esp32s3",
                 "toolchain-riscv32-esp",
             ):
                 self.packages.pop(toolchain, None)
 
-        if mcu in ("esp32s2", "esp32c3"):
+        if mcu == "esp32":
+            self.packages[xtensa32s2_toolchain]["optional"] = True
+            self.packages["toolchain-xtensa-esp32s3"]["optional"] = True
+            self.packages[riscv_toolchain]["optional"] = True
+        if mcu in ("esp32s2", "esp32s3", "esp32c3"):
             self.packages.pop(xtensa32_toolchain, None)
             self.packages.pop("toolchain-esp32ulp", None)
             # RISC-V based toolchain for ESP32C3 and ESP32S2 ULP
             self.packages[riscv_toolchain]["optional"] = False
             if mcu == "esp32s2":
                 self.packages[xtensa32s2_toolchain]["optional"] = False
+                self.packages["toolchain-xtensa-esp32s3"]["optional"] = True
+            if mcu == "esp32s3":
+                self.packages["toolchain-xtensa-esp32s3"]["optional"] = False
+                self.packages[xtensa32s2_toolchain]["optional"] = True
 
         build_core = variables.get(
             "board_build.core", board_config.get("build.core", "arduino")
