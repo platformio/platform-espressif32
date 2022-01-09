@@ -1376,7 +1376,7 @@ env.Prepend(
     FLASH_EXTRA_IMAGES=[
         (
             board.get(
-                "upload.bootloader_offset", "0x0" if mcu == "esp32c3" else "0x1000"
+                "upload.bootloader_offset", "0x0" if (mcu == "esp32c3" or mcu == "esp32s3") else "0x1000"
             ),
             os.path.join("$BUILD_DIR", "bootloader.bin"),
         ),
