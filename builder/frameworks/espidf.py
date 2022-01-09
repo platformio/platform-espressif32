@@ -55,7 +55,7 @@ TOOLCHAIN_DIR = platform.get_package_dir(
     % (
         "riscv32-esp"
         if mcu == "esp32c3"
-        else ("xtensa-esp32s2" if mcu == "esp32s2" else "xtensa-esp32")
+        else ("xtensa-%s" % mcu)
     )
 )
 
@@ -233,7 +233,13 @@ def populate_idf_env_vars(idf_env):
 
     if mcu != "esp32c3":
         additional_packages.append(
-            os.path.join(platform.get_package_dir("toolchain-%sulp" % mcu), "bin"),
+            os.path.join(
+                platform.get_package_dir(
+                    "toolchain-%sulp"
+                    % ("esp32s2" if mcu == "esp32s3" else mcu)
+                ),
+                "bin"
+              ),
         )
 
     if "windows" in get_systype():
