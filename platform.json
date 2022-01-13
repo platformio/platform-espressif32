@@ -81,19 +81,19 @@
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "8.4.0+2021r1"
+      "version": "8.4.0+2021r2"
     },
     "toolchain-xtensa-esp32s2": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "8.4.0+2021r1"
+      "version": "8.4.0+2021r2"
     },
     "toolchain-riscv32-esp": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "8.4.0+2021r1"
+      "version": "8.4.0+2021r2"
     },
     "framework-arduinoespressif32": {
       "type": "framework",
@@ -111,7 +111,7 @@
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~3.40301.0",
+      "version": "~3.40302.0",
       "optionalVersions": ["~3.40001.0"]
     },
     "framework-simba": {
