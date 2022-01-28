@@ -108,7 +108,7 @@ env.Append(
             action=env.VerboseAction(
                 " ".join(
                     [
-                        "xtensa-esp32-elf-objcopy",
+                        "xtensa-%s-elf-objcopy" % board.get("build.mcu", "esp32"),
                         "--input-target",
                         "binary",
                         "--output-target",
