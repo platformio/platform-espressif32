@@ -1029,19 +1029,6 @@ def install_python_deps():
             )
         )
 
-    # a special "esp-windows-curses" python package is required on Windows for Menuconfig
-    if "windows" in get_systype():
-        import pkg_resources
-
-        if "esp-windows-curses" not in {pkg.key for pkg in pkg_resources.working_set}:
-            env.Execute(
-                env.VerboseAction(
-                    '$PYTHONEXE -m pip install "file://%s/tools/kconfig_new/esp-windows-curses" windows-curses'
-                    % FRAMEWORK_DIR,
-                    "Installing windows-curses package",
-                )
-            )
-
 
 #
 # ESP-IDF requires Python packages with specific versions
