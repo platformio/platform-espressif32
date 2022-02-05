@@ -8,7 +8,7 @@
     "f_flash": "80000000L",
     "flash_mode": "qio",
     "mcu": "esp32s2",
-    "variant": "esp32s2"
+    "variant": "adafruit_qtpy_esp32s2"
   },
   "connectivity": [
     "wifi"
