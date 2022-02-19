@@ -9,8 +9,7 @@
     "f_flash": "80000000L",
     "flash_mode": "dio",
     "mcu": "esp32s2",
-    "variant": "esp32s2",
-	"cdc_on_boot": "1"
+    "variant": "esp32s2"
   },
   "connectivity": [
     "wifi"
