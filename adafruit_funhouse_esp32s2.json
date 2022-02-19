@@ -1,0 +1,33 @@
+{
+  "build": {
+    "arduino":{
+      "ldscript": "esp32s2_out.ld"
+    },
+    "core": "esp32",
+	"extra_flags": "-DARDUINO_ADAFRUIT_FUNHOUSE",
+    "f_cpu": "240000000L",
+    "f_flash": "80000000L",
+    "flash_mode": "dio",
+    "mcu": "esp32s2",
+    "variant": "adafruit_funhouse_esp32s2"
+  },
+  "connectivity": [
+    "wifi"
+  ],
+  "debug": {
+    "openocd_target": "esp32s2.cfg"
+  },
+  "frameworks": [
+	"arduino"
+  ],
+  "name": "Adafruit FunHouse ESP32-S2",
+  "upload": {
+    "flash_size": "4MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 4194304,
+    "require_upload_port": true,
+    "speed": 460800
+  },
+  "url": "https://learn.adafruit.com/adafruit-funhouse/overview",
+  "vendor": "Adafruit"
+}
