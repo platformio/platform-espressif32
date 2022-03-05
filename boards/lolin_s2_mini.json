@@ -1,0 +1,33 @@
+{
+  "build": {
+    "arduino":{
+      "ldscript": "esp32s2_out.ld"
+    },
+    "core": "esp32",
+    "extra_flags": "-DARDUINO_LOLIN_S2_MINI -DBOARD_HAS_PSRAM -mfix-esp32-psram-cache-issue",
+    "f_cpu": "240000000L",
+    "f_flash": "80000000L",
+    "flash_mode": "dio",
+    "mcu": "esp32s2",
+    "variant": "esp32s2"
+  },
+  "connectivity": [
+    "wifi"
+  ],
+  "debug": {
+    "openocd_board": "esp32s2.cfg"
+  },
+  "frameworks": [
+    "espidf"
+  ],
+  "name": "WEMOS LOLIN S2 Mini",
+  "upload": {
+    "flash_size": "4MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 4194304,
+    "require_upload_port": true,
+    "speed": 115200
+  },
+  "url": "https://www.wemos.cc/en/latest/s2/s2_mini.html",
+  "vendor": "WEMOS"
+}
