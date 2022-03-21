@@ -7,14 +7,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-18.04, windows-latest, macos-latest]
-        python-version: [3.7]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: [3.8]
         example:
           - "examples/arduino-blink"
+          - "examples/arduino-rmt-blink"
           - "examples/arduino-briki-internal-libs"
           - "examples/arduino-wifiscan"
           - "examples/espidf-arduino-blink"
           - "examples/espidf-arduino-wifiscan"
+          - "examples/espidf-blink"
           - "examples/espidf-aws-iot"
           - "examples/espidf-ble-eddystone"
           - "examples/espidf-coap-server"
@@ -41,7 +43,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -U https://github.com/platformio/platformio/archive/develop.zip
+          pip install -U platformio
           platformio platform install file://.
       - name: Build examples
         run: |

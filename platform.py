@@ -28,73 +28,61 @@ class Espressif32Platform(PlatformBase):
         board_config = self.board_config(variables.get("board"))
         mcu = variables.get("board_build.mcu", board_config.get("build.mcu", "esp32"))
         frameworks = variables.get("pioframework", [])
-
-        # Legacy toolchain names are default value. This logic is temporary as the
-        # platform is gradually being switched to the toolchain packages from the
-        # Espressif organization.
-
-        xtensa32_toolchain = "toolchain-xtensa32"
-        xtensa32s2_toolchain = "toolchain-xtensa32s2"
-        riscv_toolchain = "toolchain-riscv-esp"
-
         if "buildfs" in targets:
             self.packages["tool-mkspiffs"]["optional"] = False
+            self.packages['tool-mklittlefs']['optional'] = False
         if variables.get("upload_protocol"):
             self.packages["tool-openocd-esp32"]["optional"] = False
         if os.path.isdir("ulp"):
             self.packages["toolchain-esp32ulp"]["optional"] = False
+
+        xtensa_toolchain = "toolchain-xtensa-esp32"
+        xtensa32s2_toolchain = "toolchain-xtensa-esp32s2"
+        xtensa32s3_toolchain = "toolchain-xtensa-esp32s3"
+        riscv_toolchain = "toolchain-riscv32-esp"
+ 
         if "espidf" in frameworks:
-            # Legacy setting for mixed IDF+Arduino projects
-            if "arduino" in frameworks:
-                self.packages[xtensa32_toolchain]["version"] = "~2.80400.0"
-                # Arduino component is not compatible with ESP-IDF >=4.1
-                self.packages["framework-espidf"]["version"] = "~3.40001.0"
-            else:
-                xtensa32_toolchain = "toolchain-xtensa-esp32"
-                xtensa32s2_toolchain = "toolchain-xtensa-esp32s2"
-                riscv_toolchain = "toolchain-riscv32-esp"
-
-                for p in self.packages.copy():
-                    # Disable old toolchains used by default
-                    if (
-                        p.startswith("toolchain")
-                        and "ulp" not in p
-                    ):
-                        if self.packages[p]["owner"] == "espressif":
-                            self.packages[p]["optional"] = False
-                        else:
-                            del self.packages[p]
-
             for p in self.packages:
                 if p in ("tool-cmake", "tool-ninja", "toolchain-%sulp" % mcu):
                     self.packages[p]["optional"] = False
                 elif p in ("tool-mconf", "tool-idf") and "windows" in get_systype():
                     self.packages[p]["optional"] = False
-        else:
-            # Remove the latest toolchains from PATH for frameworks except IDF
-            for toolchain in (
-                "toolchain-xtensa-esp32",
-                "toolchain-xtensa-esp32s2",
-                "toolchain-riscv32-esp",
-            ):
-                self.packages.pop(toolchain, None)
+            self.packages[xtensa_toolchain]["version"] = "8.4.0+2021r2-patch2"
+            self.packages[xtensa_toolchain]["optional"] = False
+            
+        if "arduino" in frameworks:
+            self.packages[xtensa_toolchain]["version"] = "8.4.0+2021r2-patch2"
+            self.packages[xtensa_toolchain]["optional"] = False
 
-        if mcu in ("esp32s2", "esp32c3"):
-            self.packages.pop(xtensa32_toolchain, None)
+        if mcu in ("esp32s2", "esp32s3", "esp32c3"):
+            self.packages.pop(xtensa_toolchain, None)
             self.packages.pop("toolchain-esp32ulp", None)
             # RISC-V based toolchain for ESP32C3 and ESP32S2 ULP
             self.packages[riscv_toolchain]["optional"] = False
             if mcu == "esp32s2":
                 self.packages[xtensa32s2_toolchain]["optional"] = False
+                self.packages["toolchain-esp32s2ulp"]["optional"] = False
+            if mcu == "esp32s3":
+                self.packages[xtensa32s3_toolchain]["optional"] = False
+                self.packages["toolchain-esp32s2ulp"]["optional"] = False
 
         build_core = variables.get(
             "board_build.core", board_config.get("build.core", "arduino")
         ).lower()
-        if build_core == "mbcwb":
+        if "arduino" in frameworks and build_core == "mbcwb":
+            # Briki MCB core packages depend on previous toolchain packages
+            self.packages.pop("toolchain-xtensa-esp32", None)
+            self.packages["toolchain-xtensa32"]["optional"] = False
+            self.packages["toolchain-xtensa32"]["version"] = "~2.50200.0"
             self.packages["framework-arduinoespressif32"]["optional"] = True
             self.packages["framework-arduino-mbcwb"]["optional"] = False
             self.packages["tool-mbctool"]["type"] = "uploader"
             self.packages["tool-mbctool"]["optional"] = False
+
+        if set(("simba", "pumbaa")) & set(frameworks):
+            # Legacy frameworks depend on previous toolchain packages
+            self.packages["toolchain-xtensa32"]["optional"] = False
+            self.packages["toolchain-xtensa32"]["version"] = "~2.50200.0"
 
         return PlatformBase.configure_default_packages(self, variables, targets)
 
@@ -241,10 +229,7 @@ class Espressif32Platform(PlatformBase):
 
         if "openocd" in debug_options["server"].get("executable", ""):
             debug_options["server"]["arguments"].extend(
-                [
-                    "-c",
-                    "adapter_khz %s" % (initial_debug_options.get("speed") or "5000"),
-                ]
+                ["-c", "adapter_khz %s" % (initial_debug_options.get("speed") or "5000")]
             )
 
         ignore_conds = [
