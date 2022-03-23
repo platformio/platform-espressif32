@@ -147,7 +147,7 @@
     "tool-esptoolpy": {
       "type": "uploader",
       "owner": "tasmota",
-      "version": "https://github.com/tasmota/esptool/releases/download/v3.2.3/esptool-3.2.3.zip"
+      "version": "https://github.com/tasmota/esptool/releases/download/v3.3/esptool-3.3.zip"
     },
     "tool-mbctool": {
       "optional": true,
