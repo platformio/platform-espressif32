@@ -9,7 +9,7 @@
     "f_flash": "40000000L",
     "flash_mode": "dio",
     "mcu": "esp32",
-    "variant": "firebeetle32"
+    "variant": "firebeetle32e"
   },
   "connectivity": [
     "wifi",
@@ -24,14 +24,14 @@
     "arduino",
     "espidf"
   ],
-  "name": "FireBeetle-ESP32",
+  "name": "FireBeetle-ESP32-E",
   "upload": {
-    "flash_size": "16MB",
+    "flash_size": "4MB",
     "maximum_ram_size": 327680,
     "maximum_size": 4194304,
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://wiki.dfrobot.com/FireBeetle_ESP32_IOT_Microcontroller(V3.0)__Supports_Wi-Fi_&_Bluetooth__SKU__DFR0478",
+  "url": "https://wiki.dfrobot.com/FireBeetle_Board_ESP32_E_SKU_DFR0654",
   "vendor": "DFRobot"
 }
