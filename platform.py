@@ -47,11 +47,11 @@ class Espressif32Platform(PlatformBase):
                     self.packages[p]["optional"] = False
                 elif p in ("tool-mconf", "tool-idf") and "windows" in get_systype():
                     self.packages[p]["optional"] = False
-            self.packages[xtensa_toolchain]["version"] = "8.4.0+2021r2-patch2"
+            self.packages[xtensa_toolchain]["version"] = "8.4.0+2021r2-patch3"
             self.packages[xtensa_toolchain]["optional"] = False
             
         if "arduino" in frameworks:
-            self.packages[xtensa_toolchain]["version"] = "8.4.0+2021r2-patch2"
+            self.packages[xtensa_toolchain]["version"] = "8.4.0+2021r2-patch3"
             self.packages[xtensa_toolchain]["optional"] = False
 
         if mcu in ("esp32s2", "esp32s3", "esp32c3"):
