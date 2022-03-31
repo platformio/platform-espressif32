@@ -5,7 +5,7 @@
     },
     "core": "esp32",
     "extra_flags": "-DARDUINO_BPI_BIT",
-    "f_cpu": "160000000L",
+    "f_cpu": "240000000L",
     "f_flash": "40000000L",
     "flash_mode": "dio",
     "mcu": "esp32",
