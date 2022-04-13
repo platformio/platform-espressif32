@@ -20,9 +20,26 @@ from SCons.Script import (
     ARGUMENTS, COMMAND_LINE_TARGETS, AlwaysBuild, Builder, Default,
     DefaultEnvironment)
 
+from platformio.util import get_serial_ports
+
 #
 # Helpers
 #
+
+
+def BeforeUpload(target, source, env):
+    upload_options = {}
+    if "BOARD" in env:
+        upload_options = env.BoardConfig().get("upload", {})
+
+    env.AutodetectUploadPort()
+
+    before_ports = get_serial_ports()
+    if upload_options.get("use_1200bps_touch", False):
+        env.TouchSerialPort("$UPLOAD_PORT", 1200)
+
+    if upload_options.get("wait_for_upload_port", False):
+        env.Replace(UPLOAD_PORT=env.WaitForNewSerialPort(before_ports))
 
 
 def _get_board_f_flash(env):
@@ -343,8 +360,7 @@ elif upload_protocol == "esptool":
         )
 
     upload_actions = [
-        env.VerboseAction(env.AutodetectUploadPort,
-                          "Looking for upload port..."),
+        env.VerboseAction(BeforeUpload, "Looking for upload port..."),
         env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")
     ]
 
