@@ -17,7 +17,7 @@ import re
 import subprocess
 import sys
 
-from platformio.compat import path_to_unicode, WINDOWS, PY2
+from platformio.compat import path_to_unicode, WINDOWS
 from platformio.project.exception import PlatformioException
 from platformio.project.helpers import load_project_ide_data
 from platformio.commands.device import DeviceMonitorFilter
@@ -111,12 +111,8 @@ See https://docs.platformio.org/page/projectconf/build_configurations.html
         trace = ""
         enc = "mbcs" if WINDOWS else "utf-8"
         args = [self.addr2line_path, u"-fipC", u"-e", self.firmware_path]
-        if PY2:
-            args = [a.encode(enc) for a in args]
         try:
             for i, addr in enumerate(match.group(1).split()):
-                if PY2:
-                    addr = addr.encode(enc)
                 output = (
                     subprocess.check_output(args + [addr])
                     .decode(enc)
