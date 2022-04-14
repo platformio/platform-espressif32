@@ -9,7 +9,7 @@
     "Wi-Fi",
     "Bluetooth",
     "Xtensa",
-    "LX6"
+    "RISC-V"
   ],
   "engines": {
     "platformio": "^5"
