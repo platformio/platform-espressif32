@@ -50,18 +50,20 @@ mcu = board.get("build.mcu", "esp32")
 idf_variant = mcu.lower()
 
 FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
-TOOLCHAIN_DIR = platform.get_package_dir(
-    "toolchain-%s"
-    % (
-        "riscv32-esp"
-        if mcu == "esp32c3"
-        else ("xtensa-esp32s2" if mcu == "esp32s2" else "xtensa-esp32")
-    )
-)
 
 # Legacy toolchains for mixed IDF/Arduino projects
 if "arduino" in env.subst("$PIOFRAMEWORK"):
     TOOLCHAIN_DIR = platform.get_package_dir("toolchain-xtensa32")
+else:
+    TOOLCHAIN_DIR = platform.get_package_dir(
+        "toolchain-%s"
+        % (
+            "riscv32-esp"
+            if mcu == "esp32c3"
+            else ("xtensa-esp32s2" if mcu == "esp32s2" else "xtensa-esp32")
+        )
+    )
+
 
 assert os.path.isdir(FRAMEWORK_DIR)
 assert os.path.isdir(TOOLCHAIN_DIR)
