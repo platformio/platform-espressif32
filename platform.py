@@ -35,7 +35,13 @@ class Espressif32Platform(PlatformBase):
         frameworks = variables.get("pioframework", [])
 
         if "buildfs" in targets:
-            self.packages["tool-mkspiffs"]["optional"] = False
+            filesystem = variables.get("board_build.filesystem", "spiffs")
+            if filesystem == "littlefs":
+                self.packages["tool-mklittlefs"]["optional"] = False
+            elif filesystem == "fatfs":
+                self.packages["tool-mkfatfs"]["optional"] = False
+            else:
+                self.packages["tool-mkspiffs"]["optional"] = False
         if variables.get("upload_protocol"):
             self.packages["tool-openocd-esp32"]["optional"] = False
         if os.path.isdir("ulp"):

@@ -119,34 +119,40 @@ def _update_max_upload_size(env):
 
 
 def _to_unix_slashes(path):
-    return path.replace('\\', '/')
+    return path.replace("\\", "/")
 
 
 #
-# SPIFFS helpers
+# Filesystem helpers
 #
 
 
-def fetch_spiffs_size(env):
-    spiffs = None
+def fetch_fs_size(env):
+    fs = None
     for p in _parse_partitions(env):
-        if p['type'] == "data" and p['subtype'] == "spiffs":
-            spiffs = p
-    if not spiffs:
+        if p["type"] == "data" and p["subtype"] in ("spiffs", "fat"):
+            fs = p
+    if not fs:
         sys.stderr.write(
-            "Could not find the `spiffs` section in the partitions "
+            "Could not find the any filesystem section in the partitions "
             "table %s\n" % env.subst("$PARTITIONS_TABLE_CSV")
         )
         env.Exit(1)
         return
-    env["SPIFFS_START"] = _parse_size(spiffs['offset'])
-    env["SPIFFS_SIZE"] = _parse_size(spiffs['size'])
-    env["SPIFFS_PAGE"] = int("0x100", 16)
-    env["SPIFFS_BLOCK"] = int("0x1000", 16)
+    env["FS_START"] = _parse_size(fs["offset"])
+    env["FS_SIZE"] = _parse_size(fs["size"])
+    env["FS_PAGE"] = int("0x100", 16)
+    env["FS_BLOCK"] = int("0x1000", 16)
+
+    # FFat specific offsets, see:
+    # https://github.com/lorol/arduino-esp32fatfs-plugin#notes-for-fatfs
+    if filesystem == "fatfs":
+        env["FS_START"] += 4096
+        env["FS_SIZE"] -= 4096
 
 
-def __fetch_spiffs_size(target, source, env):
-    fetch_spiffs_size(env)
+def __fetch_fs_size(target, source, env):
+    fetch_fs_size(env)
     return (target, source)
 
 
@@ -156,6 +162,7 @@ platform = env.PioPlatform()
 board = env.BoardConfig()
 mcu = board.get("build.mcu", "esp32")
 toolchain_arch = "xtensa-%s" % mcu
+filesystem = board.get("build.filesystem", "spiffs")
 if mcu == "esp32c3":
     toolchain_arch = "riscv32-esp"
 
@@ -186,9 +193,25 @@ env.Replace(
     ],
     ERASECMD='"$PYTHONEXE" "$OBJCOPY" $ERASEFLAGS erase_flash',
 
-    MKSPIFFSTOOL="mkspiffs_${PIOPLATFORM}_" + ("espidf" if "espidf" in env.subst(
-        "$PIOFRAMEWORK") else "${PIOFRAMEWORK}"),
-    ESP32_SPIFFS_IMAGE_NAME=env.get("ESP32_SPIFFS_IMAGE_NAME", "spiffs"),
+    # mkspiffs package contains two different binaries for IDF and Arduino
+    MKFSTOOL="mk%s" % filesystem
+    + (
+        (
+            "_${PIOPLATFORM}_"
+            + (
+                "espidf"
+                if "espidf" in env.subst("$PIOFRAMEWORK")
+                else "${PIOFRAMEWORK}"
+            )
+        )
+        if filesystem == "spiffs"
+        else ""
+    ),
+    # Legacy `ESP32_SPIFFS_IMAGE_NAME` is used as the second fallback value for
+    # backward compatibility
+    ESP32_FS_IMAGE_NAME=env.get(
+        "ESP32_FS_IMAGE_NAME", env.get("ESP32_SPIFFS_IMAGE_NAME", filesystem)
+    ),
     ESP32_APP_OFFSET="0x10000",
 
     PROGSUFFIX=".elf"
@@ -205,9 +228,9 @@ env.Append(
     BUILDERS=dict(
         ElfToBin=Builder(
             action=env.VerboseAction(" ".join([
-                '"$PYTHONEXE" "$OBJCOPY"',
+                        '"$PYTHONEXE" "$OBJCOPY"',
                 "--chip", mcu,
-                "elf2image",
+                        "elf2image",
                 "--flash_mode", "$BOARD_FLASH_MODE",
                 "--flash_freq", "${__get_board_f_flash(__env__)}",
                 "--flash_size", board.get("upload.flash_size", "detect"),
@@ -216,18 +239,27 @@ env.Append(
             suffix=".bin"
         ),
         DataToBin=Builder(
-            action=env.VerboseAction(" ".join([
-                '"$MKSPIFFSTOOL"',
-                "-c", "$SOURCES",
-                "-p", "$SPIFFS_PAGE",
-                "-b", "$SPIFFS_BLOCK",
-                "-s", "$SPIFFS_SIZE",
-                "$TARGET"
-            ]), "Building SPIFFS image from '$SOURCES' directory to $TARGET"),
-            emitter=__fetch_spiffs_size,
+            action=env.VerboseAction(
+                " ".join(
+                    ['"$MKFSTOOL"', "-c", "$SOURCES", "-s", "$FS_SIZE"]
+                    + (
+                        [
+                            "-p",
+                            "$FS_PAGE",
+                            "-b",
+                            "$FS_BLOCK",
+                        ]
+                        if filesystem in ("spiffs", "littlefs")
+                        else []
+                    )
+                    + ["$TARGET"]
+                ),
+                "Building FS image from '$SOURCES' directory to $TARGET",
+            ),
+            emitter=__fetch_fs_size,
             source_factory=env.Dir,
-            suffix=".bin"
-        )
+            suffix=".bin",
+        ),
     )
 )
 
@@ -235,22 +267,23 @@ if not env.get("PIOFRAMEWORK"):
     env.SConscript("frameworks/_bare.py", exports="env")
 
 #
-# Target: Build executable and linkable firmware or SPIFFS image
+# Target: Build executable and linkable firmware or FS image
 #
 
 target_elf = None
 if "nobuild" in COMMAND_LINE_TARGETS:
     target_elf = join("$BUILD_DIR", "${PROGNAME}.elf")
     if set(["uploadfs", "uploadfsota"]) & set(COMMAND_LINE_TARGETS):
-        fetch_spiffs_size(env)
-        target_firm = join("$BUILD_DIR", "${ESP32_SPIFFS_IMAGE_NAME}.bin")
+        fetch_fs_size(env)
+        target_firm = join("$BUILD_DIR", "${ESP32_FS_IMAGE_NAME}.bin")
     else:
         target_firm = join("$BUILD_DIR", "${PROGNAME}.bin")
 else:
     target_elf = env.BuildProgram()
     if set(["buildfs", "uploadfs", "uploadfsota"]) & set(COMMAND_LINE_TARGETS):
         target_firm = env.DataToBin(
-            join("$BUILD_DIR", "${ESP32_SPIFFS_IMAGE_NAME}"), "$PROJECT_DATA_DIR")
+            join("$BUILD_DIR", "${ESP32_FS_IMAGE_NAME}"), "$PROJECT_DATA_DIR"
+        )
         env.NoCache(target_firm)
         AlwaysBuild(target_firm)
     else:
@@ -286,7 +319,7 @@ target_size = env.AddPlatformTarget(
 )
 
 #
-# Target: Upload firmware or SPIFFS image
+# Target: Upload firmware or FS image
 #
 
 upload_protocol = env.subst("$UPLOAD_PROTOCOL")
@@ -398,13 +431,13 @@ elif upload_protocol in debug_tools:
         debug_tools.get(upload_protocol).get("server").get("arguments", []))
     openocd_args.extend([
         "-c", "adapter_khz %s" % env.GetProjectOption("debug_speed", "5000"),
-        "-c",
+            "-c",
         "program_esp {{$SOURCE}} %s verify" %
         board.get("upload.offset_address", "$ESP32_APP_OFFSET"),
     ])
     for image in env.get("FLASH_EXTRA_IMAGES", []):
         openocd_args.extend([
-            "-c",
+                "-c",
             'program_esp {{%s}} %s verify' %
             (_to_unix_slashes(image[1]), image[0])
         ])
@@ -417,7 +450,7 @@ elif upload_protocol in debug_tools:
         for f in openocd_args
     ]
     env.Replace(UPLOADER="openocd",
-                UPLOADERFLAGS=openocd_args,
+        UPLOADERFLAGS=openocd_args,
                 UPLOADCMD="$UPLOADER $UPLOADERFLAGS")
     upload_actions = [env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")]
 
