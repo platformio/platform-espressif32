@@ -20,9 +20,26 @@ from SCons.Script import (
     ARGUMENTS, COMMAND_LINE_TARGETS, AlwaysBuild, Builder, Default,
     DefaultEnvironment)
 
+from platformio.util import get_serial_ports
+
 #
 # Helpers
 #
+
+
+def BeforeUpload(target, source, env):
+    upload_options = {}
+    if "BOARD" in env:
+        upload_options = env.BoardConfig().get("upload", {})
+
+    env.AutodetectUploadPort()
+
+    before_ports = get_serial_ports()
+    if upload_options.get("use_1200bps_touch", False):
+        env.TouchSerialPort("$UPLOAD_PORT", 1200)
+
+    if upload_options.get("wait_for_upload_port", False):
+        env.Replace(UPLOAD_PORT=env.WaitForNewSerialPort(before_ports))
 
 
 def _get_board_f_flash(env):
@@ -102,53 +119,52 @@ def _update_max_upload_size(env):
 
 
 def _to_unix_slashes(path):
-    return path.replace('\\', '/')
+    return path.replace("\\", "/")
 
 
 #
-# FS helpers
+# Filesystem helpers
 #
 
-env = DefaultEnvironment()
-env.SConscript("compat.py", exports="env")
-platform = env.PioPlatform()
-board = env.BoardConfig()
-filesystem = board.get("build.filesystem", "spiffs")
-print("FILESYSTEM ", filesystem)
-mcu = board.get("build.mcu", "esp32")
-toolchain_arch = "xtensa-%s" % mcu
-if mcu == "esp32c3":
-    toolchain_arch = "riscv32-esp"
 
 def fetch_fs_size(env):
     fs = None
     for p in _parse_partitions(env):
-        # The option to use a partition subtype of "spiffs" eliminates the
-        # need to simultaneously update both this platform code and the
-        # framework code that handles partitions.  You can use a framwork
-        # that only supports partitions named "spiffs", putting a LittleFS
-        # image therein.  Going forward, the framework code can be updated
-        # to support partitions named "littlefs" and the code here will
-        # continue to work.
-        if p['type'] == "data" and (p['subtype'] == filesystem or p['subtype'] == "spiffs"):
+        if p["type"] == "data" and p["subtype"] in ("spiffs", "fat"):
             fs = p
     if not fs:
         sys.stderr.write(
-            "Could not find the `%s` section in the partitions "
-            "table %s\n" % (filesystem, env.subst("$PARTITIONS_TABLE_CSV"))
+            "Could not find the any filesystem section in the partitions "
+            "table %s\n" % env.subst("$PARTITIONS_TABLE_CSV")
         )
         env.Exit(1)
         return
-    env["FS_START"] = _parse_size(fs['offset'])
-    env["FS_SIZE"] = _parse_size(fs['size'])
+    env["FS_START"] = _parse_size(fs["offset"])
+    env["FS_SIZE"] = _parse_size(fs["size"])
     env["FS_PAGE"] = int("0x100", 16)
     env["FS_BLOCK"] = int("0x1000", 16)
+
+    # FFat specific offsets, see:
+    # https://github.com/lorol/arduino-esp32fatfs-plugin#notes-for-fatfs
+    if filesystem == "fatfs":
+        env["FS_START"] += 4096
+        env["FS_SIZE"] -= 4096
 
 
 def __fetch_fs_size(target, source, env):
     fetch_fs_size(env)
     return (target, source)
 
+
+env = DefaultEnvironment()
+env.SConscript("compat.py", exports="env")
+platform = env.PioPlatform()
+board = env.BoardConfig()
+mcu = board.get("build.mcu", "esp32")
+toolchain_arch = "xtensa-%s" % mcu
+filesystem = board.get("build.filesystem", "spiffs")
+if mcu == "esp32c3":
+    toolchain_arch = "riscv32-esp"
 
 env.Replace(
     __get_board_f_flash=_get_board_f_flash,
@@ -177,10 +193,25 @@ env.Replace(
     ],
     ERASECMD='"$PYTHONEXE" "$OBJCOPY" $ERASEFLAGS erase_flash',
 
-    MKFSTOOL=("mklittlefs" if filesystem == "littlefs" else
-        "mkspiffs_${PIOPLATFORM}_" + ("espidf" if "espidf" in env.subst("$PIOFRAMEWORK") else "${PIOFRAMEWORK}")),
-    ESP32_FS_IMAGE_NAME=env.get("ESP32_FS_IMAGE_NAME", env.get(
-        "ESP32_SPIFFS_IMAGE_NAME", filesystem)),
+    # mkspiffs package contains two different binaries for IDF and Arduino
+    MKFSTOOL="mk%s" % filesystem
+    + (
+        (
+            "_${PIOPLATFORM}_"
+            + (
+                "espidf"
+                if "espidf" in env.subst("$PIOFRAMEWORK")
+                else "${PIOFRAMEWORK}"
+            )
+        )
+        if filesystem == "spiffs"
+        else ""
+    ),
+    # Legacy `ESP32_SPIFFS_IMAGE_NAME` is used as the second fallback value for
+    # backward compatibility
+    ESP32_FS_IMAGE_NAME=env.get(
+        "ESP32_FS_IMAGE_NAME", env.get("ESP32_SPIFFS_IMAGE_NAME", filesystem)
+    ),
     ESP32_APP_OFFSET="0x10000",
 
     PROGSUFFIX=".elf"
@@ -197,9 +228,9 @@ env.Append(
     BUILDERS=dict(
         ElfToBin=Builder(
             action=env.VerboseAction(" ".join([
-                '"$PYTHONEXE" "$OBJCOPY"',
+                        '"$PYTHONEXE" "$OBJCOPY"',
                 "--chip", mcu,
-                "elf2image",
+                        "elf2image",
                 "--flash_mode", "$BOARD_FLASH_MODE",
                 "--flash_freq", "${__get_board_f_flash(__env__)}",
                 "--flash_size", board.get("upload.flash_size", "detect"),
@@ -208,18 +239,27 @@ env.Append(
             suffix=".bin"
         ),
         DataToBin=Builder(
-            action=env.VerboseAction(" ".join([
-                '"$MKFSTOOL"',
-                "-c", "$SOURCES",
-                "-p", "$FS_PAGE",
-                "-b", "$FS_BLOCK",
-                "-s", "$FS_SIZE",
-                "$TARGET"
-            ]), "Building FS image from '$SOURCES' directory to $TARGET"),
+            action=env.VerboseAction(
+                " ".join(
+                    ['"$MKFSTOOL"', "-c", "$SOURCES", "-s", "$FS_SIZE"]
+                    + (
+                        [
+                            "-p",
+                            "$FS_PAGE",
+                            "-b",
+                            "$FS_BLOCK",
+                        ]
+                        if filesystem in ("spiffs", "littlefs")
+                        else []
+                    )
+                    + ["$TARGET"]
+                ),
+                "Building FS image from '$SOURCES' directory to $TARGET",
+            ),
             emitter=__fetch_fs_size,
             source_factory=env.Dir,
-            suffix=".bin"
-        )
+            suffix=".bin",
+        ),
     )
 )
 
@@ -241,11 +281,9 @@ if "nobuild" in COMMAND_LINE_TARGETS:
 else:
     target_elf = env.BuildProgram()
     if set(["buildfs", "uploadfs", "uploadfsota"]) & set(COMMAND_LINE_TARGETS):
-        if filesystem not in ("littlefs", "spiffs"):
-            sys.stderr.write("Filesystem %s is not supported!\n" % filesystem)
-            env.Exit(1)
         target_firm = env.DataToBin(
-            join("$BUILD_DIR", "${ESP32_SPIFFS_IMAGE_NAME}"), "$PROJECT_DATA_DIR")
+            join("$BUILD_DIR", "${ESP32_FS_IMAGE_NAME}"), "$PROJECT_DATA_DIR"
+        )
         env.NoCache(target_firm)
         AlwaysBuild(target_firm)
     else:
@@ -281,7 +319,7 @@ target_size = env.AddPlatformTarget(
 )
 
 #
-# Target: Upload firmware or filesystem image
+# Target: Upload firmware or FS image
 #
 
 upload_protocol = env.subst("$UPLOAD_PROTOCOL")
@@ -315,7 +353,7 @@ if upload_protocol == "espota":
         UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS -f $SOURCE'
     )
     if set(["uploadfs", "uploadfsota"]) & set(COMMAND_LINE_TARGETS):
-        env.Append(UPLOADERFLAGS=["-s"])
+        env.Append(UPLOADERFLAGS=["--spiffs"])
     upload_actions = [env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")]
 
 elif upload_protocol == "esptool":
@@ -349,14 +387,13 @@ elif upload_protocol == "esptool":
                 "write_flash", "-z",
                 "--flash_mode", "$BOARD_FLASH_MODE",
                 "--flash_size", "detect",
-                "$FS_START"
+                "$SPIFFS_START"
             ],
             UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS $SOURCE',
         )
 
     upload_actions = [
-        env.VerboseAction(env.AutodetectUploadPort,
-                          "Looking for upload port..."),
+        env.VerboseAction(BeforeUpload, "Looking for upload port..."),
         env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")
     ]
 
@@ -394,13 +431,13 @@ elif upload_protocol in debug_tools:
         debug_tools.get(upload_protocol).get("server").get("arguments", []))
     openocd_args.extend([
         "-c", "adapter_khz %s" % env.GetProjectOption("debug_speed", "5000"),
-        "-c",
+            "-c",
         "program_esp {{$SOURCE}} %s verify" %
         board.get("upload.offset_address", "$ESP32_APP_OFFSET"),
     ])
     for image in env.get("FLASH_EXTRA_IMAGES", []):
         openocd_args.extend([
-            "-c",
+                "-c",
             'program_esp {{%s}} %s verify' %
             (_to_unix_slashes(image[1]), image[0])
         ])
@@ -413,7 +450,7 @@ elif upload_protocol in debug_tools:
         for f in openocd_args
     ]
     env.Replace(UPLOADER="openocd",
-                UPLOADERFLAGS=openocd_args,
+        UPLOADERFLAGS=openocd_args,
                 UPLOADCMD="$UPLOADER $UPLOADERFLAGS")
     upload_actions = [env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")]
 
