@@ -228,7 +228,7 @@ env.Append(
     BUILDERS=dict(
         ElfToBin=Builder(
             action=env.VerboseAction(" ".join([
-                        '"$PYTHONEXE" "$OBJCOPY"',
+                '"$PYTHONEXE" "$OBJCOPY"',
                 "--chip", mcu, "elf2image",
                 "--flash_mode", "$BOARD_FLASH_MODE",
                 "--flash_freq", "${__get_board_f_flash(__env__)}",
@@ -368,9 +368,11 @@ elif upload_protocol == "esptool":
             "write_flash", "-z",
             "--flash_mode", "${__get_board_flash_mode(__env__)}",
             "--flash_freq", "${__get_board_f_flash(__env__)}",
-            "--flash_size", "detect"
+            "--flash_size", "detect",
+            board.get("upload.offset_address", "$ESP32_APP_OFFSET"),
+            "$SOURCE"
         ],
-        UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS $ESP32_APP_OFFSET $SOURCE'
+        UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS'
     )
     for image in env.get("FLASH_EXTRA_IMAGES", []):
         env.Append(UPLOADERFLAGS=[image[0], env.subst(image[1])])
