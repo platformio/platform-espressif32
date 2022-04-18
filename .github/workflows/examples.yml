@@ -31,8 +31,6 @@ jobs:
           - "examples/espidf-storage-spiffs"
           - "examples/espidf-ulp-adc"
           - "examples/espidf-ulp-pulse"
-          - "examples/pumbaa-blink"
-          - "examples/simba-blink"
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
