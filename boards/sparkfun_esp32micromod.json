@@ -1,20 +1,15 @@
 {
   "build": {
-    "arduino":{
+    "arduino": {
       "ldscript": "esp32_out.ld"
     },
     "core": "esp32",
-    "extra_flags": [
-      "-DARDUINO_M5Stack_Timer_CAM",
-      "-DBOARD_HAS_PSRAM",
-      "-mfix-esp32-psram-cache-issue",
-      "-mfix-esp32-psram-cache-strategy=memw"
-    ],
+    "extra_flags": "-DARDUINO_ESP32_MICROMOD",
     "f_cpu": "240000000L",
     "f_flash": "40000000L",
     "flash_mode": "dio",
     "mcu": "esp32",
-    "variant": "m5stack_timer_cam"
+    "variant": "esp32micromod"
   },
   "connectivity": [
     "wifi",
@@ -26,7 +21,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "M5Stack Timer CAM",
+  "name": "SparkFun ESP32 MicroMod",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
@@ -34,6 +29,6 @@
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "http://www.m5stack.com",
-  "vendor": "M5Stack"
+  "url": "https://www.sparkfun.com/products/16781",
+  "vendor": "SparkFun"
 }
