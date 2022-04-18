@@ -9,7 +9,7 @@
     "Wi-Fi",
     "Bluetooth",
     "Xtensa",
-    "LX6"
+    "RISC-V"
   ],
   "engines": {
     "platformio": "^5"
@@ -47,60 +47,40 @@
     }
   },
   "packages": {
-    "toolchain-xtensa32": {
-      "type": "toolchain",
-      "optional": true,
-      "owner": "platformio",
-      "version": "~2.50200.0",
-      "optionalVersions": ["~2.80400.0"]
-    },
-    "toolchain-xtensa32s2": {
-      "type": "toolchain",
-      "optional": true,
-      "owner": "platformio",
-      "version": "~1.80400.0"
-    },
-    "toolchain-esp32ulp": {
-      "type": "toolchain",
-      "optional": true,
-      "owner": "platformio",
-      "version": "~1.22851.0"
-    },
-    "toolchain-esp32s2ulp": {
-      "type": "toolchain",
-      "optional": true,
-      "owner": "platformio",
-      "version": "~1.22851.0"
-    },
-    "toolchain-riscv-esp": {
-      "type": "toolchain",
-      "optional": true,
-      "owner": "platformio",
-      "version": "~1.80400.0"
-    },
     "toolchain-xtensa-esp32": {
       "type": "toolchain",
-      "optional": true,
       "owner": "espressif",
-      "version": "8.4.0+2021r2-patch3"
+      "version": "8.4.0+2021r2-patch3",
+      "optionalVersions": [
+        "8.4.0+2021r2-patch2"
+      ]
     },
     "toolchain-xtensa-esp32s2": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "8.4.0+2021r2-patch3"
+      "version": "8.4.0+2021r2-patch3",
+      "optionalVersions": [
+        "8.4.0+2021r2-patch2"
+      ]
     },
     "toolchain-xtensa-esp32s3": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "8.4.0+2021r2-patch3"
+      "version": "8.4.0+2021r2-patch3",
+      "optionalVersions": [
+        "8.4.0+2021r2-patch2"
+      ]
     },
     "toolchain-riscv32-esp": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "8.4.0+2021r2-patch3"
+      "version": "8.4.0+2021r2-patch3",
+      "optionalVersions": [
+        "8.4.0+2021r2-patch2"
+      ]
     },
     "toolchain-esp32ulp": {
       "type": "toolchain",
@@ -158,17 +138,25 @@
       "type": "debugger",
       "optional": true,
       "owner": "platformio",
-      "version": "~2.1000.0"
+      "version": "~2.1100.0"
     },
     "tool-mkspiffs": {
       "type": "uploader",
+      "optional": true,
       "owner": "platformio",
       "version": "~2.230.0"
     },
     "tool-mklittlefs": {
       "type": "uploader",
+      "optional": true,
       "owner": "platformio",
       "version": "~1.203.0"
+    },
+    "tool-mkfatfs": {
+      "type": "uploader",
+      "optional": true,
+      "owner": "platformio",
+      "version": "~2.0.0"
     },
     "tool-cmake": {
       "optional": true,
