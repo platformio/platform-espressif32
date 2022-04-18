@@ -30,20 +30,6 @@
       "description": "ESP-IDF is the official development framework for the ESP32 and ESP32-S Series SoCs.",
       "homepage": "https://docs.espressif.com/projects/esp-idf/en/latest/esp32/",
       "title": "Espressif IoT Development Framework"
-    },
-    "simba": {
-      "package": "framework-simba",
-      "script": "builder/frameworks/simba.py",
-      "description": "Simba is an RTOS and build framework with aims to make embedded programming easy and portable",
-      "homepage": "http://simba-os.readthedocs.org",
-      "title": "Simba"
-    },
-    "pumbaa": {
-      "package": "framework-pumbaa",
-      "script": "builder/frameworks/pumbaa.py",
-      "description": "Pumbaa is Python on top of Simba. The implementation is a port of MicroPython, designed for embedded devices with limited amount of RAM and code memory",
-      "homepage": "http://pumbaa.readthedocs.org/",
-      "title": "Pumbaa"
     }
   },
   "packages": {
@@ -111,18 +97,6 @@
       "optional": true,
       "owner": "platformio",
       "version": "https://github.com/tasmota/esp-idf/releases/download/v.4.4.0/esp-idf-v4.4.zip"
-    },
-    "framework-simba": {
-      "type": "framework",
-      "optional": true,
-      "owner": "platformio",
-      "version": ">=12.2.0"
-    },
-    "framework-pumbaa": {
-      "type": "framework",
-      "optional": true,
-      "owner": "platformio",
-      "version": ">=2.3.0"
     },
     "tool-esptoolpy": {
       "type": "uploader",
