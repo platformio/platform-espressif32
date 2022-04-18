@@ -4,12 +4,29 @@
       "ldscript": "esp32s2_out.ld"
     },
     "core": "esp32",
-    "extra_flags": "-DBOARD_HAS_PSRAM",
+    "extra_flags": [
+      "-DARDUINO_ADAFRUIT_FEATHER_ESP32S2_NOPSRAM",
+      "-DARDUINO_USB_CDC_ON_BOOT=1"
+    ],
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
     "flash_mode": "dio",
+    "hwids": [
+      [
+        "0x239A",
+        "0x80EB"
+      ],
+      [
+        "0x239A",
+        "0x00EB"
+      ],
+      [
+        "0x239A",
+        "0x80EC"
+      ]
+    ],
     "mcu": "esp32s2",
-    "variant": "esp32s2"
+    "variant": "adafruit_feather_esp32s2"
   },
   "connectivity": [
     "wifi"
@@ -23,9 +40,19 @@
   ],
   "name": "Adafruit ESP32-S2 Feather Development Board",
   "upload": {
+    "arduino": {
+      "flash_extra_images": [
+        [
+          "0x2d0000",
+          "variants/adafruit_feather_esp32s2/tinyuf2.bin"
+        ]
+      ]
+    },
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
     "maximum_size": 4194304,
+    "use_1200bps_touch": true,
+    "wait_for_upload_port": true,
     "require_upload_port": true,
     "speed": 460800
   },
