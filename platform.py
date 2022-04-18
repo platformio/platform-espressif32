@@ -114,7 +114,6 @@ class Espressif32Platform(PlatformBase):
 
         is_legacy_project = (
             build_core == "mbcwb"
-            or set(("simba", "pumbaa")) & set(frameworks)
             or set(("arduino", "espidf")) == set(frameworks)
         )
 
