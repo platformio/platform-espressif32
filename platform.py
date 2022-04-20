@@ -340,7 +340,6 @@ class Espressif32Platform(PlatformBase):
         toolchain_remap = {
             "xtensa-esp32-elf-gcc": "toolchain-xtensa-esp32",
             "xtensa-esp32s2-elf-gcc": "toolchain-xtensa-esp32s2",
-            "xtensa-esp32s3-elf-gcc": "toolchain-xtensa-esp32s3",
             "riscv32-esp-elf-gcc": "toolchain-riscv32-esp",
         }
 
