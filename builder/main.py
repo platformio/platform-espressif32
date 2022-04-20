@@ -212,7 +212,8 @@ env.Replace(
     ESP32_FS_IMAGE_NAME=env.get(
         "ESP32_FS_IMAGE_NAME", env.get("ESP32_SPIFFS_IMAGE_NAME", filesystem)
     ),
-    ESP32_APP_OFFSET="0x10000",
+
+    ESP32_APP_OFFSET=board.get("upload.offset_address", "0x10000"),
 
     PROGSUFFIX=".elf"
 )
@@ -368,11 +369,9 @@ elif upload_protocol == "esptool":
             "write_flash", "-z",
             "--flash_mode", "${__get_board_flash_mode(__env__)}",
             "--flash_freq", "${__get_board_f_flash(__env__)}",
-            "--flash_size", board.get("upload.flash_size", "detect"),
-            board.get("upload.offset_address", "$ESP32_APP_OFFSET"),
-            "$SOURCE"
+            "--flash_size", board.get("upload.flash_size", "detect")
         ],
-        UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS'
+        UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS $ESP32_APP_OFFSET $SOURCE'
     )
     for image in env.get("FLASH_EXTRA_IMAGES", []):
         env.Append(UPLOADERFLAGS=[image[0], env.subst(image[1])])
@@ -439,7 +438,7 @@ elif upload_protocol in debug_tools:
             % (
                 "$FS_START"
                 if "uploadfs" in COMMAND_LINE_TARGETS
-                else board.get("upload.offset_address", "$ESP32_APP_OFFSET")
+                else "$ESP32_APP_OFFSET"
             ),
         ]
     )
