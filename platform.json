@@ -33,40 +33,40 @@
     }
   },
   "packages": {
+    "framework-arduinoespressif32": {
+      "type": "framework",
+      "optional": true,
+      "owner": "tasmota",
+      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/803/framework-arduinoespressif32-v4.4_dev-40d126bfd1.tar.gz"
+    },
+    "framework-espidf": {
+      "type": "framework",
+      "optional": true,
+      "owner": "platformio",
+      "version": "https://github.com/tasmota/esp-idf/releases/download/v.4.4.0/esp-idf-v4.4.zip"
+    },
     "toolchain-xtensa-esp32": {
       "type": "toolchain",
       "owner": "espressif",
-      "version": "8.4.0+2021r2-patch3",
-      "optionalVersions": [
-        "8.4.0+2021r2-patch2"
-      ]
+      "version": "8.4.0+2021r2-patch3"
     },
     "toolchain-xtensa-esp32s2": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "8.4.0+2021r2-patch3",
-      "optionalVersions": [
-        "8.4.0+2021r2-patch2"
-      ]
+      "version": "8.4.0+2021r2-patch3"
     },
     "toolchain-xtensa-esp32s3": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "8.4.0+2021r2-patch3",
-      "optionalVersions": [
-        "8.4.0+2021r2-patch2"
-      ]
+      "version": "8.4.0+2021r2-patch3"
     },
     "toolchain-riscv32-esp": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "8.4.0+2021r2-patch3",
-      "optionalVersions": [
-        "8.4.0+2021r2-patch2"
-      ]
+      "version": "8.4.0+2021r2-patch3"
     },
     "toolchain-esp32ulp": {
       "type": "toolchain",
@@ -80,23 +80,11 @@
       "owner": "platformio",
       "version": "~1.22851.0"
     },
-    "framework-arduinoespressif32": {
-      "type": "framework",
-      "optional": true,
-      "owner": "tasmota",
-      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/803/framework-arduinoespressif32-v4.4_dev-40d126bfd1.tar.gz"
-    },
     "framework-arduino-mbcwb": {
       "type": "framework",
       "optional": true,
       "owner": "meteca",
       "version": ">=2.1.1"
-    },
-    "framework-espidf": {
-      "type": "framework",
-      "optional": true,
-      "owner": "platformio",
-      "version": "https://github.com/tasmota/esp-idf/releases/download/v.4.4.0/esp-idf-v4.4.zip"
     },
     "tool-esptoolpy": {
       "type": "uploader",
@@ -116,13 +104,11 @@
     },
     "tool-mkspiffs": {
       "type": "uploader",
-      "optional": true,
       "owner": "platformio",
       "version": "~2.230.0"
     },
     "tool-mklittlefs": {
       "type": "uploader",
-      "optional": true,
       "owner": "platformio",
       "version": "~1.203.0"
     },
