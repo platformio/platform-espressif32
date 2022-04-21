@@ -12,8 +12,6 @@
     "variant": "esp32s2"
   },
   "connectivity": [
-    "arduino",
-    "espidf",
     "wifi"
   ],
   "debug": {
