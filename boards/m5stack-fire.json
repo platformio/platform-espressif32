@@ -5,7 +5,12 @@
       "partitions": "default_16MB.csv"
     },
     "core": "esp32",
-    "extra_flags": "-DARDUINO_M5STACK_FIRE -DBOARD_HAS_PSRAM -mfix-esp32-psram-cache-issue",
+    "extra_flags": [
+      "-DARDUINO_M5STACK_FIRE",
+      "-DBOARD_HAS_PSRAM",
+      "-mfix-esp32-psram-cache-issue",
+      "-mfix-esp32-psram-cache-strategy=memw"
+    ],
     "f_cpu": "240000000L",
     "f_flash": "40000000L",
     "flash_mode": "dio",

@@ -9,7 +9,7 @@
     "Wi-Fi",
     "Bluetooth",
     "Xtensa",
-    "LX6"
+    "RISC-V"
   ],
   "engines": {
     "platformio": "^5"
@@ -18,7 +18,7 @@
     "type": "git",
     "url": "https://github.com/platformio/platform-espressif32.git"
   },
-  "version": "3.5.0",
+  "version": "4.0.0",
   "frameworks": {
     "arduino": {
       "package": "framework-arduinoespressif32",
@@ -30,34 +30,34 @@
       "description": "ESP-IDF is the official development framework for the ESP32 and ESP32-S Series SoCs.",
       "homepage": "https://docs.espressif.com/projects/esp-idf/en/latest/esp32/",
       "title": "Espressif IoT Development Framework"
-    },
-    "simba": {
-      "package": "framework-simba",
-      "script": "builder/frameworks/simba.py",
-      "description": "Simba is an RTOS and build framework with aims to make embedded programming easy and portable",
-      "homepage": "http://simba-os.readthedocs.org",
-      "title": "Simba"
-    },
-    "pumbaa": {
-      "package": "framework-pumbaa",
-      "script": "builder/frameworks/pumbaa.py",
-      "description": "Pumbaa is Python on top of Simba. The implementation is a port of MicroPython, designed for embedded devices with limited amount of RAM and code memory",
-      "homepage": "http://pumbaa.readthedocs.org/",
-      "title": "Pumbaa"
     }
   },
   "packages": {
-    "toolchain-xtensa32": {
+    "toolchain-xtensa-esp32": {
       "type": "toolchain",
-      "owner": "platformio",
-      "version": "~2.50200.0",
-      "optionalVersions": ["~2.80400.0"]
+      "owner": "espressif",
+      "version": "8.4.0+2021r1",
+      "optionalVersions": [
+        "8.4.0+2021r2-patch2"
+      ]
     },
-    "toolchain-xtensa32s2": {
+    "toolchain-xtensa-esp32s2": {
       "type": "toolchain",
       "optional": true,
-      "owner": "platformio",
-      "version": "~1.80400.0"
+      "owner": "espressif",
+      "version": "8.4.0+2021r1",
+      "optionalVersions": [
+        "8.4.0+2021r2-patch2"
+      ]
+    },
+    "toolchain-riscv32-esp": {
+      "type": "toolchain",
+      "optional": true,
+      "owner": "espressif",
+      "version": "8.4.0+2021r1",
+      "optionalVersions": [
+        "8.4.0+2021r2-patch2"
+      ]
     },
     "toolchain-esp32ulp": {
       "type": "toolchain",
@@ -71,35 +71,11 @@
       "owner": "platformio",
       "version": "~1.22851.0"
     },
-    "toolchain-riscv-esp": {
-      "type": "toolchain",
-      "optional": true,
-      "owner": "platformio",
-      "version": "~1.80400.0"
-    },
-    "toolchain-xtensa-esp32": {
-      "type": "toolchain",
-      "optional": true,
-      "owner": "espressif",
-      "version": "8.4.0+2021r2-patch2"
-    },
-    "toolchain-xtensa-esp32s2": {
-      "type": "toolchain",
-      "optional": true,
-      "owner": "espressif",
-      "version": "8.4.0+2021r2-patch2"
-    },
-    "toolchain-riscv32-esp": {
-      "type": "toolchain",
-      "optional": true,
-      "owner": "espressif",
-      "version": "8.4.0+2021r2-patch2"
-    },
     "framework-arduinoespressif32": {
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~3.10006.0"
+      "version": "~3.20000.0"
     },
     "framework-arduino-mbcwb": {
       "type": "framework",
@@ -113,18 +89,6 @@
       "owner": "platformio",
       "version": "~3.40302.0",
       "optionalVersions": ["~3.40001.0"]
-    },
-    "framework-simba": {
-      "type": "framework",
-      "optional": true,
-      "owner": "platformio",
-      "version": ">=12.2.0"
-    },
-    "framework-pumbaa": {
-      "type": "framework",
-      "optional": true,
-      "owner": "platformio",
-      "version": ">=2.3.0"
     },
     "tool-esptoolpy": {
       "type": "uploader",
@@ -140,13 +104,25 @@
       "type": "debugger",
       "optional": true,
       "owner": "platformio",
-      "version": "~2.1000.0"
+      "version": "~2.1100.0"
     },
     "tool-mkspiffs": {
       "type": "uploader",
       "optional": true,
       "owner": "platformio",
       "version": "~2.230.0"
+    },
+    "tool-mklittlefs": {
+      "type": "uploader",
+      "optional": true,
+      "owner": "platformio",
+      "version": "~1.203.0"
+    },
+    "tool-mkfatfs": {
+      "type": "uploader",
+      "optional": true,
+      "owner": "platformio",
+      "version": "~2.0.0"
     },
     "tool-cmake": {
       "optional": true,

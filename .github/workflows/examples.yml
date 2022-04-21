@@ -7,11 +7,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-18.04, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: [3.7]
         example:
+          - "examples/arduino-ble5-advertising"
           - "examples/arduino-blink"
           - "examples/arduino-briki-internal-libs"
+          - "examples/arduino-usb-keyboard"
           - "examples/arduino-wifiscan"
           - "examples/espidf-arduino-blink"
           - "examples/espidf-arduino-wifiscan"
@@ -27,8 +29,6 @@ jobs:
           - "examples/espidf-storage-spiffs"
           - "examples/espidf-ulp-adc"
           - "examples/espidf-ulp-pulse"
-          - "examples/pumbaa-blink"
-          - "examples/simba-blink"
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -42,7 +42,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -U https://github.com/platformio/platformio/archive/develop.zip
-          platformio platform install file://.
+          pio pkg install --global --platform symlink://.
       - name: Build examples
         run: |
           platformio run -d ${{ matrix.example }}
