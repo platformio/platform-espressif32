@@ -36,28 +36,19 @@
     "toolchain-xtensa-esp32": {
       "type": "toolchain",
       "owner": "espressif",
-      "version": "8.4.0+2021r1",
-      "optionalVersions": [
-        "8.4.0+2021r2-patch2"
-      ]
+      "version": "8.4.0+2021r2-patch3"
     },
     "toolchain-xtensa-esp32s2": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "8.4.0+2021r1",
-      "optionalVersions": [
-        "8.4.0+2021r2-patch2"
-      ]
+      "version": "8.4.0+2021r2-patch3"
     },
     "toolchain-riscv32-esp": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "8.4.0+2021r1",
-      "optionalVersions": [
-        "8.4.0+2021r2-patch2"
-      ]
+      "version": "8.4.0+2021r2-patch3"
     },
     "toolchain-esp32ulp": {
       "type": "toolchain",
@@ -75,7 +66,7 @@
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~3.20000.0"
+      "version": "~3.20001.0"
     },
     "framework-arduino-mbcwb": {
       "type": "framework",

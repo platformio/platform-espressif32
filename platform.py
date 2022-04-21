@@ -95,15 +95,6 @@ class Espressif32Platform(PlatformBase):
                 elif p in ("tool-mconf", "tool-idf") and "windows" in get_systype():
                     self.packages[p]["optional"] = False
 
-            # Toolchains for stable IDF are different from Arduino
-            if len(frameworks) == 1:
-                for toolchain in (
-                    "toolchain-xtensa-esp32",
-                    "toolchain-xtensa-esp32s2",
-                    "toolchain-riscv32-esp",
-                ):
-                    self.packages[toolchain]["version"] = "8.4.0+2021r2-patch2"
-
         if mcu in ("esp32s2", "esp32c3"):
             self.packages.pop("toolchain-xtensa-esp32", None)
             self.packages.pop("toolchain-esp32ulp", None)
