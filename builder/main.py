@@ -212,7 +212,8 @@ env.Replace(
     ESP32_FS_IMAGE_NAME=env.get(
         "ESP32_FS_IMAGE_NAME", env.get("ESP32_SPIFFS_IMAGE_NAME", filesystem)
     ),
-    ESP32_APP_OFFSET="0x10000",
+
+    ESP32_APP_OFFSET=board.get("upload.offset_address", "0x10000"),
 
     PROGSUFFIX=".elf"
 )
@@ -228,9 +229,8 @@ env.Append(
     BUILDERS=dict(
         ElfToBin=Builder(
             action=env.VerboseAction(" ".join([
-                        '"$PYTHONEXE" "$OBJCOPY"',
-                "--chip", mcu,
-                        "elf2image",
+                '"$PYTHONEXE" "$OBJCOPY"',
+                "--chip", mcu, "elf2image",
                 "--flash_mode", "$BOARD_FLASH_MODE",
                 "--flash_freq", "${__get_board_f_flash(__env__)}",
                 "--flash_size", board.get("upload.flash_size", "detect"),
@@ -369,7 +369,7 @@ elif upload_protocol == "esptool":
             "write_flash", "-z",
             "--flash_mode", "${__get_board_flash_mode(__env__)}",
             "--flash_freq", "${__get_board_f_flash(__env__)}",
-            "--flash_size", "detect"
+            "--flash_size", board.get("upload.flash_size", "detect")
         ],
         UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS $ESP32_APP_OFFSET $SOURCE'
     )
@@ -387,7 +387,7 @@ elif upload_protocol == "esptool":
                 "write_flash", "-z",
                 "--flash_mode", "$BOARD_FLASH_MODE",
                 "--flash_size", "detect",
-                "$SPIFFS_START"
+                "$FS_START"
             ],
             UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS $SOURCE',
         )
@@ -429,18 +429,28 @@ elif upload_protocol in debug_tools:
     openocd_args = ["-d%d" % (2 if int(ARGUMENTS.get("PIOVERBOSE", 0)) else 1)]
     openocd_args.extend(
         debug_tools.get(upload_protocol).get("server").get("arguments", []))
-    openocd_args.extend([
-        "-c", "adapter_khz %s" % env.GetProjectOption("debug_speed", "5000"),
+    openocd_args.extend(
+        [
             "-c",
-        "program_esp {{$SOURCE}} %s verify" %
-        board.get("upload.offset_address", "$ESP32_APP_OFFSET"),
-    ])
-    for image in env.get("FLASH_EXTRA_IMAGES", []):
-        openocd_args.extend([
-                "-c",
-            'program_esp {{%s}} %s verify' %
-            (_to_unix_slashes(image[1]), image[0])
-        ])
+            "adapter_khz %s" % env.GetProjectOption("debug_speed", "5000"),
+            "-c",
+            "program_esp {{$SOURCE}} %s verify"
+            % (
+                "$FS_START"
+                if "uploadfs" in COMMAND_LINE_TARGETS
+                else "$ESP32_APP_OFFSET"
+            ),
+        ]
+    )
+    if "uploadfs" not in COMMAND_LINE_TARGETS:
+        for image in env.get("FLASH_EXTRA_IMAGES", []):
+            openocd_args.extend(
+                [
+                    "-c",
+                    "program_esp {{%s}} %s verify"
+                    % (_to_unix_slashes(image[1]), image[0]),
+                ]
+            )
     openocd_args.extend(["-c", "reset run; shutdown"])
     openocd_args = [
         f.replace(
@@ -449,9 +459,11 @@ elif upload_protocol in debug_tools:
                 platform.get_package_dir("tool-openocd-esp32") or ""))
         for f in openocd_args
     ]
-    env.Replace(UPLOADER="openocd",
+    env.Replace(
+        UPLOADER="openocd",
         UPLOADERFLAGS=openocd_args,
-                UPLOADCMD="$UPLOADER $UPLOADERFLAGS")
+        UPLOADCMD="$UPLOADER $UPLOADERFLAGS",
+    )
     upload_actions = [env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")]
 
 # custom upload tool
