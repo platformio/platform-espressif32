@@ -1,43 +1,39 @@
 {
-    "build": {
-        "arduino": {
-            "ldscript": "esp32_out.ld"
-        },
-        "core": "esp32",
-        "extra_flags": [
-            "-DARDUINO_WT32_ETH01"
-        ],
-        "f_cpu": "240000000L",
-        "f_flash": "40000000L",
-        "flash_mode": "dio",
-        "boot": "dio",
-        "mcu": "esp32",
-        "variant": "wt32-eth01"
+  "build": {
+    "arduino": {
+      "ldscript": "esp32_out.ld"
     },
-    "connectivity": [
-        "wifi",
-        "bluetooth",
-        "ethernet",
-        "can"
+    "core": "esp32",
+    "extra_flags": [
+      "-DARDUINO_WT32_ETH01"
     ],
-    "debug": {
-        "openocd_board": "esp-wroom-32.cfg"
-    },
-    "frameworks": [
-        "arduino",
-        "espidf"
-    ],
-    "platforms": [
-        "espressif32"
-    ],
-    "name": "WT32-ETH01 Ethernet Module",
-    "upload": {
-        "flash_size": "4MB",
-        "maximum_ram_size": 327680,
-        "maximum_size": 4194304,
-        "require_upload_port": true,
-        "speed": 460800
-    },
-    "url": "http://www.wireless-tag.com/portfolio/wt32-eth01/",
-    "vendor": "Wireless-Tag"
+    "f_cpu": "240000000L",
+    "f_flash": "40000000L",
+    "flash_mode": "dio",
+    "mcu": "esp32",
+    "variant": "wt32-eth01"
+  },
+  "connectivity": [
+    "wifi",
+    "bluetooth",
+    "ethernet",
+    "can"
+  ],
+  "debug": {
+    "openocd_board": "esp-wroom-32.cfg"
+  },
+  "frameworks": [
+    "arduino",
+    "espidf"
+  ],
+  "name": "Wireless-Tag WT32-ETH01 Ethernet Module",
+  "upload": {
+    "flash_size": "4MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 4194304,
+    "require_upload_port": true,
+    "speed": 460800
+  },
+  "url": "http://www.wireless-tag.com/portfolio/wt32-eth01/",
+  "vendor": "Wireless-Tag"
 }
