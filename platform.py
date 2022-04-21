@@ -385,6 +385,7 @@ class Espressif32Platform(PlatformBase):
                 self.packages[toolchain_package] = dict()
             self.packages[toolchain_package]["version"] = version
             self.packages[toolchain_package]["owner"] = "espressif"
+            self.packages[toolchain_package]["type"] = "toolchain"
 
     def configure_upstream_arduino_packages(self, url_items):
         framework_index_file = os.path.join(
