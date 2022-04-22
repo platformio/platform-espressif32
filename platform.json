@@ -43,10 +43,11 @@
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "https://github.com/tasmota/esp-idf/releases/download/v.4.4.0/esp-idf-v4.4.zip"
+      "version": "https://github.com/tasmota/esp-idf/releases/download/v.4.4.1/esp-idf-v4.4.1.zip"
     },
     "toolchain-xtensa-esp32": {
       "type": "toolchain",
+      "optional": true,
       "owner": "espressif",
       "version": "8.4.0+2021r2-patch3"
     },
@@ -67,6 +68,36 @@
       "optional": true,
       "owner": "espressif",
       "version": "8.4.0+2021r2-patch3"
+    },
+    "toolchain-xtensa-esp32-arm": {
+      "type": "toolchain",
+      "optional": true,
+      "owner": "tasmota",
+      "version": "https://github.com/Jason2866/crosstool-NG/releases/download/8.4.0/toolchain-xtensa-esp32.tar.gz"
+    },
+    "toolchain-xtensa-esp32s2-arm": {
+      "type": "toolchain",
+      "optional": true,
+      "owner": "tasmota",
+      "version": "https://github.com/Jason2866/crosstool-NG/releases/download/8.4.0/toolchain-xtensa-esp32s2.tar.gz"
+    },
+    "toolchain-xtensa-esp32s3-arm": {
+      "type": "toolchain",
+      "optional": true,
+      "owner": "tasmota",
+      "version": "https://github.com/Jason2866/crosstool-NG/releases/download/8.4.0/toolchain-xtensa-esp32s3.tar.gz"
+    },
+    "toolchain-riscv32-esp-arm": {
+      "type": "toolchain",
+      "optional": true,
+      "owner": "tasmota",
+      "version": "https://github.com/Jason2866/crosstool-NG/releases/download/8.4.0/toolchain-riscv32-esp.tar.gz"
+    },
+    "tool-openocd-esp32-arm": {
+      "type": "debugger",
+      "optional": true,
+      "owner": "tasmota",
+      "version": "https://github.com/Jason2866/openocd-esp32/releases/download/v0.11.0-esp32-20220404/openocd-esp32-macos-arm-0.11.0-esp32-20220406.zip"
     },
     "toolchain-esp32ulp": {
       "type": "toolchain",
