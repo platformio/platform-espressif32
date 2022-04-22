@@ -4,12 +4,17 @@
       "ldscript": "esp32_out.ld"
     },
     "core": "esp32",
-    "extra_flags": "-DARDUINO_TINYPICO -DBOARD_HAS_PSRAM -mfix-esp32-psram-cache-issue",
+    "extra_flags": [
+      "-DARDUINO_TINYPICO",
+      "-DBOARD_HAS_PSRAM",
+      "-mfix-esp32-psram-cache-issue",
+      "-mfix-esp32-psram-cache-strategy=memw"
+    ],
     "f_cpu": "240000000L",
     "f_flash": "40000000L",
-    "flash_mode": "qio",
+    "flash_mode": "dio",
     "mcu": "esp32",
-    "variant": "pico32"
+    "variant": "um_tinypico"
   },
   "connectivity": [
     "wifi",

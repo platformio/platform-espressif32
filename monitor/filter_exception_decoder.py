@@ -32,7 +32,7 @@ class Esp32ExceptionDecoder(DeviceMonitorFilter):
     def __call__(self):
         self.buffer = ""
         self.backtrace_re = re.compile(
-            r"^Backtrace: ?((0x[0-9a-fA-F]+:0x[0-9a-fA-F]+ ?)+)\s*"
+            r"^Backtrace: ?((0x[0-9a-fA-F]{8}:0x[0-9a-fA-F]{8} ?)+)\s*"
         )
 
         self.firmware_path = None
