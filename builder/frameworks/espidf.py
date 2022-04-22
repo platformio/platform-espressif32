@@ -557,7 +557,7 @@ def prepare_build_envs(config, default_env):
     build_envs = []
     target_compile_groups = config.get("compileGroups")
     is_build_type_debug = (
-        set(["debug", "sizedata"]) & set(COMMAND_LINE_TARGETS)
+        set(["__debug", "sizedata"]) & set(COMMAND_LINE_TARGETS)
         or default_env.GetProjectOption("build_type") == "debug"
     )
 
