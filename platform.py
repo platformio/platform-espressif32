@@ -422,4 +422,3 @@ class Espressif32Platform(PlatformBase):
             self.configure_arduino_toolchains(
                 self.download_remote_package_index(url_items)
             )
-
