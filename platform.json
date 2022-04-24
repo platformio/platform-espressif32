@@ -97,7 +97,7 @@
       "type": "debugger",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/Jason2866/openocd-esp32/releases/download/v0.11.0-esp32-20220404/openocd-esp32-macos-arm-0.11.0-esp32-20220406.zip"
+      "version": "https://github.com/Jason2866/openocd-esp32/releases/download/v0.11.0-esp32-20220404/openocd-esp32-macos-arm64-0.11.0-esp32-20220424.zip"
     },
     "toolchain-esp32ulp": {
       "type": "toolchain",
