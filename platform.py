@@ -173,6 +173,7 @@ class Espressif32Platform(PlatformBase):
         debug = board.manifest.get("debug", {})
         non_debug_protocols = ["esptool", "espota", "mbctool"]
         supported_debug_tools = [
+            "cmsis-dap",
             "esp-prog",
             "iot-bus-jtag",
             "jlink",
@@ -201,6 +202,8 @@ class Espressif32Platform(PlatformBase):
                 continue
 
             if link == "jlink":
+                openocd_interface = link
+            elif link == "cmsis-dap":
                 openocd_interface = link
             elif link in ("esp-prog", "ftdi"):
                 if board.id == "esp32-s2-kaluga-1":
