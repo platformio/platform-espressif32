@@ -119,8 +119,8 @@
     },
     "tool-esptoolpy": {
       "type": "uploader",
-      "owner": "tasmota",
-      "version": "https://github.com/tasmota/esptool/releases/download/v3.3/esptool-3.3.zip"
+      "owner": "platformio",
+      "version": "~1.30300.0"
     },
     "tool-mbctool": {
       "optional": true,
