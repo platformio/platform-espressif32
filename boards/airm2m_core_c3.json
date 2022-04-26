@@ -1,0 +1,37 @@
+{
+  "build": {
+    "arduino":{
+      "ldscript": "esp32c3_out.ld"
+    },
+    "core": "esp32",
+    "f_cpu": "160000000L",
+    "f_flash": "80000000L",
+    "flash_mode": "dio",
+    "extra_flags": [
+      "-DARDUINO_ESP32C3_DEV",
+      "-DAIRM2M_CORE_ESP32C3"
+    ],
+    "mcu": "esp32c3",
+    "variant": "AirM2M_CORE_ESP32C3"
+  },
+  "connectivity": [
+    "wifi"
+  ],
+  "debug": {
+    "openocd_target": "esp32c3.cfg"
+  },
+  "frameworks": [
+    "arduino",
+    "espidf"
+  ],
+  "name": "AirM2M CORE_ESP32C3",
+  "upload": {
+    "flash_size": "4MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 4194304,
+    "require_upload_port": true,
+    "speed": 1152000
+  },
+  "url": "https://wiki.luatos.com/chips/esp32c3/board.html",
+  "vendor": "AirM2M"
+}
