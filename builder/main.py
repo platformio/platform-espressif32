@@ -80,6 +80,7 @@ def _parse_partitions(env):
 
     result = []
     next_offset = 0
+    bound = 0x10000 # default value
     with open(partitions_csv) as fp:
         for line in fp.readlines():
             line = line.strip()
@@ -97,13 +98,14 @@ def _parse_partitions(env):
                 "flags": tokens[5] if len(tokens) > 5 else None
             }
             result.append(partition)
-            next_offset = _parse_size(partition["offset"]) + _parse_size(
-                partition["size"]
-            )
-
-            bound = 0x10000 if partition["type"] in ("0", "app") else 4
+            next_offset = _parse_size(partition["offset"])
+            #print("App start from .csv:", hex(next_offset))
+            #print("Partition subtype from .csv:", partition["subtype"])
+            if (partition["subtype"] == "ota_0"):
+                bound = next_offset
             next_offset = (next_offset + bound - 1) & ~(bound - 1)
-
+            #print("Main Firmware will be flashed to:", hex(bound))
+    env["ESP32_APP_OFFSET"] = hex(bound)
     return result
 
 
@@ -212,8 +214,6 @@ env.Replace(
     ESP32_FS_IMAGE_NAME=env.get(
         "ESP32_FS_IMAGE_NAME", env.get("ESP32_SPIFFS_IMAGE_NAME", filesystem)
     ),
-
-    ESP32_APP_OFFSET=board.get("upload.offset_address", "0x10000"),
 
     PROGSUFFIX=".elf"
 )
