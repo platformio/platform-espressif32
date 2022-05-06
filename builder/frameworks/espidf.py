@@ -273,13 +273,15 @@ def load_target_configurations(cmake_codemodel, cmake_api_reply_dir):
     return configs
 
 
-def build_library(default_env, lib_config, project_src_dir, prepend_dir=None):
+def build_library(
+    default_env, lib_config, project_src_dir, prepend_dir=None, debug_allowed=True
+):
     lib_name = lib_config["nameOnDisk"]
     lib_path = lib_config["paths"]["build"]
     if prepend_dir:
         lib_path = os.path.join(prepend_dir, lib_path)
     lib_objects = compile_source_files(
-        lib_config, default_env, project_src_dir, prepend_dir
+        lib_config, default_env, project_src_dir, prepend_dir, debug_allowed
     )
     return default_env.Library(
         target=os.path.join("$BUILD_DIR", lib_path, lib_name), source=lib_objects
@@ -553,11 +555,11 @@ def generate_project_ld_script(sdk_config, ignore_targets=None):
     )
 
 
-def prepare_build_envs(config, default_env):
+def prepare_build_envs(config, default_env, debug_allowed=True):
     build_envs = []
     target_compile_groups = config.get("compileGroups")
 
-    is_build_type_debug = "debug" in env.GetBuildType()
+    is_build_type_debug = "debug" in env.GetBuildType() and debug_allowed
     for cg in target_compile_groups:
         includes = []
         sys_includes = []
@@ -587,8 +589,8 @@ def prepare_build_envs(config, default_env):
     return build_envs
 
 
-def compile_source_files(config, default_env, project_src_dir, prepend_dir=None):
-    build_envs = prepare_build_envs(config, default_env)
+def compile_source_files(config, default_env, project_src_dir, prepend_dir=None, debug_allowed=True):
+    build_envs = prepare_build_envs(config, default_env, debug_allowed)
     objects = []
     components_dir = fs.to_unix_path(os.path.join(FRAMEWORK_DIR, "components"))
     for source in config.get("sources", []):
@@ -703,7 +705,7 @@ def find_lib_deps(components_map, elf_config, link_args, ignore_components=None)
     return result
 
 
-def build_bootloader():
+def build_bootloader(sdk_config):
     bootloader_src_dir = os.path.join(
         FRAMEWORK_DIR, "components", "bootloader", "subproject"
     )
@@ -743,7 +745,15 @@ def build_bootloader():
         target_configs, ["STATIC_LIBRARY", "OBJECT_LIBRARY"]
     )
 
-    build_components(bootloader_env, components_map, bootloader_src_dir, "bootloader")
+    # Note: By default the size of bootloader is limited to 0x2000 bytes,
+    # in debug mode the footprint size can be easily grow beyond this limit
+    build_components(
+        bootloader_env,
+        components_map,
+        bootloader_src_dir,
+        "bootloader",
+        debug_allowed=sdk_config.get("BOOTLOADER_COMPILER_OPTIMIZATION_DEBUG", False),
+    )
     link_args = extract_link_args(elf_config)
     extra_flags = filter_args(link_args["LINKFLAGS"], ["-T", "-u"])
     link_args["LINKFLAGS"] = sorted(
@@ -788,10 +798,12 @@ def get_components_map(target_configs, target_types, ignore_components=None):
     return result
 
 
-def build_components(env, components_map, project_src_dir, prepend_dir=None):
+def build_components(
+    env, components_map, project_src_dir, prepend_dir=None, debug_allowed=True
+):
     for k, v in components_map.items():
         components_map[k]["lib"] = build_library(
-            env, v["config"], project_src_dir, prepend_dir
+            env, v["config"], project_src_dir, prepend_dir, debug_allowed
         )
 
 
@@ -1232,7 +1244,7 @@ project_lib_includes = get_project_lib_includes(env)
 # Compile bootloader
 #
 
-env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", build_bootloader())
+env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", build_bootloader(sdk_config))
 
 #
 # Target: ESP-IDF menuconfig
