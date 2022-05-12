@@ -46,6 +46,3 @@ jobs:
       - name: Build examples
         run: |
           pio run -d ${{ matrix.example }}
-      - name: Build unit tests
-        run: |
-          pio test -d "examples/espidf-hello-world" -e esp32dev --without-uploading --without-testing
