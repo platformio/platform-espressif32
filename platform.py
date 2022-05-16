@@ -98,27 +98,33 @@ class Espressif32Platform(PlatformBase):
                 elif p in ("tool-mconf", "tool-idf") and "windows" in get_systype():
                     self.packages[p]["optional"] = False
 
-        if mcu in ("esp32", "esp32s2", "esp32s3", "esp32c3"):
-            # RISC-V based toolchain for ESP32C3 and ESP32Sx ULP
-            self.packages["toolchain-esp32ulp"]["optional"] = False
-            if not "arm64" in get_systype():
-                if mcu == "esp32c3":
-                    self.packages["toolchain-riscv32-esp"]["optional"] = False
-                if mcu == "esp32":
-                    self.packages["toolchain-xtensa-esp32"]["optional"] = False
-                if mcu == "esp32s2":
-                    self.packages["toolchain-xtensa-esp32s2"]["optional"] = False
-                if mcu == "esp32s3":
-                    self.packages["toolchain-xtensa-esp32s3"]["optional"] = False
-            if "darwin" in get_systype() and "arm64" in get_systype():
-                if mcu == "esp32c3":
-                    self.packages["toolchain-riscv32-esp-arm"]["optional"] = False
-                if mcu == "esp32":
-                    self.packages["toolchain-xtensa-esp32-arm"]["optional"] = False
-                if mcu == "esp32s2":
-                    self.packages["toolchain-xtensa-esp32s2-arm"]["optional"] = False
-                if mcu == "esp32s3":
-                    self.packages["toolchain-xtensa-esp32s3-arm"]["optional"] = False
+        if not "arm64" in get_systype():
+            for available_mcu in ("esp32", "esp32s2", "esp32s3"):
+                if available_mcu == mcu:
+                    self.packages["toolchain-xtensa-%s" % mcu]["optional"] = False
+                else:
+                    self.packages.pop("toolchain-xtensa-%s" % available_mcu, None)
+
+            if mcu in ("esp32s2", "esp32s3", "esp32c3"):
+                self.packages.pop("toolchain-esp32ulp", None)
+                if mcu == "esp32" or mcu == "esp32c3":
+                    self.packages.pop("toolchain-esp32s2ulp", None)
+                # RISC-V based toolchain for ESP32C3, ESP32S2, ESP32S3 ULP
+                self.packages["toolchain-riscv32-esp"]["optional"] = False
+
+        if "darwin" in get_systype() and "arm64" in get_systype():
+            for available_mcu in ("esp32", "esp32s2", "esp32s3"):
+                if available_mcu == mcu:
+                    self.packages["toolchain-xtensa-%s-arm" % mcu]["optional"] = False
+                else:
+                    self.packages.pop("toolchain-xtensa-%s-arm" % available_mcu, None)
+
+            if mcu in ("esp32s2", "esp32s3", "esp32c3"):
+                self.packages.pop("toolchain-esp32ulp", None)
+                if mcu == "esp32" or mcu == "esp32c3":
+                    self.packages.pop("toolchain-esp32s2ulp", None)
+                # RISC-V based toolchain for ESP32C3, ESP32S2, ESP32S3 ULP
+                self.packages["toolchain-riscv32-esp-arm"]["optional"] = False
 
         is_legacy_project = (
             build_core == "mbcwb"
@@ -175,6 +181,7 @@ class Espressif32Platform(PlatformBase):
         supported_debug_tools = [
             "cmsis-dap",
             "esp-prog",
+            "esp_usb_jtag",
             "iot-bus-jtag",
             "jlink",
             "minimodule",
@@ -201,9 +208,7 @@ class Espressif32Platform(PlatformBase):
             if link in non_debug_protocols or link in debug["tools"]:
                 continue
 
-            if link == "jlink":
-                openocd_interface = link
-            elif link == "cmsis-dap":
+            if link in ("jlink", "cmsis-dap", "esp_usb_jtag"):
                 openocd_interface = link
             elif link in ("esp-prog", "ftdi"):
                 if board.id == "esp32-s2-kaluga-1":
