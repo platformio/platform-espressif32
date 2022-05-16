@@ -5,41 +5,37 @@
     },
     "core": "esp32",
     "extra_flags": [
-      "-DARDUINO_LIONBIT",
-      "-DARDUINO_RUNNING_CORE=1",
-      "-DARDUINO_EVENT_RUNNING_CORE=1"
+      "-DARDUINO_DYDK1A",
+      "-DBOARD_HAS_PSRAM",
+      "-mfix-esp32-psram-cache-issue",
+      "-mfix-esp32-psram-cache-strategy=memw"
     ],
     "f_cpu": "240000000L",
     "f_flash": "40000000L",
     "flash_mode": "dio",
-    "flags" : "-DCORE_DEBUG_LEVEL=5",
     "mcu": "esp32",
-    "variant": "lionbit"
+    "variant": "deneyapkart1A"
   },
   "connectivity": [
     "wifi",
     "bluetooth",
-    "ethernet",
-    "can"
+    "ethernet"
   ],
   "debug": {
-    "openocd_board": "esp-wroom-32.cfg"
+    "openocd_board": "esp32-wrover.cfg"
   },
   "frameworks": [
     "arduino",
     "espidf"
   ],
-  "name": "Lion:Bit Dev Board",
+  "name": "Deneyap Kart 1A",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
     "maximum_size": 4194304,
     "require_upload_port": true,
-    "speed": 115200
+    "speed": 460800
   },
-  "monitor": {
-    "speed" : 115200
-  },
-  "url": "http://lionbit.lk/",
-  "vendor": "Lion:Bit"
+  "url": "https://deneyapkart.org/magaza/urun-deneyap-kart.html",
+  "vendor": "Deneyap"
 }

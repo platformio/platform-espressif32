@@ -57,6 +57,10 @@ def _get_board_flash_mode(env):
     return mode
 
 
+def _get_board_boot_mode(env):
+    return env.BoardConfig().get("build.boot", "$BOARD_FLASH_MODE")
+
+
 def _parse_size(value):
     if isinstance(value, int):
         return value
@@ -111,8 +115,8 @@ def _update_max_upload_size(env):
     if not env.get("PARTITIONS_TABLE_CSV"):
         return
     sizes = [
-        _parse_size(p['size']) for p in _parse_partitions(env)
-        if p['type'] in ("0", "app")
+        _parse_size(p["size"]) for p in _parse_partitions(env)
+        if p["type"] in ("0", "app")
     ]
     if sizes:
         board.update("upload.maximum_size", max(sizes))
@@ -167,6 +171,7 @@ if mcu == "esp32c3":
     toolchain_arch = "riscv32-esp"
 
 env.Replace(
+    __get_board_boot_mode=_get_board_boot_mode,
     __get_board_f_flash=_get_board_f_flash,
     __get_board_flash_mode=_get_board_flash_mode,
 

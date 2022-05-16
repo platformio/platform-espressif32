@@ -44,6 +44,12 @@
       "owner": "espressif",
       "version": "8.4.0+2021r2-patch3"
     },
+     "toolchain-xtensa-esp32s3": {
+      "type": "toolchain",
+      "optional": true,
+      "owner": "espressif",
+      "version": "8.4.0+2021r2-patch3"
+    },
     "toolchain-riscv32-esp": {
       "type": "toolchain",
       "optional": true,
@@ -66,7 +72,7 @@
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~3.20002.0"
+      "version": "~3.20003.0"
     },
     "framework-arduino-mbcwb": {
       "type": "framework",
