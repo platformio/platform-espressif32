@@ -4,12 +4,22 @@
       "ldscript": "esp32c3_out.ld"
     },
     "core": "esp32",
-    "extra_flags": "-DARDUINO_USB_MODE=1 -DARDUINO_USB_CDC_ON_BOOT=1",
+    "extra_flags": [
+      "-DARDUINO_ADAFRUIT_QTPY_ESP32C3",
+      "-DARDUINO_USB_MODE=1",
+      "-DARDUINO_USB_CDC_ON_BOOT=1"
+    ],
     "f_cpu": "160000000L",
     "f_flash": "80000000L",
-    "flash_mode": "qio",
+    "flash_mode": "dout",
+    "hwids": [
+      [
+        "0X303A",
+        "0x1001"
+      ]
+    ],
     "mcu": "esp32c3",
-    "variant": "esp32c3"
+    "variant": "adafruit_qtpy_esp32c3"
   },
   "connectivity": [
     "wifi"
@@ -21,7 +31,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "Adafruit QT Py ESP32-C3 WiFi Dev Board with STEMMA QT",
+  "name": "Adafruit QT Py ESP32-C3",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
