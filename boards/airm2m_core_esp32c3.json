@@ -8,8 +8,8 @@
     "f_flash": "80000000L",
     "flash_mode": "dio",
     "extra_flags": [
-      "-DARDUINO_ESP32C3_DEV",
-      "-DAIRM2M_CORE_ESP32C3"
+      "-DARDUINO_AirM2M_CORE_ESP32C3",
+      "-DARDUINO_USB_MODE=1"
     ],
     "mcu": "esp32c3",
     "variant": "AirM2M_CORE_ESP32C3"
@@ -24,13 +24,13 @@
     "arduino",
     "espidf"
   ],
-  "name": "AirM2M CORE_ESP32C3",
+  "name": "AirM2M CORE ESP32C3",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
     "maximum_size": 4194304,
     "require_upload_port": true,
-    "speed": 1152000
+    "speed": 460800
   },
   "url": "https://wiki.luatos.com/chips/esp32c3/board.html",
   "vendor": "AirM2M"
