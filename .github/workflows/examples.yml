@@ -45,4 +45,4 @@ jobs:
           pio pkg install --global --platform symlink://.
       - name: Build examples
         run: |
-          platformio run -d ${{ matrix.example }}
+          pio run -d ${{ matrix.example }}
