@@ -161,7 +161,6 @@ def __fetch_fs_size(target, source, env):
 
 
 env = DefaultEnvironment()
-env.SConscript("compat.py", exports="env")
 platform = env.PioPlatform()
 board = env.BoardConfig()
 mcu = board.get("build.mcu", "esp32")
