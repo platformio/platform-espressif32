@@ -19,7 +19,7 @@ import json
 import re
 import requests
 
-from platformio.managers.platform import PlatformBase, to_unix_path
+from platformio.public import PlatformBase, to_unix_path
 
 
 IS_WINDOWS = sys.platform.startswith("win")
