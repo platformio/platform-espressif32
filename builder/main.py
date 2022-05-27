@@ -227,9 +227,6 @@ if env.get("PROGNAME", "program") == "program":
     env.Replace(PROGNAME="firmware")
 
 env.Append(
-    # copy CCFLAGS to ASFLAGS (-x assembler-with-cpp mode)
-    ASFLAGS=env.get("CCFLAGS", [])[:],
-
     BUILDERS=dict(
         ElfToBin=Builder(
             action=env.VerboseAction(" ".join([
