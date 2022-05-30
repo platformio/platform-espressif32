@@ -394,20 +394,26 @@ def filter_args(args, allowed, ignore=None):
 def get_app_flags(app_config, default_config):
     def _extract_flags(config):
         flags = {}
-        for cg in config["compileGroups"]:
-            flags[cg["language"]] = []
-            for ccfragment in cg["compileCommandFragments"]:
-                fragment = ccfragment.get("fragment", "")
-                if not fragment.strip() or fragment.startswith("-D"):
-                    continue
-                flags[cg["language"]].extend(
-                    click.parser.split_arg_string(fragment.strip())
-                )
+        if "compileGroups" in config:
+            for cg in config["compileGroups"]:
+                flags[cg["language"]] = []
+                for ccfragment in cg["compileCommandFragments"]:
+                    fragment = ccfragment.get("fragment", "")
+                    if not fragment.strip() or fragment.startswith("-D"):
+                        continue
+                    flags[cg["language"]].extend(
+                        click.parser.split_arg_string(fragment.strip())
+                    )
 
         return flags
 
     app_flags = _extract_flags(app_config)
     default_flags = _extract_flags(default_config)
+    # No Flags? Add defaults
+    if "ASM" not in app_flags and "ASM" not in default_flags:
+        app_flags["ASM"] = []
+    if "CXX" not in app_flags and "CXX" not in default_flags:
+        app_flags["CXX"] = []
 
     # Flags are sorted because CMake randomly populates build flags in code model
     return {
