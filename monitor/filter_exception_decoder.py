@@ -17,16 +17,19 @@ import re
 import subprocess
 import sys
 
-from platformio.compat import path_to_unicode, WINDOWS
 from platformio.project.exception import PlatformioException
-from platformio.project.helpers import load_project_ide_data
-from platformio.commands.device import DeviceMonitorFilter
+from platformio.public import (
+    DeviceMonitorFilterBase,
+    load_build_metadata,
+)
 
 # By design, __init__ is called inside miniterm and we can't pass context to it.
 # pylint: disable=attribute-defined-outside-init
 
+IS_WINDOWS = sys.platform.startswith("win")
 
-class Esp32ExceptionDecoder(DeviceMonitorFilter):
+
+class Esp32ExceptionDecoder(DeviceMonitorFilterBase)
     NAME = "esp32_exception_decoder"
 
     def __call__(self):
@@ -42,7 +45,7 @@ class Esp32ExceptionDecoder(DeviceMonitorFilter):
         return self
 
     def setup_paths(self):
-        self.project_dir = path_to_unicode(os.path.abspath(self.project_dir))
+        self.project_dir = os.path.abspath(self.project_dir)
 
         self.project_strip_dir = os.environ.get("esp32_exception_decoder_project_strip_dir")
         self.firmware_path = os.environ.get("esp32_exception_decoder_firmware_path")
@@ -54,7 +57,7 @@ class Esp32ExceptionDecoder(DeviceMonitorFilter):
         try:
             if self.firmware_path is None or self.addr2line_path is None:
                 # Only load if necessary, as the call is expensive
-                data = load_project_ide_data(self.project_dir, self.environment)
+                data = load_build_metadata(self.project_dir, self.environment)
 
             if self.firmware_path is None:
                 # Only do this check when the firmware path is not externally provided
@@ -133,7 +136,7 @@ See https://docs.platformio.org/page/projectconf/build_configurations.html
 
     def get_backtrace(self, match):
         trace = ""
-        enc = "mbcs" if WINDOWS else "utf-8"
+        enc = "mbcs" if IS_WINDOWS else "utf-8"
         args = [self.addr2line_path, u"-fipC", u"-e", self.firmware_path]
         try:
             addr = match.group()
