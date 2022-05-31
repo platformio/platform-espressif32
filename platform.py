@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import copy
 import os
 import urllib
 import sys
@@ -20,14 +19,15 @@ import json
 import re
 import requests
 
-from platformio import fs
 from platformio.public import PlatformBase, to_unix_path
-from platformio.util import get_systype
+
+
+IS_WINDOWS = sys.platform.startswith("win")
 
 class Espressif32Platform(PlatformBase):
     def configure_default_packages(self, variables, targets):
         if not variables.get("board"):
-            return PlatformBase.configure_default_packages(self, variables, targets)
+            return super().configure_default_packages(variables, targets)
 
         board_config = self.board_config(variables.get("board"))
         mcu = variables.get("board_build.mcu", board_config.get("build.mcu", "esp32"))
@@ -94,7 +94,7 @@ class Espressif32Platform(PlatformBase):
             for p in self.packages:
                 if p in ("tool-cmake", "tool-ninja", "toolchain-%sulp" % mcu):
                     self.packages[p]["optional"] = False
-                elif p in ("tool-mconf", "tool-idf") and "windows" in get_systype():
+                elif p in ("tool-mconf", "tool-idf") and IS_WINDOWS:
                     self.packages[p]["optional"] = False
 
         if not "arm64" in get_systype():
@@ -154,10 +154,10 @@ class Espressif32Platform(PlatformBase):
                 self.packages["tool-mbctool"]["type"] = "uploader"
                 self.packages["tool-mbctool"]["optional"] = False
 
-        return PlatformBase.configure_default_packages(self, variables, targets)
+        return super().configure_default_packages(variables, targets)
 
     def get_boards(self, id_=None):
-        result = PlatformBase.get_boards(self, id_)
+        result = super().get_boards(id_)
         if not result:
             return result
         if id_:
@@ -278,59 +278,18 @@ class Espressif32Platform(PlatformBase):
 
         load_cmds = [
             'monitor program_esp "{{{path}}}" {offset} verify'.format(
-                path=fs.to_unix_path(item["path"]), offset=item["offset"]
+                path=to_unix_path(item["path"]), offset=item["offset"]
             )
             for item in flash_images
         ]
         load_cmds.append(
             'monitor program_esp "{%s.bin}" %s verify'
             % (
-                fs.to_unix_path(debug_config.build_data["prog_path"][:-4]),
+                to_unix_path(debug_config.build_data["prog_path"][:-4]),
                 build_extra_data.get("application_offset", "0x10000"),
             )
         )
         debug_config.load_cmds = load_cmds
-
-    def configure_debug_options(self, initial_debug_options, ide_data):
-        """
-        Deprecated. Remove method when PlatformIO Core 5.2 is released
-        """
-        ide_extra_data = ide_data.get("extra", {})
-        flash_images = ide_extra_data.get("flash_images", [])
-        debug_options = copy.deepcopy(initial_debug_options)
-
-        if "openocd" in debug_options["server"].get("executable", ""):
-            debug_options["server"]["arguments"].extend(
-                [
-                    "-c",
-                    "adapter_khz %s" % (initial_debug_options.get("speed") or "5000"),
-                ]
-            )
-
-        ignore_conds = [
-            initial_debug_options["load_cmds"] != ["load"],
-            not flash_images,
-            not all([os.path.isfile(item["path"]) for item in flash_images]),
-        ]
-
-        if any(ignore_conds):
-            return debug_options
-
-        load_cmds = [
-            'monitor program_esp "{{{path}}}" {offset} verify'.format(
-                path=fs.to_unix_path(item["path"]), offset=item["offset"]
-            )
-            for item in flash_images
-        ]
-        load_cmds.append(
-            'monitor program_esp "{%s.bin}" %s verify'
-            % (
-                fs.to_unix_path(ide_data["prog_path"][:-4]),
-                ide_extra_data.get("application_offset", "0x10000"),
-            )
-        )
-        debug_options["load_cmds"] = load_cmds
-        return debug_options
 
     @staticmethod
     def extract_toolchain_versions(tool_deps):
