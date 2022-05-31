@@ -21,9 +21,8 @@ import re
 import requests
 
 from platformio import fs
-from platformio.managers.platform import PlatformBase
+from platformio.public import PlatformBase, to_unix_path
 from platformio.util import get_systype
-
 
 class Espressif32Platform(PlatformBase):
     def configure_default_packages(self, variables, targets):
