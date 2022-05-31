@@ -901,7 +901,13 @@ def find_default_component(target_configs):
     for config in target_configs:
         if "__pio_env" in config:
             return config
-    return ""
+    sys.stderr.write(
+        "Error! Failed to find the default IDF component with build information for "
+        "generic files.\nCheck that the `EXTRA_COMPONENT_DIRS` option is not overridden "
+        "in your CMakeLists.txt.\nSee an example with an extra component here "
+        "https://docs.platformio.org/en/latest/frameworks/espidf.html#esp-idf-components\n"
+    )
+    env.Exit(1)
 
 
 def create_version_file():
