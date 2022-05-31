@@ -20,7 +20,7 @@ import re
 import requests
 
 from platformio.public import PlatformBase, to_unix_path
-
+from platformio.util import get_systype
 
 IS_WINDOWS = sys.platform.startswith("win")
 
