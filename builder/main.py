@@ -163,7 +163,6 @@ def __fetch_fs_size(target, source, env):
 
 
 env = DefaultEnvironment()
-env.SConscript("compat.py", exports="env")
 platform = env.PioPlatform()
 board = env.BoardConfig()
 mcu = board.get("build.mcu", "esp32")
@@ -228,9 +227,6 @@ if env.get("PROGNAME", "program") == "program":
     env.Replace(PROGNAME="firmware")
 
 env.Append(
-    # copy CCFLAGS to ASFLAGS (-x assembler-with-cpp mode)
-    ASFLAGS=env.get("CCFLAGS", [])[:],
-
     BUILDERS=dict(
         ElfToBin=Builder(
             action=env.VerboseAction(" ".join([
