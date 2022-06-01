@@ -4,12 +4,18 @@
       "ldscript": "esp32s2_out.ld"
     },
     "core": "esp32",
-    "extra_flags": "-DBOARD_HAS_PSRAM",
+    "extra_flags": "-DARDUINO_ESP32S2_THING_PLUS",
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
     "flash_mode": "qio",
+    "hwids": [
+      [
+        "0x1B4F",
+        "0x0027"
+      ]
+    ],
     "mcu": "esp32s2",
-    "variant": "esp32s2"
+    "variant": "esp32s2thing_plus"
   },
   "connectivity": [
     "wifi"
@@ -21,14 +27,17 @@
     "arduino",
     "espidf"
   ],
-  "name": "Espressif ESP32-S2-Saola-1",
+  "name": "SparkFun ESP32-S2 Thing Plus",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
     "maximum_size": 4194304,
+    "mode": "usb",
+    "use_1200bps_touch": true,
+    "wait_for_upload_port": true,
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/hw-reference/esp32s2/user-guide-saola-1-v1.2.html",
-  "vendor": "Espressif"
+  "url": "https://www.sparkfun.com/products/17743",
+  "vendor": "SparkFun"
 }

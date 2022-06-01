@@ -5,28 +5,20 @@
     },
     "core": "esp32",
     "extra_flags": [
-      "-DARDUINO_ADAFRUIT_FEATHER_ESP32S2_NOPSRAM",
+      "-DARDUINO_atmegazero_esp32s2",
       "-DARDUINO_USB_CDC_ON_BOOT=1"
     ],
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
-    "flash_mode": "dio",
+    "flash_mode": "qio",
     "hwids": [
       [
         "0x239A",
-        "0x80EB"
-      ],
-      [
-        "0x239A",
-        "0x00EB"
-      ],
-      [
-        "0x239A",
-        "0x80EC"
+        "0x800A"
       ]
     ],
     "mcu": "esp32s2",
-    "variant": "adafruit_feather_esp32s2"
+    "variant": "atmegazero_esp32s2"
   },
   "connectivity": [
     "wifi"
@@ -38,24 +30,24 @@
     "arduino",
     "espidf"
   ],
-  "name": "Adafruit ESP32-S2 Feather Development Board",
+  "name": "EspinalLab ATMegaZero ESP32-S2",
   "upload": {
     "arduino": {
       "flash_extra_images": [
         [
           "0x2d0000",
-          "variants/adafruit_feather_esp32s2/tinyuf2.bin"
+          "variants/atmegazero_esp32s2/tinyuf2.bin"
         ]
       ]
     },
-    "flash_size": "4MB",
+    "flash_size": "16MB",
     "maximum_ram_size": 327680,
-    "maximum_size": 4194304,
+    "maximum_size": 16777216,
     "use_1200bps_touch": true,
     "wait_for_upload_port": true,
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://www.adafruit.com/product/4769",
-  "vendor": "Adafruit"
+  "url": "https://shop.atmegazero.com/",
+  "vendor": "EspinalLab"
 }

@@ -4,12 +4,12 @@
       "ldscript": "esp32s2_out.ld"
     },
     "core": "esp32",
-    "extra_flags": "-DBOARD_HAS_PSRAM",
+    "extra_flags": "-DBOARD_HAS_PSRAM -DARDUINO_USB_MODE=0 -DARDUINO_USB_CDC_ON_BOOT=1",
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
     "flash_mode": "qio",
     "mcu": "esp32s2",
-    "variant": "esp32s2"
+    "variant": "adafruit_qtpy_esp32s2"
   },
   "connectivity": [
     "wifi"
@@ -21,14 +21,14 @@
     "arduino",
     "espidf"
   ],
-  "name": "Espressif ESP32-S2-Saola-1",
+  "name": "Adafruit QT Py ESP32-S2",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
     "maximum_size": 4194304,
     "require_upload_port": true,
-    "speed": 460800
+    "speed": 921600
   },
-  "url": "https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/hw-reference/esp32s2/user-guide-saola-1-v1.2.html",
-  "vendor": "Espressif"
+  "url": "https://www.adafruit.com/product/5325",
+  "vendor": "Adafruit"
 }

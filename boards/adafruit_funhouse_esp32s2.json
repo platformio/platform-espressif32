@@ -5,28 +5,29 @@
     },
     "core": "esp32",
     "extra_flags": [
-      "-DARDUINO_ADAFRUIT_FEATHER_ESP32S2_NOPSRAM",
+      "-DARDUINO_FUNHOUSE_ESP32S2",
+      "-DBOARD_HAS_PSRAM",
       "-DARDUINO_USB_CDC_ON_BOOT=1"
     ],
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
-    "flash_mode": "dio",
+    "flash_mode": "qio",
     "hwids": [
       [
         "0x239A",
-        "0x80EB"
+        "0x80F9"
       ],
       [
         "0x239A",
-        "0x00EB"
+        "0x00F9"
       ],
       [
         "0x239A",
-        "0x80EC"
+        "0x80FA"
       ]
     ],
     "mcu": "esp32s2",
-    "variant": "adafruit_feather_esp32s2"
+    "variant": "adafruit_funhouse_esp32s2"
   },
   "connectivity": [
     "wifi"
@@ -38,13 +39,13 @@
     "arduino",
     "espidf"
   ],
-  "name": "Adafruit ESP32-S2 Feather Development Board",
+  "name": "Adafruit FunHouse",
   "upload": {
     "arduino": {
       "flash_extra_images": [
         [
           "0x2d0000",
-          "variants/adafruit_feather_esp32s2/tinyuf2.bin"
+          "variants/adafruit_funhouse_esp32s2/tinyuf2.bin"
         ]
       ]
     },
@@ -56,6 +57,6 @@
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://www.adafruit.com/product/4769",
+  "url": "https://www.adafruit.com/product/4985",
   "vendor": "Adafruit"
 }

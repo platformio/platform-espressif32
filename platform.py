@@ -12,82 +12,152 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import copy
 import os
+import urllib
+import sys
+import json
+import re
+import requests
 
-from platformio import fs
-from platformio.managers.platform import PlatformBase
+from platformio.public import PlatformBase, to_unix_path
 from platformio.util import get_systype
 
+IS_WINDOWS = sys.platform.startswith("win")
 
 class Espressif32Platform(PlatformBase):
     def configure_default_packages(self, variables, targets):
         if not variables.get("board"):
-            return PlatformBase.configure_default_packages(self, variables, targets)
+            return super().configure_default_packages(variables, targets)
 
         board_config = self.board_config(variables.get("board"))
         mcu = variables.get("board_build.mcu", board_config.get("build.mcu", "esp32"))
         frameworks = variables.get("pioframework", [])
+
         if "buildfs" in targets:
-            self.packages["tool-mkspiffs"]["optional"] = False
-            self.packages['tool-mklittlefs']['optional'] = False
+            filesystem = variables.get("board_build.filesystem", "spiffs")
+            if filesystem == "littlefs":
+                self.packages["tool-mklittlefs"]["optional"] = False
+            elif filesystem == "fatfs":
+                self.packages["tool-mkfatfs"]["optional"] = False
+            else:
+                self.packages["tool-mkspiffs"]["optional"] = False
         if variables.get("upload_protocol"):
-            self.packages["tool-openocd-esp32"]["optional"] = False
+            if "darwin" in get_systype() and "arm64" in get_systype():
+                self.packages["tool-openocd-esp32-arm"]["optional"] = False
+            if not "arm64" in get_systype():
+                self.packages["tool-openocd-esp32"]["optional"] = False
         if os.path.isdir("ulp"):
             self.packages["toolchain-esp32ulp"]["optional"] = False
-
-        xtensa_toolchain = "toolchain-xtensa-esp32"
-        xtensa32s2_toolchain = "toolchain-xtensa-esp32s2"
-        xtensa32s3_toolchain = "toolchain-xtensa-esp32s3"
-        riscv_toolchain = "toolchain-riscv32-esp"
- 
-        if "espidf" in frameworks:
-            for p in self.packages:
-                if p in ("tool-cmake", "tool-ninja", "toolchain-%sulp" % mcu):
-                    self.packages[p]["optional"] = False
-                elif p in ("tool-mconf", "tool-idf") and "windows" in get_systype():
-                    self.packages[p]["optional"] = False
-            self.packages[xtensa_toolchain]["version"] = "8.4.0+2021r2-patch3"
-            self.packages[xtensa_toolchain]["optional"] = False
-            
-        if "arduino" in frameworks:
-            self.packages[xtensa_toolchain]["version"] = "8.4.0+2021r2-patch3"
-            self.packages[xtensa_toolchain]["optional"] = False
-
-        if mcu in ("esp32s2", "esp32s3", "esp32c3"):
-            self.packages.pop(xtensa_toolchain, None)
-            self.packages.pop("toolchain-esp32ulp", None)
-            # RISC-V based toolchain for ESP32C3 and ESP32S2 ULP
-            self.packages[riscv_toolchain]["optional"] = False
-            if mcu == "esp32s2":
-                self.packages[xtensa32s2_toolchain]["optional"] = False
-                self.packages["toolchain-esp32s2ulp"]["optional"] = False
-            if mcu == "esp32s3":
-                self.packages[xtensa32s3_toolchain]["optional"] = False
-                self.packages["toolchain-esp32s2ulp"]["optional"] = False
 
         build_core = variables.get(
             "board_build.core", board_config.get("build.core", "arduino")
         ).lower()
-        if "arduino" in frameworks and build_core == "mbcwb":
-            # Briki MCB core packages depend on previous toolchain packages
-            self.packages.pop("toolchain-xtensa-esp32", None)
-            self.packages["toolchain-xtensa32"]["optional"] = False
-            self.packages["toolchain-xtensa32"]["version"] = "~2.50200.0"
-            self.packages["framework-arduinoespressif32"]["optional"] = True
-            self.packages["framework-arduino-mbcwb"]["optional"] = False
-            self.packages["tool-mbctool"]["type"] = "uploader"
-            self.packages["tool-mbctool"]["optional"] = False
 
-        if set(("simba", "pumbaa")) & set(frameworks):
-            # Legacy frameworks depend on previous toolchain packages
-            self.packages["toolchain-xtensa32"]["optional"] = False
-            self.packages["toolchain-xtensa32"]["version"] = "~2.50200.0"
+        if len(frameworks) == 1 and "arduino" in frameworks and build_core == "esp32":
+            # In case the upstream Arduino framework is specified in the configuration
+            # file then we need to dynamically extract toolchain versions from the
+            # Arduino index file. This feature can be disabled via a special option:
+            if (
+                variables.get(
+                    "board_build.arduino.upstream_packages",
+                    board_config.get("build.arduino.upstream_packages", "yes"),
+                ).lower()
+                == "yes"
+            ):
+                package_version = self.packages["framework-arduinoespressif32"][
+                    "version"
+                ]
 
-        return PlatformBase.configure_default_packages(self, variables, targets)
+                url_items = urllib.parse.urlparse(package_version)
+                # Only GitHub repositories support dynamic packages
+                if (
+                    url_items.scheme in ("http", "https")
+                    and url_items.netloc.startswith("github")
+                    and url_items.path.endswith(".git")
+                ):
+                    try:
+                        self.configure_upstream_arduino_packages(url_items)
+                    except Exception as e:
+                        sys.stderr.write(
+                            "Error! Failed to extract upstream toolchain"
+                            "configurations:\n%s\n" % str(e)
+                        )
+                        sys.stderr.write(
+                            "You can disable this feature via the "
+                            "`board_build.arduino.upstream_packages = no` setting in "
+                            "your `platformio.ini` file.\n"
+                        )
+                        sys.exit(1)
+
+        if "espidf" in frameworks:
+            # Common package for IDF and mixed Arduino+IDF projects
+            for p in self.packages:
+                if p in ("tool-cmake", "tool-ninja", "toolchain-%sulp" % mcu):
+                    self.packages[p]["optional"] = False
+                elif p in ("tool-mconf", "tool-idf") and IS_WINDOWS:
+                    self.packages[p]["optional"] = False
+
+        if not "arm64" in get_systype():
+            for available_mcu in ("esp32", "esp32s2", "esp32s3"):
+                if available_mcu == mcu:
+                    self.packages["toolchain-xtensa-%s" % mcu]["optional"] = False
+                else:
+                    self.packages.pop("toolchain-xtensa-%s" % available_mcu, None)
+
+            if mcu in ("esp32s2", "esp32s3", "esp32c3"):
+                self.packages.pop("toolchain-esp32ulp", None)
+                if mcu == "esp32" or mcu == "esp32c3":
+                    self.packages.pop("toolchain-esp32s2ulp", None)
+                # RISC-V based toolchain for ESP32C3, ESP32S2, ESP32S3 ULP
+                self.packages["toolchain-riscv32-esp"]["optional"] = False
+
+        if "darwin" in get_systype() and "arm64" in get_systype():
+            for available_mcu in ("esp32", "esp32s2", "esp32s3"):
+                if available_mcu == mcu:
+                    self.packages["toolchain-xtensa-%s-arm" % mcu]["optional"] = False
+                else:
+                    self.packages.pop("toolchain-xtensa-%s-arm" % available_mcu, None)
+
+            if mcu in ("esp32s2", "esp32s3", "esp32c3"):
+                self.packages.pop("toolchain-esp32ulp", None)
+                if mcu == "esp32" or mcu == "esp32c3":
+                    self.packages.pop("toolchain-esp32s2ulp", None)
+                # RISC-V based toolchain for ESP32C3, ESP32S2, ESP32S3 ULP
+                self.packages["toolchain-riscv32-esp-arm"]["optional"] = False
+
+        is_legacy_project = (
+            build_core == "mbcwb"
+        )
+
+        if is_legacy_project:
+            # Remove the main toolchains from PATH
+            for toolchain in (
+                "toolchain-xtensa-esp32",
+                "toolchain-xtensa-esp32s2",
+                "toolchain-xtensa-esp32s3",
+                "toolchain-riscv32-esp",
+            ):
+                self.packages.pop(toolchain, None)
+
+            # Add legacy toolchain with specific version
+            self.packages["toolchain-xtensa32"] = {
+                "type": "toolchain",
+                "owner": "platformio",
+                "version": "~2.80400.0"
+                if "arduino" in frameworks and build_core != "mbcwb"
+                else "~2.50200.0",
+            }
+
+            if build_core == "mbcwb":
+                self.packages["framework-arduinoespressif32"]["optional"] = True
+                self.packages["framework-arduino-mbcwb"]["optional"] = False
+                self.packages["tool-mbctool"]["type"] = "uploader"
+                self.packages["tool-mbctool"]["optional"] = False
+
+        return super().configure_default_packages(variables, targets)
 
     def get_boards(self, id_=None):
-        result = PlatformBase.get_boards(self, id_)
+        result = super().get_boards(id_)
         if not result:
             return result
         if id_:
@@ -108,7 +178,9 @@ class Espressif32Platform(PlatformBase):
         debug = board.manifest.get("debug", {})
         non_debug_protocols = ["esptool", "espota", "mbctool"]
         supported_debug_tools = [
+            "cmsis-dap",
             "esp-prog",
+            "esp_usb_jtag",
             "iot-bus-jtag",
             "jlink",
             "minimodule",
@@ -135,7 +207,7 @@ class Espressif32Platform(PlatformBase):
             if link in non_debug_protocols or link in debug["tools"]:
                 continue
 
-            if link == "jlink":
+            if link in ("jlink", "cmsis-dap", "esp_usb_jtag"):
                 openocd_interface = link
             elif link in ("esp-prog", "ftdi"):
                 if board.id == "esp32-s2-kaluga-1":
@@ -206,53 +278,113 @@ class Espressif32Platform(PlatformBase):
 
         load_cmds = [
             'monitor program_esp "{{{path}}}" {offset} verify'.format(
-                path=fs.to_unix_path(item["path"]), offset=item["offset"]
+                path=to_unix_path(item["path"]), offset=item["offset"]
             )
             for item in flash_images
         ]
         load_cmds.append(
             'monitor program_esp "{%s.bin}" %s verify'
             % (
-                fs.to_unix_path(debug_config.build_data["prog_path"][:-4]),
+                to_unix_path(debug_config.build_data["prog_path"][:-4]),
                 build_extra_data.get("application_offset", "0x10000"),
             )
         )
         debug_config.load_cmds = load_cmds
 
-    def configure_debug_options(self, initial_debug_options, ide_data):
-        """
-        Deprecated. Remove method when PlatformIO Core 5.2 is released
-        """
-        ide_extra_data = ide_data.get("extra", {})
-        flash_images = ide_extra_data.get("flash_images", [])
-        debug_options = copy.deepcopy(initial_debug_options)
+    @staticmethod
+    def extract_toolchain_versions(tool_deps):
+        def _parse_version(original_version):
+            assert original_version
+            match = re.match(r"^gcc(\d+)_(\d+)_(\d+)\-esp\-(.+)$", original_version)
+            if not match:
+                raise ValueError("Bad package version `%s`" % original_version)
+            assert len(match.groups()) == 4
+            return "%s.%s.%s+%s" % (match.groups())
 
-        if "openocd" in debug_options["server"].get("executable", ""):
-            debug_options["server"]["arguments"].extend(
-                ["-c", "adapter_khz %s" % (initial_debug_options.get("speed") or "5000")]
+        if not tool_deps:
+            raise ValueError(
+                ("Failed to extract tool dependencies from the remote package file")
             )
 
-        ignore_conds = [
-            initial_debug_options["load_cmds"] != ["load"],
-            not flash_images,
-            not all([os.path.isfile(item["path"]) for item in flash_images]),
-        ]
+        toolchain_remap = {
+            "xtensa-esp32-elf-gcc": "toolchain-xtensa-esp32",
+            "xtensa-esp32s2-elf-gcc": "toolchain-xtensa-esp32s2",
+            "xtensa-esp32s3-elf-gcc": "toolchain-xtensa-esp32s3",
+            "riscv32-esp-elf-gcc": "toolchain-riscv32-esp",
+        }
 
-        if any(ignore_conds):
-            return debug_options
+        result = dict()
+        for tool in tool_deps:
+            if tool["name"] in toolchain_remap:
+                result[toolchain_remap[tool["name"]]] = _parse_version(tool["version"])
 
-        load_cmds = [
-            'monitor program_esp "{{{path}}}" {offset} verify'.format(
-                path=fs.to_unix_path(item["path"]), offset=item["offset"]
+        return result
+
+    @staticmethod
+    def parse_tool_dependencies(index_data):
+        for package in index_data.get("packages", []):
+            if package["name"] == "esp32":
+                for platform in package["platforms"]:
+                    if platform["name"] == "esp32":
+                        return platform["toolsDependencies"]
+
+        return []
+
+    @staticmethod
+    def download_remote_package_index(url_items):
+        def _prepare_url_for_index_file(url_items):
+            tag = "master"
+            if url_items.fragment:
+                tag = url_items.fragment
+            return (
+                "https://raw.githubusercontent.com/%s/"
+                "%s/package/package_esp32_index.template.json"
+                % (url_items.path.replace(".git", ""), tag)
             )
-            for item in flash_images
-        ]
-        load_cmds.append(
-            'monitor program_esp "{%s.bin}" %s verify'
-            % (
-                fs.to_unix_path(ide_data["prog_path"][:-4]),
-                ide_extra_data.get("application_offset", "0x10000"),
+
+        index_file_url = _prepare_url_for_index_file(url_items)
+        r = requests.get(index_file_url, timeout=10)
+        if r.status_code != 200:
+            raise ValueError(
+                (
+                    "Failed to download package index file due to a bad response (%d) "
+                    "from the remote `%s`"
+                )
+                % (r.status_code, index_file_url)
             )
+        return r.json()
+
+    def configure_arduino_toolchains(self, package_index):
+        if not package_index:
+            return
+
+        toolchain_packages = self.extract_toolchain_versions(
+            self.parse_tool_dependencies(package_index)
         )
-        debug_options["load_cmds"] = load_cmds
-        return debug_options
+        for toolchain_package, version in toolchain_packages.items():
+            if toolchain_package not in self.packages:
+                self.packages[toolchain_package] = dict()
+            self.packages[toolchain_package]["version"] = version
+            self.packages[toolchain_package]["owner"] = "espressif"
+            self.packages[toolchain_package]["type"] = "toolchain"
+
+    def configure_upstream_arduino_packages(self, url_items):
+        framework_index_file = os.path.join(
+            self.get_package_dir("framework-arduinoespressif32") or "",
+            "package",
+            "package_esp32_index.template.json",
+        )
+
+        # Detect whether the remote is already cloned
+        if os.path.isfile(framework_index_file) and os.path.isdir(
+            os.path.join(
+                self.get_package_dir("framework-arduinoespressif32") or "", ".git"
+            )
+        ):
+            with open(framework_index_file) as fp:
+                self.configure_arduino_toolchains(json.load(fp))
+        else:
+            print("Configuring toolchain packages from a remote source...")
+            self.configure_arduino_toolchains(
+                self.download_remote_package_index(url_items)
+            )

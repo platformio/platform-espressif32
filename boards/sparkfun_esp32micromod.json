@@ -1,15 +1,15 @@
 {
   "build": {
-    "arduino":{
+    "arduino": {
       "ldscript": "esp32_out.ld"
     },
     "core": "esp32",
-    "extra_flags": "-DARDUINO_NANO32",
+    "extra_flags": "-DARDUINO_ESP32_MICROMOD",
     "f_cpu": "240000000L",
     "f_flash": "40000000L",
     "flash_mode": "dio",
     "mcu": "esp32",
-    "variant": "nano32"
+    "variant": "esp32micromod"
   },
   "connectivity": [
     "wifi",
@@ -21,7 +21,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "MakerAsia Nano32",
+  "name": "SparkFun ESP32 MicroMod",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
@@ -29,6 +29,6 @@
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "http://iot-bits.com/nano32-esp32-development-board",
-  "vendor": "MakerAsia"
+  "url": "https://www.sparkfun.com/products/16781",
+  "vendor": "SparkFun"
 }

@@ -12,14 +12,13 @@
     "variant": "esp32s2"
   },
   "connectivity": [
-    "arduino",
-    "espidf",
     "wifi"
   ],
   "debug": {
     "openocd_target": "esp32s2.cfg"
   },
   "frameworks": [
+    "arduino",
     "espidf"
   ],
   "name": "Franzininho WiFi Board",

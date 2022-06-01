@@ -1,11 +1,12 @@
 {
   "build": {
-    "arduino":{
+    "arduino": {
       "ldscript": "esp32s2_out.ld"
     },
     "core": "esp32",
     "extra_flags": [
-      "-DARDUINO_ADAFRUIT_FEATHER_ESP32S2_NOPSRAM",
+      "-DARDUINO_FEATHERS2NEO",
+      "-DBOARD_HAS_PSRAM",
       "-DARDUINO_USB_CDC_ON_BOOT=1"
     ],
     "f_cpu": "240000000L",
@@ -13,20 +14,12 @@
     "flash_mode": "dio",
     "hwids": [
       [
-        "0x239A",
-        "0x80EB"
-      ],
-      [
-        "0x239A",
-        "0x00EB"
-      ],
-      [
-        "0x239A",
-        "0x80EC"
+        "0x303A",
+        "0x80B4"
       ]
     ],
     "mcu": "esp32s2",
-    "variant": "adafruit_feather_esp32s2"
+    "variant": "um_feathers2neo"
   },
   "connectivity": [
     "wifi"
@@ -38,24 +31,16 @@
     "arduino",
     "espidf"
   ],
-  "name": "Adafruit ESP32-S2 Feather Development Board",
+  "name": "Unexpected Maker FeatherS2 Neo",
   "upload": {
-    "arduino": {
-      "flash_extra_images": [
-        [
-          "0x2d0000",
-          "variants/adafruit_feather_esp32s2/tinyuf2.bin"
-        ]
-      ]
-    },
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
     "maximum_size": 4194304,
     "use_1200bps_touch": true,
     "wait_for_upload_port": true,
     "require_upload_port": true,
-    "speed": 460800
+    "speed": 921600
   },
-  "url": "https://www.adafruit.com/product/4769",
-  "vendor": "Adafruit"
+  "url": "https://unexpectedmaker.com/feathers2-neo",
+  "vendor": "Unexpected Maker"
 }

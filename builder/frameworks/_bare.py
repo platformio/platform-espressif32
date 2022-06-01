@@ -21,7 +21,12 @@ from SCons.Script import Import
 Import("env")
 
 env.Append(
-    ASFLAGS=["-x", "assembler-with-cpp"],
+    ASFLAGS=[
+        "-mlongcalls",
+    ],
+    ASPPFLAGS=[
+        "-x", "assembler-with-cpp",
+    ],
 
     CFLAGS=["-std=gnu99"],
 
@@ -60,6 +65,3 @@ env.Append(
         "-Wl,--gc-sections"
     ]
 )
-
-# copy CCFLAGS to ASFLAGS (-x assembler-with-cpp mode)
-env.Append(ASFLAGS=env.get("CCFLAGS", [])[:])
