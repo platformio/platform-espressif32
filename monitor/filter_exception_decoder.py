@@ -29,7 +29,7 @@ from platformio.public import (
 IS_WINDOWS = sys.platform.startswith("win")
 
 
-class Esp32ExceptionDecoder(DeviceMonitorFilterBase)
+class Esp32ExceptionDecoder(DeviceMonitorFilterBase):
     NAME = "esp32_exception_decoder"
 
     def __call__(self):
