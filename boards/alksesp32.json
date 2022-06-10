@@ -21,7 +21,8 @@
     "openocd_board": "esp-wroom-32.cfg"
   },
   "frameworks": [
-    "arduino"
+    "arduino",
+    "espidf"
   ],
   "name": "ALKS ESP32",
   "upload": {
