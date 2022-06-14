@@ -157,6 +157,7 @@ class Espressif32Platform(PlatformBase):
         supported_debug_tools = [
             "cmsis-dap",
             "esp-prog",
+            "esp-bridge",
             "iot-bus-jtag",
             "jlink",
             "minimodule",
@@ -166,6 +167,9 @@ class Espressif32Platform(PlatformBase):
             "olimex-jtag-tiny",
             "tumpa",
         ]
+
+        if board.get("build.mcu", "") in ("esp32c3", "esp32s3"):
+            supported_debug_tools.append("esp-builtin")
 
         upload_protocol = board.manifest.get("upload", {}).get("protocol")
         upload_protocols = board.manifest.get("upload", {}).get("protocols", [])
@@ -178,7 +182,6 @@ class Espressif32Platform(PlatformBase):
         if "tools" not in debug:
             debug["tools"] = {}
 
-        # Only FTDI based debug probes
         for link in upload_protocols:
             if link in non_debug_protocols or link in debug["tools"]:
                 continue
@@ -190,6 +193,10 @@ class Espressif32Platform(PlatformBase):
                     openocd_interface = "ftdi/esp32s2_kaluga_v1"
                 else:
                     openocd_interface = "ftdi/esp32_devkitj_v1"
+            elif link == "esp-bridge":
+                openocd_interface = "esp_usb_bridge"
+            elif link == "esp-builtin":
+                openocd_interface = "esp_usb_jtag"
             else:
                 openocd_interface = "ftdi/" + link
 
