@@ -32,7 +32,7 @@
       "flash_extra_images": [
         [
           "0x410000",
-          "variants/adafruit_feather_esp32s3_nopsram/tinyuf2.bin"
+          "variants/unphone9/tinyuf2.bin"
         ]
       ]
     },
