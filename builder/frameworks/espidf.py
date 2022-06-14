@@ -52,21 +52,11 @@ idf_variant = mcu.lower()
 FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
 if "darwin" in get_systype() and "arm64" in get_systype():
     TOOLCHAIN_DIR = platform.get_package_dir(
-        "toolchain-%s"
-        % (
-            "riscv32-esp-arm"
-            if mcu == "esp32c3"
-            else ("xtensa-%s-arm" % mcu)
-        )
+    "toolchain-%s" % ("riscv32-esp-arm" if mcu == "esp32c3" else ("xtensa-%s-arm" % mcu))
     )
 if not "arm64" in get_systype():
     TOOLCHAIN_DIR = platform.get_package_dir(
-        "toolchain-%s"
-        % (
-            "riscv32-esp"
-            if mcu == "esp32c3"
-            else ("xtensa-%s" % mcu)
-        )
+    "toolchain-%s" % ("riscv32-esp" if mcu == "esp32c3" else ("xtensa-%s" % mcu))
     )
 
 assert os.path.isdir(FRAMEWORK_DIR)
@@ -236,15 +226,9 @@ def populate_idf_env_vars(idf_env):
         os.path.dirname(env.subst("$PYTHONEXE")),
     ]
 
-    if mcu != "esp32c3":
+    if mcu not in ("esp32c3", "esp32s3"):
         additional_packages.append(
-            os.path.join(
-                platform.get_package_dir(
-                    "toolchain-%sulp"
-                    % ("esp32s2" if (mcu == "esp32s3" or mcu == "esp32s2") else mcu)
-                ),
-                "bin"
-              ),
+            os.path.join(platform.get_package_dir("toolchain-%sulp" % mcu), "bin"),
         )
 
     if "windows" in get_systype():
@@ -354,7 +338,7 @@ def extract_link_args(target_config):
             if fragment.startswith("-l"):
                 link_args["LIBS"].extend(args)
             elif fragment.startswith("-L"):
-                lib_path = fragment.replace("-L", "").strip().strip('"')
+                lib_path = fragment.replace("-L", "").strip(" '\"")
                 _add_to_libpath(lib_path, link_args)
             elif fragment.startswith("-") and not fragment.startswith("-l"):
                 # CMake mistakenly marks LINKFLAGS as libraries
@@ -438,46 +422,83 @@ def get_sdk_configuration():
         return {}
 
 
-def find_framework_service_files(search_path, sdk_config):
-    result = {}
-    result["lf_files"] = list()
-    result["kconfig_files"] = list()
-    result["kconfig_build_files"] = list()
-    for d in os.listdir(search_path):
-        path = os.path.join(search_path, d)
-        if not os.path.isdir(path):
-            continue
-        for f in os.listdir(path):
-            # Skip hardware specific files as they will be added later
-            if f == "linker.lf" and not os.path.basename(path).startswith(
-                ("esp32", "riscv")
+def load_component_paths(framework_components_dir, ignored_component_prefixes=None):
+    def _scan_components_from_framework():
+        result = []
+        for component in os.listdir(framework_components_dir):
+            component_path = os.path.join(framework_components_dir, component)
+            if component.startswith(ignored_component_prefixes) or not os.path.isdir(
+                component_path
             ):
-                result["lf_files"].append(os.path.join(path, f))
-            elif f == "Kconfig.projbuild":
-                result["kconfig_build_files"].append(os.path.join(path, f))
-            elif f == "Kconfig":
-                result["kconfig_files"].append(os.path.join(path, f))
+                continue
+            result.append(component_path)
 
-    if mcu == "esp32c3":
-        result["lf_files"].append(
-            os.path.join(FRAMEWORK_DIR, "components", "riscv", "linker.lf")
-        )
+        return result
 
-    result["lf_files"].extend(
-        [
-            os.path.join(FRAMEWORK_DIR, "components", "esp_common", "common.lf"),
-            os.path.join(FRAMEWORK_DIR, "components", "esp_common", "soc.lf"),
-            os.path.join(FRAMEWORK_DIR, "components", "esp_system", "app.lf"),
-            os.path.join(FRAMEWORK_DIR, "components", "newlib", "newlib.lf"),
-            os.path.join(FRAMEWORK_DIR, "components", "newlib", "system_libs.lf"),
-        ]
+    # First of all, try to load the list of used components from the project description
+    components = []
+    ignored_component_prefixes = ignored_component_prefixes or []
+    project_description_file = os.path.join(BUILD_DIR, "project_description.json")
+    if os.path.isfile(project_description_file):
+        with open(project_description_file) as fp:
+            try:
+                data = json.load(fp)
+                for path in data.get("build_component_paths", []):
+                    if not os.path.basename(path).startswith(
+                        ignored_component_prefixes
+                    ):
+                        components.append(path)
+            except:
+                print(
+                    "Warning: Could not find load components from project description!\n"
+                )
+
+    return components or _scan_components_from_framework()
+
+
+def extract_linker_script_fragments(framework_components_dir, sdk_config):
+    # Hardware-specific components are excluded from search and added manually below
+    project_components = load_component_paths(
+        framework_components_dir, ignored_component_prefixes=("esp32", "riscv")
     )
 
+    result = []
+    for component_path in project_components:
+        linker_fragment = os.path.join(component_path, "linker.lf")
+        if os.path.isfile(linker_fragment):
+            result.append(linker_fragment)
+
+    if not result:
+        sys.stderr.write("Error: Failed to extract paths to linker script fragments\n")
+        env.Exit(1)
+
+    if mcu == "esp32c3":
+        result.append(os.path.join(framework_components_dir, "riscv", "linker.lf"))
+
+    # Add extra linker fragments
+    for fragment in (
+        os.path.join("esp_system", "app.lf"),
+        os.path.join("esp_common", "common.lf"),
+        os.path.join("esp_common", "soc.lf"),
+        os.path.join("newlib", "system_libs.lf"),
+        os.path.join("newlib", "newlib.lf"),
+    ):
+        result.append(os.path.join(framework_components_dir, fragment))
+
     if sdk_config.get("SPIRAM_CACHE_WORKAROUND", False):
-        result["lf_files"].append(
+        result.append(
             os.path.join(
-                FRAMEWORK_DIR, "components", "newlib", "esp32-spiram-rom-functions-c.lf"
+                framework_components_dir, "newlib", "esp32-spiram-rom-functions-c.lf"
             )
+        )
+
+    if board.get("build.esp-idf.extra_lf_files", ""):
+        result.extend(
+            [
+                lf if os.path.isabs(lf) else os.path.join(PROJECT_DIR, lf)
+                for lf in board.get("build.esp-idf.extra_lf_files").splitlines()
+                if lf.strip()
+            ]
         )
 
     return result
@@ -510,7 +531,7 @@ def create_custom_libraries_list(ldgen_libraries_file, ignore_targets):
 
 def generate_project_ld_script(sdk_config, ignore_targets=None):
     ignore_targets = ignore_targets or []
-    project_files = find_framework_service_files(
+    linker_script_fragments = extract_linker_script_fragments(
         os.path.join(FRAMEWORK_DIR, "components"), sdk_config
     )
 
@@ -519,51 +540,13 @@ def generate_project_ld_script(sdk_config, ignore_targets=None):
     libraries_list = create_custom_libraries_list(
         os.path.join(BUILD_DIR, "ldgen_libraries"), ignore_targets
     )
-    # Rework the memory template linker script, following components/esp_system/ld.cmake
-    args = {
-        "preprocess" : os.path.join(
-            TOOLCHAIN_DIR,
-            "bin",
-            env.subst("$CC")),
-        "ld_output": os.path.join("$BUILD_DIR", "memory.ld"),
-        "ld_dir": os.path.join(
-            FRAMEWORK_DIR,
-            "components",
-            "esp_system",
-            "ld"),
-        "ld_input": os.path.join(
-            FRAMEWORK_DIR,
-            "components",
-            "esp_system",
-            "ld",
-            idf_variant,
-            "memory.ld.in",
-        ),
-        "config": os.path.join("$BUILD_DIR", "config"),
-        "flags" : '-C -P -x c -E -o '
-    }
-
-    cmd = (
-        '"{preprocess}" {flags} "{ld_output}" -I "{config}" -I "{ld_dir}" "{ld_input}"'
-    ).format(**args)
-
-    env.Command(
-        os.path.join("$BUILD_DIR", "memory.ld"),
-        os.path.join(
-            FRAMEWORK_DIR,
-            "components",
-            "esp_system",
-            "ld",
-            idf_variant,
-            "memory.ld.in",
-        ),
-        env.VerboseAction(cmd, "Generating memory linker script $TARGET"),
-    )
 
     args = {
         "script": os.path.join(FRAMEWORK_DIR, "tools", "ldgen", "ldgen.py"),
         "config": SDKCONFIG_PATH,
-        "fragments": " ".join(['"%s"' % f for f in project_files.get("lf_files")]),
+        "fragments": " ".join(
+            ['"%s"' % fs.to_unix_path(f) for f in linker_script_fragments]
+        ),
         "kconfig": os.path.join(FRAMEWORK_DIR, "Kconfig"),
         "env_file": os.path.join("$BUILD_DIR", "config.env"),
         "libraries_list": libraries_list,
@@ -629,7 +612,9 @@ def prepare_build_envs(config, default_env, debug_allowed=True):
     return build_envs
 
 
-def compile_source_files(config, default_env, project_src_dir, prepend_dir=None, debug_allowed=True):
+def compile_source_files(
+    config, default_env, project_src_dir, prepend_dir=None, debug_allowed=True
+):
     build_envs = prepare_build_envs(config, default_env, debug_allowed)
     objects = []
     components_dir = fs.to_unix_path(os.path.join(FRAMEWORK_DIR, "components"))
@@ -744,20 +729,6 @@ def find_lib_deps(components_map, elf_config, link_args, ignore_components=None)
 
     return result
 
-def fix_ld_paths(extra_flags):
-    peripheral_framework_path = os.path.join(FRAMEWORK_DIR, "components", "soc", idf_variant, "ld")
-    rom_framework_path = os.path.join(FRAMEWORK_DIR, "components", "esp_rom", idf_variant, "ld")
-    bl_framework_path = os.path.join(FRAMEWORK_DIR, "components", "bootloader", "subproject", "main", "ld", idf_variant)
-
-    # ESP linker scripts changed path in ESP-IDF 4.4+, so add missing paths to linker's search path
-    try:
-        ld_index = extra_flags.index("%s.peripherals.ld" % idf_variant)
-        extra_flags[ld_index-1:ld_index-1] = [ "-L", peripheral_framework_path, "-L", rom_framework_path, "-L", bl_framework_path]
-    except:
-        print("Error while parsing the flags")
-
-    return extra_flags
-
 
 def build_bootloader(sdk_config):
     bootloader_src_dir = os.path.join(
@@ -810,7 +781,6 @@ def build_bootloader(sdk_config):
     )
     link_args = extract_link_args(elf_config)
     extra_flags = filter_args(link_args["LINKFLAGS"], ["-T", "-u"])
-    extra_flags = fix_ld_paths(extra_flags)
     link_args["LINKFLAGS"] = sorted(
         list(set(link_args["LINKFLAGS"]) - set(extra_flags))
     )
@@ -880,9 +850,11 @@ def generate_default_component():
 file(GLOB component_sources *.c* *.S)
 idf_component_register(SRCS ${component_sources})
 """
-    dummy_component_path = os.path.join(BUILD_DIR, "__pio_env")
-    if not os.path.isdir(dummy_component_path):
-        os.makedirs(dummy_component_path)
+    dummy_component_path = os.path.join(FRAMEWORK_DIR, "components", "__pio_env")
+    if os.path.isdir(dummy_component_path):
+        return
+
+    os.makedirs(dummy_component_path)
 
     for ext in (".cpp", ".c", ".S"):
         dummy_file = os.path.join(dummy_component_path, "__dummy" + ext)
@@ -894,14 +866,18 @@ idf_component_register(SRCS ${component_sources})
         with open(component_cmake, "w") as fp:
             fp.write(prj_cmake_tpl)
 
-    return dummy_component_path
-
 
 def find_default_component(target_configs):
     for config in target_configs:
         if "__pio_env" in config:
             return config
-    return ""
+    sys.stderr.write(
+        "Error! Failed to find the default IDF component with build information for "
+        "generic files.\nCheck that the `EXTRA_COMPONENT_DIRS` option is not overridden "
+        "in your CMakeLists.txt.\nSee an example with an extra component here "
+        "https://docs.platformio.org/en/latest/frameworks/espidf.html#esp-idf-components\n"
+    )
+    env.Exit(1)
 
 
 def create_version_file():
@@ -1115,11 +1091,16 @@ def install_python_deps():
 
 install_python_deps()
 
-
 # ESP-IDF package doesn't contain .git folder, instead package version is specified
 # in a special file "version.h" in the root folder of the package
 
 create_version_file()
+
+# Generate a default component with dummy C/C++/ASM source files in the framework
+# folder. This component is used to force the IDF build system generate build
+# information for generic C/C++/ASM sources regardless of whether such files are used in project
+
+generate_default_component()
 
 #
 # Generate final linker script
@@ -1131,13 +1112,17 @@ if not board.get("build.ldscript", ""):
         board.get(
             "build.esp-idf.ldscript",
             os.path.join(
-                FRAMEWORK_DIR, "components", "esp_system", "ld", idf_variant, "memory.ld.in"
+                FRAMEWORK_DIR,
+                "components",
+                "esp_system",
+                "ld",
+                idf_variant,
+                "memory.ld.in",
             ),
         ),
         env.VerboseAction(
-            '$CC -I"$BUILD_DIR/config" -I"' +
-            os.path.join(FRAMEWORK_DIR, "components", "esp_system", "ld") +
-            '" -C -P -x  c -E $SOURCE -o $TARGET',
+            '$CC -I"$BUILD_DIR/config" -I"%s" -C -P -x c -E $SOURCE -o $TARGET'
+            % os.path.join(FRAMEWORK_DIR, "components", "esp_system", "ld"),
             "Generating LD script $TARGET",
         ),
     )
@@ -1145,37 +1130,6 @@ if not board.get("build.ldscript", ""):
     env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", linker_script)
     env.Replace(LDSCRIPT_PATH="memory.ld")
 
-#
-# Generate partition table
-#
-
-fwpartitions_dir = os.path.join(FRAMEWORK_DIR, "components", "partition_table")
-partitions_csv = board.get("build.partitions", "partitions_singleapp.csv")
-
-env.Replace(
-    PARTITIONS_TABLE_CSV=os.path.abspath(
-        os.path.join(fwpartitions_dir, partitions_csv)
-        if os.path.isfile(os.path.join(fwpartitions_dir, partitions_csv))
-        else partitions_csv
-    )
-)
-
-partition_table = env.Command(
-    os.path.join("$BUILD_DIR", "partitions.bin"),
-    "$PARTITIONS_TABLE_CSV",
-    env.VerboseAction(
-        '"$PYTHONEXE" "%s" -q --flash-size "%s" $SOURCE $TARGET'
-        % (
-            os.path.join(
-                FRAMEWORK_DIR, "components", "partition_table", "gen_esp32part.py"
-            ),
-            board.get("upload.flash_size", "4MB"),
-        ),
-        "Generating partitions $TARGET",
-    ),
-)
-
-env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", partition_table)
 
 #
 # Current build script limitations
@@ -1213,7 +1167,7 @@ if os.path.isfile(os.path.join(PROJECT_SRC_DIR, "sdkconfig.h")):
 # By default 'main' folder is used to store source files. In case when a user has
 # default 'src' folder we need to add this as an extra component. If there is no 'main'
 # folder CMake won't generate dependencies properly
-extra_components = [generate_default_component()]
+extra_components = []
 if PROJECT_SRC_DIR != os.path.join(PROJECT_DIR, "main"):
     extra_components.append(PROJECT_SRC_DIR)
 if "arduino" in env.subst("$PIOFRAMEWORK"):
@@ -1325,15 +1279,13 @@ libs = find_lib_deps(
 # Extra flags which need to be explicitly specified in LINKFLAGS section because SCons
 # cannot merge them correctly
 extra_flags = filter_args(link_args["LINKFLAGS"], ["-T", "-u"])
-extra_flags = fix_ld_paths(extra_flags)
 link_args["LINKFLAGS"] = sorted(list(set(link_args["LINKFLAGS"]) - set(extra_flags)))
 
-# remove the main linker script flags '-T memory.ld' since it already appears later on
+# remove the main linker script flags '-T memory.ld'
 try:
     ld_index = extra_flags.index("memory.ld")
     extra_flags.pop(ld_index)
     extra_flags.pop(ld_index - 1)
-    pass
 except:
     print("Warning! Couldn't find the main linker script in the CMake code model.")
 
@@ -1378,7 +1330,44 @@ if "__test" not in COMMAND_LINE_TARGETS or env.GetProjectOption(
         )
     )
 
+#
+# Generate partition table
+#
+
+fwpartitions_dir = os.path.join(FRAMEWORK_DIR, "components", "partition_table")
+partitions_csv = board.get("build.partitions", "partitions_singleapp.csv")
 partition_table_offset = sdk_config.get("PARTITION_TABLE_OFFSET", 0x8000)
+
+env.Replace(
+    PARTITIONS_TABLE_CSV=os.path.abspath(
+        os.path.join(fwpartitions_dir, partitions_csv)
+        if os.path.isfile(os.path.join(fwpartitions_dir, partitions_csv))
+        else partitions_csv
+    )
+)
+
+partition_table = env.Command(
+    os.path.join("$BUILD_DIR", "partitions.bin"),
+    "$PARTITIONS_TABLE_CSV",
+    env.VerboseAction(
+        '"$PYTHONEXE" "%s" -q --offset "%s" --flash-size "%s" $SOURCE $TARGET'
+        % (
+            os.path.join(
+                FRAMEWORK_DIR, "components", "partition_table", "gen_esp32part.py"
+            ),
+            partition_table_offset,
+            board.get("upload.flash_size", "4MB"),
+        ),
+        "Generating partitions $TARGET",
+    ),
+)
+
+env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", partition_table)
+
+#
+# Main environment configuration
+#
+
 project_flags.update(link_args)
 env.MergeFlags(project_flags)
 env.Prepend(
@@ -1389,7 +1378,8 @@ env.Prepend(
     FLASH_EXTRA_IMAGES=[
         (
             board.get(
-                "upload.bootloader_offset", "0x0" if (mcu == "esp32c3" or mcu == "esp32s3") else "0x1000"
+                "upload.bootloader_offset",
+                "0x0" if mcu in ("esp32c3", "esp32s3") else "0x1000",
             ),
             os.path.join("$BUILD_DIR", "bootloader.bin"),
         ),
