@@ -345,7 +345,7 @@ def extract_link_args(target_config):
             if fragment.startswith("-l"):
                 link_args["LIBS"].extend(args)
             elif fragment.startswith("-L"):
-                lib_path = fragment.replace("-L", "").strip()
+                lib_path = fragment.replace("-L", "").strip(" '\"")
                 _add_to_libpath(lib_path, link_args)
             elif fragment.startswith("-") and not fragment.startswith("-l"):
                 # CMake mistakenly marks LINKFLAGS as libraries
@@ -482,22 +482,15 @@ def extract_linker_script_fragments(framework_components_dir, sdk_config):
     if mcu == "esp32c3":
         result.append(os.path.join(framework_components_dir, "riscv", "linker.lf"))
 
-    result.extend(
-        [
-            os.path.join(
-                framework_components_dir,
-                idf_variant,
-                "ld",
-                "%s_fragments.lf" % idf_variant,
-            ),
-            os.path.join(
-                framework_components_dir,
-                idf_variant,
-                "linker.lf",
-            ),
-            os.path.join(framework_components_dir, "newlib", "newlib.lf"),
-        ]
-    )
+    # Add extra linker fragments
+    for fragment in (
+        os.path.join("esp_system", "app.lf"),
+        os.path.join("esp_common", "common.lf"),
+        os.path.join("esp_common", "soc.lf"),
+        os.path.join("newlib", "system_libs.lf"),
+        os.path.join("newlib", "newlib.lf"),
+    ):
+        result.append(os.path.join(framework_components_dir, fragment))
 
     if sdk_config.get("SPIRAM_CACHE_WORKAROUND", False):
         result.append(
@@ -580,13 +573,14 @@ def generate_project_ld_script(sdk_config, ignore_targets=None):
     ).format(**args)
 
     return env.Command(
-        os.path.join("$BUILD_DIR", "%s.project.ld" % idf_variant),
+        os.path.join("$BUILD_DIR", "sections.ld"),
         os.path.join(
             FRAMEWORK_DIR,
             "components",
-            idf_variant,
+            "esp_system",
             "ld",
-            "%s.project.ld.in" % idf_variant,
+            idf_variant,
+            "sections.ld.in",
         ),
         env.VerboseAction(cmd, "Generating project linker script $TARGET"),
     )
@@ -1115,22 +1109,23 @@ create_version_file()
 #
 
 if not board.get("build.ldscript", ""):
+    linker_common = os.path.join(FRAMEWORK_DIR, "components", "esp_system", "ld")
     linker_script = env.Command(
-        os.path.join("$BUILD_DIR", "%s_out.ld" % idf_variant),
+        os.path.join("$BUILD_DIR", "memory.ld"),
         board.get(
             "build.esp-idf.ldscript",
             os.path.join(
-                FRAMEWORK_DIR, "components", idf_variant, "ld", "%s.ld" % idf_variant
+                FRAMEWORK_DIR, "components", "esp_system", "ld", idf_variant, "memory.ld.in"
             ),
         ),
         env.VerboseAction(
-            '$CC -I"$BUILD_DIR/config" -C -P -x  c -E $SOURCE -o $TARGET',
+            f'$CC -I"$BUILD_DIR/config" -I"{linker_common}" -C -P -x  c -E $SOURCE -o $TARGET',
             "Generating LD script $TARGET",
         ),
     )
 
     env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", linker_script)
-    env.Replace(LDSCRIPT_PATH="%s_out.ld" % idf_variant)
+    env.Replace(LDSCRIPT_PATH="memory.ld")
 
 #
 # Generate partition table
@@ -1316,7 +1311,7 @@ link_args["LINKFLAGS"] = sorted(list(set(link_args["LINKFLAGS"]) - set(extra_fla
 
 # remove the main linker script flags '-T esp32_out.ld'
 try:
-    ld_index = extra_flags.index("%s_out.ld" % idf_variant)
+    ld_index = extra_flags.index("memory.ld")
     extra_flags.pop(ld_index)
     extra_flags.pop(ld_index - 1)
 except:
