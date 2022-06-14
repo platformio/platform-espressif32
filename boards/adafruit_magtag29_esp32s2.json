@@ -1,0 +1,62 @@
+{
+  "build": {
+    "arduino":{
+      "ldscript": "esp32s2_out.ld"
+    },
+    "core": "esp32",
+    "extra_flags": [
+      "-DARDUINO_MAGTAG29_ESP32S2",
+      "-DBOARD_HAS_PSRAM",
+      "-DARDUINO_USB_CDC_ON_BOOT=1"
+    ],
+    "f_cpu": "240000000L",
+    "f_flash": "80000000L",
+    "flash_mode": "qio",
+    "hwids": [
+      [
+        "0x239A",
+        "0x80E5"
+      ],
+      [
+        "0x239A",
+        "0x00E5"
+      ],
+      [
+        "0x239A",
+        "0x80E6"
+      ]
+    ],
+    "mcu": "esp32s2",
+    "variant": "adafruit_magtag29_esp32s2"
+  },
+  "connectivity": [
+    "wifi"
+  ],
+  "debug": {
+    "openocd_target": "esp32s2.cfg"
+  },
+  "frameworks": [
+    "arduino",
+    "espidf"
+  ],
+  "name": "Adafruit MagTag 2.9",
+  "upload": {
+    "arduino": {
+      "flash_extra_images": [
+        [
+          "0x2d0000",
+          "variants/adafruit_magtag29_esp32s2/tinyuf2.bin"
+        ]
+      ]
+    },
+    "flash_size": "4MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 4194304,
+    "use_1200bps_touch": true,
+    "wait_for_upload_port": true,
+    "require_upload_port": true,
+    "speed": 460800
+  },
+  "url": "https://www.adafruit.com/product/4800",
+  "vendor": "Adafruit"
+}

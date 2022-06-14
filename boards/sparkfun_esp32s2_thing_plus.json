@@ -1,0 +1,42 @@
+{
+  "build": {
+    "arduino":{
+      "ldscript": "esp32s2_out.ld"
+    },
+    "core": "esp32",
+    "extra_flags": "-DARDUINO_ESP32S2_THING_PLUS",
+    "f_cpu": "240000000L",
+    "f_flash": "80000000L",
+    "flash_mode": "qio",
+    "hwids": [
+      [
+        "0x1B4F",
+        "0x0027"
+      ]
+    ],
+    "mcu": "esp32s2",
+    "variant": "esp32s2thing_plus"
+  },
+  "connectivity": [
+    "wifi"
+  ],
+  "debug": {
+    "openocd_target": "esp32s2.cfg"
+  },
+  "frameworks": [
+    "arduino",
+    "espidf"
+  ],
+  "name": "SparkFun ESP32-S2 Thing Plus",
+  "upload": {
+    "flash_size": "4MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 4194304,
+    "use_1200bps_touch": true,
+    "wait_for_upload_port": true,
+    "require_upload_port": true,
+    "speed": 460800
+  },
+  "url": "https://www.sparkfun.com/products/17743",
+  "vendor": "SparkFun"
+}

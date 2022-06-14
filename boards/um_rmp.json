@@ -1,0 +1,46 @@
+{
+  "build": {
+    "arduino": {
+      "ldscript": "esp32s2_out.ld"
+    },
+    "core": "esp32",
+    "extra_flags": [
+      "-DARDUINO_RMP",
+      "-DBOARD_HAS_PSRAM",
+      "-DARDUINO_USB_CDC_ON_BOOT=1"
+    ],
+    "f_cpu": "240000000L",
+    "f_flash": "40000000L",
+    "flash_mode": "dio",
+    "hwids": [
+      [
+        "0X303A",
+        "0x80F6"
+      ]
+    ],
+    "mcu": "esp32s2",
+    "variant": "um_rmp"
+  },
+  "connectivity": [
+    "wifi"
+  ],
+  "debug": {
+    "openocd_target": "esp32s2.cfg"
+  },
+  "frameworks": [
+    "arduino",
+    "espidf"
+  ],
+  "name": "Unexpected Maker RMP",
+  "upload": {
+    "flash_size": "4MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 4194304,
+    "use_1200bps_touch": true,
+    "wait_for_upload_port": true,
+    "require_upload_port": true,
+    "speed": 921600
+  },
+  "url": "https://unexpectedmaker.com/esp32s2",
+  "vendor": "Unexpected Maker"
+}

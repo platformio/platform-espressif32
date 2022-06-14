@@ -41,3 +41,4 @@ elif "espidf" not in env.subst("$PIOFRAMEWORK"):
     SConscript(
         join(DefaultEnvironment().PioPlatform().get_package_dir(
             "framework-arduinoespressif32"), "tools", "platformio-build.py"))
+    env["IDE_EXTRA_DATA"].update({"application_offset": env.subst("$ESP32_APP_OFFSET")})

@@ -50,18 +50,20 @@ mcu = board.get("build.mcu", "esp32")
 idf_variant = mcu.lower()
 
 FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
-TOOLCHAIN_DIR = platform.get_package_dir(
-    "toolchain-%s"
-    % (
-        "riscv32-esp"
-        if mcu == "esp32c3"
-        else ("xtensa-esp32s2" if mcu == "esp32s2" else "xtensa-esp32")
-    )
-)
 
 # Legacy toolchains for mixed IDF/Arduino projects
 if "arduino" in env.subst("$PIOFRAMEWORK"):
     TOOLCHAIN_DIR = platform.get_package_dir("toolchain-xtensa32")
+else:
+    TOOLCHAIN_DIR = platform.get_package_dir(
+        "toolchain-%s"
+        % (
+            "riscv32-esp"
+            if mcu == "esp32c3"
+            else ("xtensa-esp32s2" if mcu == "esp32s2" else "xtensa-esp32")
+        )
+    )
+
 
 assert os.path.isdir(FRAMEWORK_DIR)
 assert os.path.isdir(TOOLCHAIN_DIR)
@@ -271,13 +273,15 @@ def load_target_configurations(cmake_codemodel, cmake_api_reply_dir):
     return configs
 
 
-def build_library(default_env, lib_config, project_src_dir, prepend_dir=None):
+def build_library(
+    default_env, lib_config, project_src_dir, prepend_dir=None, debug_allowed=True
+):
     lib_name = lib_config["nameOnDisk"]
     lib_path = lib_config["paths"]["build"]
     if prepend_dir:
         lib_path = os.path.join(prepend_dir, lib_path)
     lib_objects = compile_source_files(
-        lib_config, default_env, project_src_dir, prepend_dir
+        lib_config, default_env, project_src_dir, prepend_dir, debug_allowed
     )
     return default_env.Library(
         target=os.path.join("$BUILD_DIR", lib_path, lib_name), source=lib_objects
@@ -425,46 +429,83 @@ def get_sdk_configuration():
         return {}
 
 
-def find_framework_service_files(search_path, sdk_config):
-    result = {}
-    result["lf_files"] = list()
-    result["kconfig_files"] = list()
-    result["kconfig_build_files"] = list()
-    for d in os.listdir(search_path):
-        path = os.path.join(search_path, d)
-        if not os.path.isdir(path):
-            continue
-        for f in os.listdir(path):
-            # Skip hardware specific files as they will be added later
-            if f == "linker.lf" and not os.path.basename(path).startswith(
-                ("esp32", "riscv")
+def load_component_paths(framework_components_dir, ignored_component_prefixes=None):
+    def _scan_components_from_framework():
+        result = []
+        for component in os.listdir(framework_components_dir):
+            component_path = os.path.join(framework_components_dir, component)
+            if component.startswith(ignored_component_prefixes) or not os.path.isdir(
+                component_path
             ):
-                result["lf_files"].append(os.path.join(path, f))
-            elif f == "Kconfig.projbuild":
-                result["kconfig_build_files"].append(os.path.join(path, f))
-            elif f == "Kconfig":
-                result["kconfig_files"].append(os.path.join(path, f))
+                continue
+            result.append(component_path)
 
-    if mcu == "esp32c3":
-        result["lf_files"].append(
-            os.path.join(FRAMEWORK_DIR, "components", "riscv", "linker.lf")
-        )
+        return result
 
-    result["lf_files"].extend(
-        [
-            os.path.join(FRAMEWORK_DIR, "components", "esp_system", "app.lf"),
-            os.path.join(FRAMEWORK_DIR, "components", "esp_common", "common.lf"),
-            os.path.join(FRAMEWORK_DIR, "components", "esp_common", "soc.lf"),
-            os.path.join(FRAMEWORK_DIR, "components", "newlib", "system_libs.lf"),
-            os.path.join(FRAMEWORK_DIR, "components", "newlib", "newlib.lf"),
-        ]
+    # First of all, try to load the list of used components from the project description
+    components = []
+    ignored_component_prefixes = ignored_component_prefixes or []
+    project_description_file = os.path.join(BUILD_DIR, "project_description.json")
+    if os.path.isfile(project_description_file):
+        with open(project_description_file) as fp:
+            try:
+                data = json.load(fp)
+                for path in data.get("build_component_paths", []):
+                    if not os.path.basename(path).startswith(
+                        ignored_component_prefixes
+                    ):
+                        components.append(path)
+            except:
+                print(
+                    "Warning: Could not find load components from project description!\n"
+                )
+
+    return components or _scan_components_from_framework()
+
+
+def extract_linker_script_fragments(framework_components_dir, sdk_config):
+    # Hardware-specific components are excluded from search and added manually below
+    project_components = load_component_paths(
+        framework_components_dir, ignored_component_prefixes=("esp32", "riscv")
     )
 
+    result = []
+    for component_path in project_components:
+        linker_fragment = os.path.join(component_path, "linker.lf")
+        if os.path.isfile(linker_fragment):
+            result.append(linker_fragment)
+
+    if not result:
+        sys.stderr.write("Error: Failed to extract paths to linker script fragments\n")
+        env.Exit(1)
+
+    if mcu == "esp32c3":
+        result.append(os.path.join(framework_components_dir, "riscv", "linker.lf"))
+
+    # Add extra linker fragments
+    for fragment in (
+        os.path.join("esp_system", "app.lf"),
+        os.path.join("esp_common", "common.lf"),
+        os.path.join("esp_common", "soc.lf"),
+        os.path.join("newlib", "system_libs.lf"),
+        os.path.join("newlib", "newlib.lf"),
+    ):
+        result.append(os.path.join(framework_components_dir, fragment))
+
     if sdk_config.get("SPIRAM_CACHE_WORKAROUND", False):
-        result["lf_files"].append(
+        result.append(
             os.path.join(
-                FRAMEWORK_DIR, "components", "newlib", "esp32-spiram-rom-functions-c.lf"
+                framework_components_dir, "newlib", "esp32-spiram-rom-functions-c.lf"
             )
+        )
+
+    if board.get("build.esp-idf.extra_lf_files", ""):
+        result.extend(
+            [
+                lf if os.path.isabs(lf) else os.path.join(PROJECT_DIR, lf)
+                for lf in board.get("build.esp-idf.extra_lf_files").splitlines()
+                if lf.strip()
+            ]
         )
 
     return result
@@ -497,7 +538,7 @@ def create_custom_libraries_list(ldgen_libraries_file, ignore_targets):
 
 def generate_project_ld_script(sdk_config, ignore_targets=None):
     ignore_targets = ignore_targets or []
-    project_files = find_framework_service_files(
+    linker_script_fragments = extract_linker_script_fragments(
         os.path.join(FRAMEWORK_DIR, "components"), sdk_config
     )
 
@@ -510,7 +551,9 @@ def generate_project_ld_script(sdk_config, ignore_targets=None):
     args = {
         "script": os.path.join(FRAMEWORK_DIR, "tools", "ldgen", "ldgen.py"),
         "config": SDKCONFIG_PATH,
-        "fragments": " ".join(['"%s"' % f for f in project_files.get("lf_files")]),
+        "fragments": " ".join(
+            ['"%s"' % fs.to_unix_path(f) for f in linker_script_fragments]
+        ),
         "kconfig": os.path.join(FRAMEWORK_DIR, "Kconfig"),
         "env_file": os.path.join("$BUILD_DIR", "config.env"),
         "libraries_list": libraries_list,
@@ -543,14 +586,11 @@ def generate_project_ld_script(sdk_config, ignore_targets=None):
     )
 
 
-def prepare_build_envs(config, default_env):
+def prepare_build_envs(config, default_env, debug_allowed=True):
     build_envs = []
     target_compile_groups = config.get("compileGroups")
-    is_build_type_debug = (
-        set(["debug", "sizedata"]) & set(COMMAND_LINE_TARGETS)
-        or default_env.GetProjectOption("build_type") == "debug"
-    )
 
+    is_build_type_debug = "debug" in env.GetBuildType() and debug_allowed
     for cg in target_compile_groups:
         includes = []
         sys_includes = []
@@ -571,7 +611,6 @@ def prepare_build_envs(config, default_env):
         build_env.AppendUnique(CPPDEFINES=defines, CPPPATH=includes)
         if sys_includes:
             build_env.Append(CCFLAGS=[("-isystem", inc) for inc in sys_includes])
-        build_env.Append(ASFLAGS=build_env.get("CCFLAGS", [])[:])
         build_env.ProcessUnFlags(default_env.get("BUILD_UNFLAGS"))
         if is_build_type_debug:
             build_env.ConfigureDebugFlags()
@@ -580,8 +619,10 @@ def prepare_build_envs(config, default_env):
     return build_envs
 
 
-def compile_source_files(config, default_env, project_src_dir, prepend_dir=None):
-    build_envs = prepare_build_envs(config, default_env)
+def compile_source_files(
+    config, default_env, project_src_dir, prepend_dir=None, debug_allowed=True
+):
+    build_envs = prepare_build_envs(config, default_env, debug_allowed)
     objects = []
     components_dir = fs.to_unix_path(os.path.join(FRAMEWORK_DIR, "components"))
     for source in config.get("sources", []):
@@ -696,7 +737,7 @@ def find_lib_deps(components_map, elf_config, link_args, ignore_components=None)
     return result
 
 
-def build_bootloader():
+def build_bootloader(sdk_config):
     bootloader_src_dir = os.path.join(
         FRAMEWORK_DIR, "components", "bootloader", "subproject"
     )
@@ -736,7 +777,15 @@ def build_bootloader():
         target_configs, ["STATIC_LIBRARY", "OBJECT_LIBRARY"]
     )
 
-    build_components(bootloader_env, components_map, bootloader_src_dir, "bootloader")
+    # Note: By default the size of bootloader is limited to 0x2000 bytes,
+    # in debug mode the footprint size can be easily grow beyond this limit
+    build_components(
+        bootloader_env,
+        components_map,
+        bootloader_src_dir,
+        "bootloader",
+        debug_allowed=sdk_config.get("BOOTLOADER_COMPILER_OPTIMIZATION_DEBUG", False),
+    )
     link_args = extract_link_args(elf_config)
     extra_flags = filter_args(link_args["LINKFLAGS"], ["-T", "-u"])
     link_args["LINKFLAGS"] = sorted(
@@ -781,10 +830,12 @@ def get_components_map(target_configs, target_types, ignore_components=None):
     return result
 
 
-def build_components(env, components_map, project_src_dir, prepend_dir=None):
+def build_components(
+    env, components_map, project_src_dir, prepend_dir=None, debug_allowed=True
+):
     for k, v in components_map.items():
         components_map[k]["lib"] = build_library(
-            env, v["config"], project_src_dir, prepend_dir
+            env, v["config"], project_src_dir, prepend_dir, debug_allowed
         )
 
 
@@ -827,7 +878,13 @@ def find_default_component(target_configs):
     for config in target_configs:
         if "__pio_env" in config:
             return config
-    return ""
+    sys.stderr.write(
+        "Error! Failed to find the default IDF component with build information for "
+        "generic files.\nCheck that the `EXTRA_COMPONENT_DIRS` option is not overridden "
+        "in your CMakeLists.txt.\nSee an example with an extra component here "
+        "https://docs.platformio.org/en/latest/frameworks/espidf.html#esp-idf-components\n"
+    )
+    env.Exit(1)
 
 
 def create_version_file():
@@ -1226,7 +1283,7 @@ project_lib_includes = get_project_lib_includes(env)
 # Compile bootloader
 #
 
-env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", build_bootloader())
+env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", build_bootloader(sdk_config))
 
 #
 # Target: ESP-IDF menuconfig
