@@ -37,7 +37,8 @@
     "openocd_target": "esp32s3.cfg"
   },
   "frameworks": [
-    "arduino"
+    "arduino",
+    "espidf"
   ],
   "name": "Adafruit QT Py ESP32-S3 No PSRAM",
   "upload": {
