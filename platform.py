@@ -108,12 +108,7 @@ class Espressif32Platform(PlatformBase):
             # RISC-V based toolchain for ESP32C3, ESP32S2, ESP32S3 ULP
             self.packages["toolchain-riscv32-esp"]["optional"] = False
 
-        is_legacy_project = (
-            build_core == "mbcwb"
-            or set(("arduino", "espidf")) == set(frameworks)
-        )
-
-        if is_legacy_project:
+        if build_core == "mbcwb":
             # Remove the main toolchains from PATH
             for toolchain in (
                 "toolchain-xtensa-esp32",
@@ -127,15 +122,8 @@ class Espressif32Platform(PlatformBase):
             self.packages["toolchain-xtensa32"] = {
                 "type": "toolchain",
                 "owner": "platformio",
-                "version": "~2.80400.0"
-                if "arduino" in frameworks and build_core != "mbcwb"
-                else "~2.50200.0",
+                "version": "~2.50200.0"
             }
-
-            # Legacy setting for mixed IDF+Arduino projects
-            if set(("arduino", "espidf")) == set(frameworks):
-                # Arduino component is not compatible with ESP-IDF >=4.1
-                self.packages["framework-espidf"]["version"] = "~3.40001.0"
 
             if build_core == "mbcwb":
                 self.packages["framework-arduinoespressif32"]["optional"] = True
