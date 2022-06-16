@@ -1,0 +1,34 @@
+{
+  "build": {
+    "arduino": {
+      "ldscript": "esp32c3_out.ld"
+    },
+    "core": "esp32",
+    "f_cpu": "160000000L",
+    "f_flash": "80000000L",
+    "flash_mode": "qio",
+    "extra_flags": "-DARDUINO_TTGO_T_OI_PLUS_DEV",
+    "mcu": "esp32c3",
+    "variant": "ttgo-t-oi-plus"
+  },
+  "connectivity": [
+    "wifi"
+  ],
+  "debug": {
+    "openocd_target": "esp32c3.cfg"
+  },
+  "frameworks": [
+    "arduino",
+    "espidf"
+  ],
+  "name": "TTGO T-OI PLUS RISC-V ESP32-C3",
+  "upload": {
+    "flash_size": "4MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 4194304,
+    "require_upload_port": true,
+    "speed": 460800
+  },
+  "url": "http://www.lilygo.cn/prod_view.aspx?TypeId=50044&Id=1361&FId=t3:50044:3",
+  "vendor": "TTGO"
+}

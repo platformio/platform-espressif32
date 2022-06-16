@@ -22,7 +22,8 @@
     "openocd_board": "esp-wroom-32.cfg"
   },
   "frameworks": [
-    "arduino"
+    "arduino",
+    "espidf"
   ],
   "name": "Briki MBC-WB - ESP32",
   "upload": {

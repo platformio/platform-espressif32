@@ -1,15 +1,16 @@
 {
   "build": {
     "arduino":{
-      "ldscript": "esp32_out.ld"
+      "ldscript": "esp32_out.ld",
+      "partitions": "huge_app.csv"
     },
     "core": "esp32",
-    "extra_flags": "-DARDUINO_ALKS",
+    "extra_flags": "-DARDUINO_WATCHY",
     "f_cpu": "240000000L",
     "f_flash": "40000000L",
     "flash_mode": "dio",
     "mcu": "esp32",
-    "variant": "alksesp32"
+    "variant": "watchy"
   },
   "connectivity": [
     "wifi",
@@ -24,7 +25,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "ALKS ESP32",
+  "name": "SQFMI Watchy v2.0",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
@@ -32,6 +33,6 @@
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://github.com/RoboticsBrno/ArduinoLearningKitStarter.git",
-  "vendor": "RoboticsBrno"
+  "url": "https://watchy.sqfmi.com/",
+  "vendor": "SQFMI"
 }

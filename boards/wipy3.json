@@ -4,18 +4,18 @@
       "ldscript": "esp32_out.ld"
     },
     "core": "esp32",
-    "extra_flags": "-DARDUINO_ALKS",
+    "extra_flags": "-DARDUINO_WIPY3",
     "f_cpu": "240000000L",
     "f_flash": "40000000L",
     "flash_mode": "dio",
     "mcu": "esp32",
-    "variant": "alksesp32"
+    "variant": "wipy3"
   },
   "connectivity": [
     "wifi",
     "bluetooth",
-    "ethernet",
-    "can"
+    "can",
+    "ethernet"
   ],
   "debug": {
     "openocd_board": "esp-wroom-32.cfg"
@@ -24,14 +24,14 @@
     "arduino",
     "espidf"
   ],
-  "name": "ALKS ESP32",
+  "name": "Pycom WiPy3",
   "upload": {
     "flash_size": "4MB",
-    "maximum_ram_size": 327680,
+    "maximum_ram_size": 1310720,
     "maximum_size": 4194304,
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://github.com/RoboticsBrno/ArduinoLearningKitStarter.git",
-  "vendor": "RoboticsBrno"
+  "url": "https://pycom.io/",
+  "vendor": "Pycom Ltd."
 }
