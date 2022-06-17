@@ -50,7 +50,7 @@
         ]
       ]
     },
-    "flash_size": "4MB",
+    "flash_size": "8MB",
     "maximum_ram_size": 327680,
     "maximum_size": 4194304,
     "use_1200bps_touch": true,
