@@ -232,7 +232,6 @@ env.Append(
             action=env.VerboseAction(" ".join([
                 '"$PYTHONEXE" "$OBJCOPY"',
                 "--chip", mcu, "elf2image",
-                "--dont-append-digest",
                 "--flash_mode", "$BOARD_FLASH_MODE",
                 "--flash_freq", "${__get_board_f_flash(__env__)}",
                 "--flash_size", board.get("upload.flash_size", "detect"),
@@ -364,7 +363,6 @@ elif upload_protocol == "esptool":
             platform.get_package_dir("tool-esptoolpy") or "", "esptool.py"),
         UPLOADERFLAGS=[
             "--chip", mcu,
-            "--dont-append-digest",
             "--port", '"$UPLOAD_PORT"',
             "--baud", "$UPLOAD_SPEED",
             "--before", "default_reset",
@@ -383,7 +381,6 @@ elif upload_protocol == "esptool":
         env.Replace(
             UPLOADERFLAGS=[
                 "--chip", mcu,
-                "--dont-append-digest",
                 "--port", '"$UPLOAD_PORT"',
                 "--baud", "$UPLOAD_SPEED",
                 "--before", "default_reset",
