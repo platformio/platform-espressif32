@@ -1,8 +1,7 @@
 {
   "build": {
     "arduino":{
-      "ldscript": "esp32s3_out.ld",
-      "memory_type": "qspi_qspi"
+      "ldscript": "esp32s3_out.ld"
     },
     "core": "esp32",
     "extra_flags": "-DBOARD_HAS_PSRAM",
