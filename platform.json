@@ -18,7 +18,7 @@
     "type": "git",
     "url": "https://github.com/platformio/platform-espressif32.git"
   },
-  "version": "4.4.0",
+  "version": "5.0.0",
   "frameworks": {
     "arduino": {
       "package": "framework-arduinoespressif32",
@@ -84,8 +84,7 @@
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~3.40302.0",
-      "optionalVersions": ["~3.40001.0"]
+      "version": "~3.40401.0"
     },
     "tool-esptoolpy": {
       "type": "uploader",

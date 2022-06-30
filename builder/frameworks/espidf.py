@@ -50,19 +50,9 @@ mcu = board.get("build.mcu", "esp32")
 idf_variant = mcu.lower()
 
 FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
-
-# Legacy toolchains for mixed IDF/Arduino projects
-if "arduino" in env.subst("$PIOFRAMEWORK"):
-    TOOLCHAIN_DIR = platform.get_package_dir("toolchain-xtensa32")
-else:
-    TOOLCHAIN_DIR = platform.get_package_dir(
-        "toolchain-%s"
-        % (
-            "riscv32-esp"
-            if mcu == "esp32c3"
-            else ("xtensa-esp32s2" if mcu == "esp32s2" else "xtensa-esp32")
-        )
-    )
+TOOLCHAIN_DIR = platform.get_package_dir(
+    "toolchain-%s" % ("riscv32-esp" if mcu == "esp32c3" else ("xtensa-%s" % mcu))
+)
 
 
 assert os.path.isdir(FRAMEWORK_DIR)
@@ -233,7 +223,7 @@ def populate_idf_env_vars(idf_env):
         os.path.dirname(env.subst("$PYTHONEXE")),
     ]
 
-    if mcu != "esp32c3":
+    if mcu not in ("esp32c3", "esp32s3"):
         additional_packages.append(
             os.path.join(platform.get_package_dir("toolchain-%sulp" % mcu), "bin"),
         )
@@ -345,7 +335,7 @@ def extract_link_args(target_config):
             if fragment.startswith("-l"):
                 link_args["LIBS"].extend(args)
             elif fragment.startswith("-L"):
-                lib_path = fragment.replace("-L", "").strip()
+                lib_path = fragment.replace("-L", "").strip(" '\"")
                 _add_to_libpath(lib_path, link_args)
             elif fragment.startswith("-") and not fragment.startswith("-l"):
                 # CMake mistakenly marks LINKFLAGS as libraries
@@ -482,22 +472,15 @@ def extract_linker_script_fragments(framework_components_dir, sdk_config):
     if mcu == "esp32c3":
         result.append(os.path.join(framework_components_dir, "riscv", "linker.lf"))
 
-    result.extend(
-        [
-            os.path.join(
-                framework_components_dir,
-                idf_variant,
-                "ld",
-                "%s_fragments.lf" % idf_variant,
-            ),
-            os.path.join(
-                framework_components_dir,
-                idf_variant,
-                "linker.lf",
-            ),
-            os.path.join(framework_components_dir, "newlib", "newlib.lf"),
-        ]
-    )
+    # Add extra linker fragments
+    for fragment in (
+        os.path.join("esp_system", "app.lf"),
+        os.path.join("esp_common", "common.lf"),
+        os.path.join("esp_common", "soc.lf"),
+        os.path.join("newlib", "system_libs.lf"),
+        os.path.join("newlib", "newlib.lf"),
+    ):
+        result.append(os.path.join(framework_components_dir, fragment))
 
     if sdk_config.get("SPIRAM_CACHE_WORKAROUND", False):
         result.append(
@@ -580,13 +563,14 @@ def generate_project_ld_script(sdk_config, ignore_targets=None):
     ).format(**args)
 
     return env.Command(
-        os.path.join("$BUILD_DIR", "%s.project.ld" % idf_variant),
+        os.path.join("$BUILD_DIR", "sections.ld"),
         os.path.join(
             FRAMEWORK_DIR,
             "components",
-            idf_variant,
+            "esp_system",
             "ld",
-            "%s.project.ld.in" % idf_variant,
+            idf_variant,
+            "sections.ld.in",
         ),
         env.VerboseAction(cmd, "Generating project linker script $TARGET"),
     )
@@ -863,9 +847,11 @@ def generate_default_component():
 file(GLOB component_sources *.c* *.S)
 idf_component_register(SRCS ${component_sources})
 """
-    dummy_component_path = os.path.join(BUILD_DIR, "__pio_env")
-    if not os.path.isdir(dummy_component_path):
-        os.makedirs(dummy_component_path)
+    dummy_component_path = os.path.join(FRAMEWORK_DIR, "components", "__pio_env")
+    if os.path.isdir(dummy_component_path):
+        return
+
+    os.makedirs(dummy_component_path)
 
     for ext in (".cpp", ".c", ".S"):
         dummy_file = os.path.join(dummy_component_path, "__dummy" + ext)
@@ -876,8 +862,6 @@ idf_component_register(SRCS ${component_sources})
     if not os.path.isfile(component_cmake):
         with open(component_cmake, "w") as fp:
             fp.write(prj_cmake_tpl)
-
-    return dummy_component_path
 
 
 def find_default_component(target_configs):
@@ -1104,11 +1088,16 @@ def install_python_deps():
 
 install_python_deps()
 
-
 # ESP-IDF package doesn't contain .git folder, instead package version is specified
 # in a special file "version.h" in the root folder of the package
 
 create_version_file()
+
+# Generate a default component with dummy C/C++/ASM source files in the framework
+# folder. This component is used to force the IDF build system generate build
+# information for generic C/C++/ASM sources regardless of whether such files are used in project
+
+generate_default_component()
 
 #
 # Generate final linker script
@@ -1116,53 +1105,28 @@ create_version_file()
 
 if not board.get("build.ldscript", ""):
     linker_script = env.Command(
-        os.path.join("$BUILD_DIR", "%s_out.ld" % idf_variant),
+        os.path.join("$BUILD_DIR", "memory.ld"),
         board.get(
             "build.esp-idf.ldscript",
             os.path.join(
-                FRAMEWORK_DIR, "components", idf_variant, "ld", "%s.ld" % idf_variant
+                FRAMEWORK_DIR,
+                "components",
+                "esp_system",
+                "ld",
+                idf_variant,
+                "memory.ld.in",
             ),
         ),
         env.VerboseAction(
-            '$CC -I"$BUILD_DIR/config" -C -P -x  c -E $SOURCE -o $TARGET',
+            '$CC -I"$BUILD_DIR/config" -I"%s" -C -P -x c -E $SOURCE -o $TARGET'
+            % os.path.join(FRAMEWORK_DIR, "components", "esp_system", "ld"),
             "Generating LD script $TARGET",
         ),
     )
 
     env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", linker_script)
-    env.Replace(LDSCRIPT_PATH="%s_out.ld" % idf_variant)
+    env.Replace(LDSCRIPT_PATH="memory.ld")
 
-#
-# Generate partition table
-#
-
-fwpartitions_dir = os.path.join(FRAMEWORK_DIR, "components", "partition_table")
-partitions_csv = board.get("build.partitions", "partitions_singleapp.csv")
-
-env.Replace(
-    PARTITIONS_TABLE_CSV=os.path.abspath(
-        os.path.join(fwpartitions_dir, partitions_csv)
-        if os.path.isfile(os.path.join(fwpartitions_dir, partitions_csv))
-        else partitions_csv
-    )
-)
-
-partition_table = env.Command(
-    os.path.join("$BUILD_DIR", "partitions.bin"),
-    "$PARTITIONS_TABLE_CSV",
-    env.VerboseAction(
-        '"$PYTHONEXE" "%s" -q --flash-size "%s" $SOURCE $TARGET'
-        % (
-            os.path.join(
-                FRAMEWORK_DIR, "components", "partition_table", "gen_esp32part.py"
-            ),
-            board.get("upload.flash_size", "4MB"),
-        ),
-        "Generating partitions $TARGET",
-    ),
-)
-
-env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", partition_table)
 
 #
 # Current build script limitations
@@ -1200,7 +1164,7 @@ if os.path.isfile(os.path.join(PROJECT_SRC_DIR, "sdkconfig.h")):
 # By default 'main' folder is used to store source files. In case when a user has
 # default 'src' folder we need to add this as an extra component. If there is no 'main'
 # folder CMake won't generate dependencies properly
-extra_components = [generate_default_component()]
+extra_components = []
 if PROJECT_SRC_DIR != os.path.join(PROJECT_DIR, "main"):
     extra_components.append(PROJECT_SRC_DIR)
 if "arduino" in env.subst("$PIOFRAMEWORK"):
@@ -1314,9 +1278,9 @@ libs = find_lib_deps(
 extra_flags = filter_args(link_args["LINKFLAGS"], ["-T", "-u"])
 link_args["LINKFLAGS"] = sorted(list(set(link_args["LINKFLAGS"]) - set(extra_flags)))
 
-# remove the main linker script flags '-T esp32_out.ld'
+# remove the main linker script flags '-T memory.ld'
 try:
-    ld_index = extra_flags.index("%s_out.ld" % idf_variant)
+    ld_index = extra_flags.index("memory.ld")
     extra_flags.pop(ld_index)
     extra_flags.pop(ld_index - 1)
 except:
@@ -1363,7 +1327,44 @@ if "__test" not in COMMAND_LINE_TARGETS or env.GetProjectOption(
         )
     )
 
+#
+# Generate partition table
+#
+
+fwpartitions_dir = os.path.join(FRAMEWORK_DIR, "components", "partition_table")
+partitions_csv = board.get("build.partitions", "partitions_singleapp.csv")
 partition_table_offset = sdk_config.get("PARTITION_TABLE_OFFSET", 0x8000)
+
+env.Replace(
+    PARTITIONS_TABLE_CSV=os.path.abspath(
+        os.path.join(fwpartitions_dir, partitions_csv)
+        if os.path.isfile(os.path.join(fwpartitions_dir, partitions_csv))
+        else partitions_csv
+    )
+)
+
+partition_table = env.Command(
+    os.path.join("$BUILD_DIR", "partitions.bin"),
+    "$PARTITIONS_TABLE_CSV",
+    env.VerboseAction(
+        '"$PYTHONEXE" "%s" -q --offset "%s" --flash-size "%s" $SOURCE $TARGET'
+        % (
+            os.path.join(
+                FRAMEWORK_DIR, "components", "partition_table", "gen_esp32part.py"
+            ),
+            partition_table_offset,
+            board.get("upload.flash_size", "4MB"),
+        ),
+        "Generating partitions $TARGET",
+    ),
+)
+
+env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", partition_table)
+
+#
+# Main environment configuration
+#
+
 project_flags.update(link_args)
 env.MergeFlags(project_flags)
 env.Prepend(
@@ -1374,7 +1375,8 @@ env.Prepend(
     FLASH_EXTRA_IMAGES=[
         (
             board.get(
-                "upload.bootloader_offset", "0x0" if mcu == "esp32c3" else "0x1000"
+                "upload.bootloader_offset",
+                "0x0" if mcu in ("esp32c3", "esp32s3") else "0x1000",
             ),
             os.path.join("$BUILD_DIR", "bootloader.bin"),
         ),
