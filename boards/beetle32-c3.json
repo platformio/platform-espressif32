@@ -13,7 +13,7 @@
         "-DARDUINO_USB_CDC_ON_BOOT=1"
       ],
       "mcu": "esp32c3",
-      "variant": "beetle32c3"
+      "variant": "dfrobot_beetle_esp32c3"
     },
     "connectivity": [
       "wifi",
