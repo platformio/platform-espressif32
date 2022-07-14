@@ -18,7 +18,8 @@
     "hwids": [
       ["0x239A", "0x811D"],
       ["0x239A", "0x011D"],
-      ["0x239A", "0x811E"]
+      ["0x239A", "0x811E"],
+      ["0x303A", "0x1001"]
     ],
     "mcu": "esp32s3",
     "variant": "adafruit_feather_esp32s3_tft"
