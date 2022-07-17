@@ -1249,7 +1249,6 @@ project_defines = get_app_defines(project_config)
 project_flags = get_app_flags(project_config, default_config)
 link_args = extract_link_args(elf_config)
 app_includes = get_app_includes(elf_config)
-project_lib_includes = get_project_lib_includes(env)
 
 #
 # Compile bootloader
@@ -1303,32 +1302,6 @@ def _skip_prj_source_files(node):
 
 
 env.AddBuildMiddleware(_skip_prj_source_files)
-
-# Project files should be compiled only when a special
-# option is enabled when running 'test' command
-if "__test" not in COMMAND_LINE_TARGETS or env.GetProjectOption(
-    "test_build_project_src"
-):
-    project_env = env.Clone()
-    if project_target_name != "__idf_main":
-        # Manually add dependencies to CPPPATH since ESP-IDF build system doesn't generate
-        # this info if the folder with sources is not named 'main'
-        # https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/build-system.html#rename-main
-        project_env.AppendUnique(CPPPATH=app_includes["plain_includes"])
-
-    # Add include dirs from PlatformIO build system to project CPPPATH so
-    # they're visible to PIOBUILDFILES
-    project_env.Append(
-        CPPPATH=["$PROJECT_INCLUDE_DIR", "$PROJECT_SRC_DIR"] + project_lib_includes
-    )
-
-    env.Append(
-        PIOBUILDFILES=compile_source_files(
-            target_configs.get(project_target_name),
-            project_env,
-            project_env.subst("$PROJECT_DIR"),
-        )
-    )
 
 #
 # Generate partition table
@@ -1389,6 +1362,52 @@ env.Prepend(
         ),
     ],
 )
+
+#
+# Propagate Arduino defines to the main build environment
+#
+
+if "arduino" in env.subst("$PIOFRAMEWORK"):
+    arduino_config_name = list(
+        filter(
+            lambda config_name: config_name.startswith(
+                "__idf_framework-arduinoespressif32"
+            ),
+            target_configs,
+        )
+    )[0]
+    env.AppendUnique(
+        CPPDEFINES=extract_defines(
+            target_configs.get(arduino_config_name, {}).get("compileGroups", [])[0]
+        )
+    )
+
+# Project files should be compiled only when a special
+# option is enabled when running 'test' command
+if "__test" not in COMMAND_LINE_TARGETS or env.GetProjectOption(
+    "test_build_project_src"
+):
+    project_env = env.Clone()
+    if project_target_name != "__idf_main":
+        # Manually add dependencies to CPPPATH since ESP-IDF build system doesn't generate
+        # this info if the folder with sources is not named 'main'
+        # https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/build-system.html#rename-main
+        project_env.AppendUnique(CPPPATH=app_includes["plain_includes"])
+
+    # Add include dirs from PlatformIO build system to project CPPPATH so
+    # they're visible to PIOBUILDFILES
+    project_env.AppendUnique(
+        CPPPATH=["$PROJECT_INCLUDE_DIR", "$PROJECT_SRC_DIR"]
+        + get_project_lib_includes(env)
+    )
+
+    env.Append(
+        PIOBUILDFILES=compile_source_files(
+            target_configs.get(project_target_name),
+            project_env,
+            project_env.subst("$PROJECT_DIR"),
+        )
+    )
 
 #
 # Generate mbedtls bundle
