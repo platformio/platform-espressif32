@@ -13,9 +13,7 @@
   },
   "connectivity": [
     "wifi",
-    "bluetooth",
-    "ethernet",
-    "can"
+    "bluetooth"
   ],
   "debug": {
     "openocd_board": "esp-wroom-32.cfg"
@@ -26,12 +24,12 @@
   ],
   "name": "FireBeetle-ESP32",
   "upload": {
-    "flash_size": "4MB",
-    "maximum_ram_size": 327680,
-    "maximum_size": 4194304,
+    "flash_size": "16MB",
+    "maximum_ram_size": 532480,
+    "maximum_size": 16777216,
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://dfrobotblog.wordpress.com",
+  "url": "https://wiki.dfrobot.com/FireBeetle_ESP32_IOT_Microcontroller(V3.0)__Supports_Wi-Fi_&_Bluetooth__SKU__DFR0478",
   "vendor": "DFRobot"
 }
