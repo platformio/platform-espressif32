@@ -88,7 +88,9 @@ class Espressif32Platform(PlatformBase):
                         sys.exit(1)
 
         if "espidf" in frameworks:
-            # Common package for IDF and mixed Arduino+IDF projects
+            if "arduino" in frameworks:
+                self.packages["framework-arduinoespressif32"]["version"] = "~3.20003.0"
+            # Common packages for IDF and mixed Arduino+IDF projects
             for p in self.packages:
                 if p in ("tool-cmake", "tool-ninja", "toolchain-%sulp" % mcu):
                     self.packages[p]["optional"] = False
