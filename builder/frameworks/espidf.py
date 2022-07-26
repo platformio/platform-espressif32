@@ -818,6 +818,8 @@ def get_targets_by_type(target_configs, target_types, ignore_targets=None):
 def get_components_map(target_configs, target_types, ignore_components=None):
     result = {}
     for config in get_targets_by_type(target_configs, target_types, ignore_components):
+        if "nameOnDisk" not in config:
+            config["nameOnDisk"] = "lib%s.a" % config["name"]
         result[config["id"]] = {"config": config}
 
     return result
