@@ -37,13 +37,13 @@
       "type": "framework",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/tasmota/arduino-esp32/releases/download/2.0.4/framework-arduinoespressif32-204.tar.gz"
+      "version": "https://github.com/tasmota/arduino-esp32/releases/download/2.0.4.1/framework-arduinoespressif32.tar.gz"
     },
     "framework-espidf": {
       "type": "framework",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/tasmota/esp-idf/releases/download/v4.4.2/esp-idf-v4.4.2.zip"
+      "version": "https://github.com/tasmota/esp-idf/releases/download/v4.4.3/esp-idf-v4.4.3.zip"
     },
     "toolchain-xtensa-esp32": {
       "type": "toolchain",
