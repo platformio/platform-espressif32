@@ -1470,4 +1470,4 @@ env.Replace(
 )
 
 # Propagate application offset to debug configurations
-env["IDE_EXTRA_DATA"].update({"application_offset": env.subst("$ESP32_APP_OFFSET")})
+env["INTEGRATION_EXTRA_DATA"].update({"application_offset": env.subst("$ESP32_APP_OFFSET")})

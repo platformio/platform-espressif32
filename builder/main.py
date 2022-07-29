@@ -169,6 +169,9 @@ filesystem = board.get("build.filesystem", "spiffs")
 if mcu == "esp32c3":
     toolchain_arch = "riscv32-esp"
 
+if "INTEGRATION_EXTRA_DATA" not in env:
+    env["INTEGRATION_EXTRA_DATA"] = {}
+
 env.Replace(
     __get_board_boot_mode=_get_board_boot_mode,
     __get_board_f_flash=_get_board_f_flash,
@@ -500,6 +503,13 @@ env.AddPlatformTarget(
 if any("-Wl,-T" in f for f in env.get("LINKFLAGS", [])):
     print("Warning! '-Wl,-T' option for specifying linker scripts is deprecated. "
           "Please use 'board_build.ldscript' option in your 'platformio.ini' file.")
+
+#
+# A temporary workaround to propagate additional data to the debug configuration routine
+#
+
+Import("projenv")
+projenv["INTEGRATION_EXTRA_DATA"] = env.get("INTEGRATION_EXTRA_DATA")
 
 #
 # Default targets
