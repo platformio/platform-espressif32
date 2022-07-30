@@ -160,6 +160,18 @@ def __fetch_fs_size(target, source, env):
     return (target, source)
 
 
+def merge_binaries(source, target, env, for_signature):
+    return " ".join([
+        '"$PYTHONEXE"',
+        join(platform.get_package_dir("tool-esptoolpy") or "", "esptool.py"),
+        "--chip", mcu, "merge_bin",
+        "-o", "$TARGET",
+        "--flash_mode", "$BOARD_FLASH_MODE",
+        "--flash_size", board.get("upload.flash_size", "detect"),
+        "$ESP32_APP_OFFSET", "$SOURCES"
+    ] + ['"%s"' % itm for img in env.get("FLASH_EXTRA_IMAGES", []) for itm in img])
+
+
 env = DefaultEnvironment()
 platform = env.PioPlatform()
 board = env.BoardConfig()
@@ -168,6 +180,21 @@ toolchain_arch = "xtensa-%s" % mcu
 filesystem = board.get("build.filesystem", "spiffs")
 if mcu == "esp32c3":
     toolchain_arch = "riscv32-esp"
+
+# Arduino core v2.0.4 contains updated bootloader images that have innacurate default
+# headers. This results in bootloops if firmware is flashed via OpenOCD (e.g. debugging
+# or uploading via debug tools). For this reason, before uploading or debugging we need
+# to merge binaries via esptoolpy so that the image headers will be adjusted according to
+# --flash-size and --flash-mode arguments.
+# Note: This behavior doesn't occur if uploading is done via esptoolpy, as esptoolpy
+# overrides the binary image headers before flashing.
+firmware_merge_required = bool(
+    env.get("PIOFRAMEWORK", []) == ["arduino"]
+    and (
+        "debug" in env.GetBuildType()
+        or env.subst("$UPLOAD_PROTOCOL") in board.get("debug.tools", {})
+    )
+)
 
 if "INTEGRATION_EXTRA_DATA" not in env:
     env["INTEGRATION_EXTRA_DATA"] = {}
@@ -264,6 +291,10 @@ env.Append(
             source_factory=env.Dir,
             suffix=".bin",
         ),
+        MergeBin=Builder(
+            generator=merge_binaries,
+            suffix=".bin",
+        ),
     )
 )
 
@@ -275,6 +306,7 @@ if not env.get("PIOFRAMEWORK"):
 #
 
 target_elf = None
+target_firm_merged = None
 if "nobuild" in COMMAND_LINE_TARGETS:
     target_elf = join("$BUILD_DIR", "${PROGNAME}.elf")
     if set(["uploadfs", "uploadfsota"]) & set(COMMAND_LINE_TARGETS):
@@ -293,6 +325,14 @@ else:
     else:
         target_firm = env.ElfToBin(
             join("$BUILD_DIR", "${PROGNAME}"), target_elf)
+        if firmware_merge_required:
+            # Note: Default offset address must be set to 0x0 because debugging
+            # relies on OpenOCD that requires merged firmware
+            env["INTEGRATION_EXTRA_DATA"].update(
+                {"application_offset": "0x0", "merged_firmware": True}
+            )
+            target_firm_merged = env.MergeBin(join(
+                "$BUILD_DIR", "${PROGNAME}_merged"), target_firm)
         env.Depends(target_firm, "checkprogsize")
 
 env.AddPlatformTarget("buildfs", target_firm, target_firm, "Build Filesystem Image")
@@ -430,6 +470,10 @@ elif upload_protocol == "mbctool":
 
 
 elif upload_protocol in debug_tools:
+    if firmware_merge_required:
+        # Only merged firmware with proper headers will work when uploading is done via
+        # debug probes. The firmware offset address must be adjusted to 0x0 accordingly.
+        target_firm = target_firm_merged
     openocd_args = ["-d%d" % (2 if int(ARGUMENTS.get("PIOVERBOSE", 0)) else 1)]
     openocd_args.extend(
         debug_tools.get(upload_protocol).get("server").get("arguments", []))
@@ -442,11 +486,14 @@ elif upload_protocol in debug_tools:
             % (
                 "$FS_START"
                 if "uploadfs" in COMMAND_LINE_TARGETS
-                else "$ESP32_APP_OFFSET"
+                else board.get(
+                    "upload.offset_address",
+                    "0x0" if firmware_merge_required else "$ESP32_APP_OFFSET"
+                )
             ),
         ]
     )
-    if "uploadfs" not in COMMAND_LINE_TARGETS:
+    if "uploadfs" not in COMMAND_LINE_TARGETS and not firmware_merge_required:
         for image in env.get("FLASH_EXTRA_IMAGES", []):
             openocd_args.extend(
                 [
