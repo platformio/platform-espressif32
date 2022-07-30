@@ -167,7 +167,7 @@ def merge_binaries(source, target, env, for_signature):
         "--chip", mcu, "merge_bin",
         "-o", "$TARGET",
         "--flash_mode", "$BOARD_FLASH_MODE",
-        "--flash_size", board.get("upload.flash_size", "detect"),
+        "--flash_size", board.get("upload.flash_size", "4MB"),
         "$ESP32_APP_OFFSET", "$SOURCES"
     ] + ['"%s"' % itm for img in env.get("FLASH_EXTRA_IMAGES", []) for itm in img])
 
