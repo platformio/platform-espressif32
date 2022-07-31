@@ -1,13 +1,12 @@
 {
   "build": {
-    "arduino":{
-      "ldscript": "esp32s3_out.ld",
-      "partitions": "partitions.csv"
+    "arduino": {
+      "ldscript": "esp32s3_out.ld"
     },
     "core": "esp32",
     "extra_flags": [
-      "-DARDUINO_ADAFRUIT_FEATHER_ESP32S3",
-      "-DARDUINO_USB_CDC_ON_BOOT=1",
+      "-DARDUINO_ESP32S3_DEV",
+      "-DARDUINO_USB_MODE=1",
       "-DARDUINO_RUNNING_CORE=1",
       "-DARDUINO_EVENT_RUNNING_CORE=1"
     ],
@@ -16,20 +15,16 @@
     "flash_mode": "qio",
     "hwids": [
       [
-        "0x239A",
-        "0x811B"
+        "0x303A",
+        "0x83CF"
       ],
       [
-        "0x239A",
-        "0x011B"
-      ],
-      [
-        "0x239A",
-        "0x811C"
+        "0x303A",
+        "0x1001"
       ]
     ],
     "mcu": "esp32s3",
-    "variant": "adafruit_feather_esp32s3"
+    "variant": "dfrobot_firebeetle2_esp32s3"
   },
   "connectivity": [
     "wifi"
@@ -41,16 +36,14 @@
     "arduino",
     "espidf"
   ],
-  "name": "Adafruit Feather ESP32-S3 2MB PSRAM",
+  "name": "DFRobot Firebeetle 2 ESP32-S3",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
     "maximum_size": 4194304,
-    "use_1200bps_touch": true,
-    "wait_for_upload_port": true,
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://www.adafruit.com/product/5477",
-  "vendor": "Adafruit"
+  "url": "https://www.dfrobot.com/product-1590.html",
+  "vendor": "DFRobot"
 }
