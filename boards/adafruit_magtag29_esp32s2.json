@@ -1,7 +1,8 @@
 {
   "build": {
     "arduino":{
-      "ldscript": "esp32s2_out.ld"
+      "ldscript": "esp32s2_out.ld",
+      "partitions": "partitions-4MB-tinyuf2.csv"
     },
     "core": "esp32",
     "extra_flags": [
@@ -41,14 +42,6 @@
   ],
   "name": "Adafruit MagTag 2.9",
   "upload": {
-    "arduino": {
-      "flash_extra_images": [
-        [
-          "0x2d0000",
-          "variants/adafruit_magtag29_esp32s2/tinyuf2.bin"
-        ]
-      ]
-    },
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
     "maximum_size": 4194304,

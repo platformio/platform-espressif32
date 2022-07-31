@@ -1,15 +1,25 @@
+
 {
   "build": {
     "arduino":{
       "ldscript": "esp32_out.ld"
     },
     "core": "esp32",
-    "extra_flags": "-DARDUINO_D1_MINI32",
+    "extra_flags": [
+      "-DARDUINO_CONNAXIO_ESPOIR",
+      "-DCONFIG_FREERTOS_UNICORE=1"
+    ],
     "f_cpu": "240000000L",
-    "f_flash": "40000000L",
+    "f_flash": "80000000L",
     "flash_mode": "dio",
     "mcu": "esp32",
-    "variant": "d1_mini32"
+    "variant": "connaxio_espoir",
+    "hwids": [
+      [
+        "0x10C4",
+        "0x8D9A"
+      ]
+    ]
   },
   "connectivity": [
     "wifi",
@@ -18,20 +28,20 @@
     "can"
   ],
   "debug": {
-    "openocd_board": "esp-wroom-32.cfg"
+    "openocd_board": "esp32-solo-1.cfg"
   },
   "frameworks": [
     "arduino",
     "espidf"
   ],
-  "name": "WEMOS D1 MINI ESP32",
+  "name": "Connaxio's Espoir",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
     "maximum_size": 4194304,
     "require_upload_port": true,
-    "speed": 460800
+    "speed": 921600
   },
-  "url": "https://www.wemos.cc",
-  "vendor": "WEMOS"
+  "url": "https://www.connaxio.com/electronics/espoir/",
+  "vendor": "Connaxio"
 }
