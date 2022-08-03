@@ -9,26 +9,16 @@
 
 #include <stdlib.h>
 #include "esp_log.h"
+#include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "driver/gpio.h"
-#include "sdkconfig.h"
 #include "tinyusb.h"
+#include "sdkconfig.h"
 
 static const char *TAG = "example";
 
-// USB Device Driver task
-// This top level thread processes all usb events and invokes callbacks
-static void usb_device_task(void *param) {
-    (void)param;
-    ESP_LOGI(TAG, "USB task started");
-    while (1) {
-        tud_task(); // RTOS forever loop
-    }
-}
-
-void app_main(void) {
-
+void app_main(void)
+{
     ESP_LOGI(TAG, "USB initialization");
 
 #if CONFIG_EXAMPLE_MANUAL_DESC
@@ -39,7 +29,7 @@ void app_main(void) {
         .bDescriptorType = TUSB_DESC_DEVICE,
         .bcdUSB = 0x0200, // USB version. 0x0200 means version 2.0
         .bDeviceClass = TUSB_CLASS_UNSPECIFIED,
-        .bMaxPacketSize0 = CFG_TUD_ENDOINT0_SIZE,
+        .bMaxPacketSize0 = CFG_TUD_ENDPOINT0_SIZE,
 
         .idVendor = 0x303A,
         .idProduct = 0x3000,
@@ -49,7 +39,8 @@ void app_main(void) {
         .iProduct = 0x02,      // see string_descriptor[2] bellow
         .iSerialNumber = 0x03, // see string_descriptor[3] bellow
 
-        .bNumConfigurations = 0x01};
+        .bNumConfigurations = 0x01
+    };
 
     tusb_desc_strarray_device_t my_string_descriptor = {
         // array of pointer to string descriptors
@@ -77,8 +68,4 @@ void app_main(void) {
 
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
     ESP_LOGI(TAG, "USB initialization DONE");
-
-    // Create a task for tinyusb device stack:
-    xTaskCreate(usb_device_task, "usbd", 4096, NULL, 5, NULL);
-    return;
 }

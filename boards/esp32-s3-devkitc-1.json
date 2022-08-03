@@ -1,7 +1,8 @@
 {
   "build": {
     "arduino":{
-      "ldscript": "esp32s3_out.ld"
+      "ldscript": "esp32s3_out.ld",
+      "partitions": "default_8MB.csv"
     },
     "core": "esp32",
     "extra_flags": [
@@ -12,7 +13,7 @@
     ],
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
-    "flash_mode": "dio",
+    "flash_mode": "qio",
     "hwids": [
       [
         "0X303A",
@@ -26,16 +27,21 @@
     "wifi"
   ],
   "debug": {
+    "default_tool": "esp-builtin",
+    "onboard_tools": [
+      "esp-builtin"
+    ],
     "openocd_target": "esp32s3.cfg"
   },
   "frameworks": [
-    "arduino"
+    "arduino",
+    "espidf"
   ],
-  "name": "Espressif ESP32-S3-DevKitC-1",
+  "name": "Espressif ESP32-S3-DevKitC-1-N8 (8 MB QD, No PSRAM)",
   "upload": {
-    "flash_size": "4MB",
+    "flash_size": "8MB",
     "maximum_ram_size": 327680,
-    "maximum_size": 4194304,
+    "maximum_size": 8388608,
     "require_upload_port": true,
     "speed": 460800
   },

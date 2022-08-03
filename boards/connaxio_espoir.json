@@ -1,16 +1,25 @@
+
 {
   "build": {
     "arduino":{
       "ldscript": "esp32_out.ld"
     },
     "core": "esp32",
-    "extra_flags": "-DARDUINO_ESP32_POE",
+    "extra_flags": [
+      "-DARDUINO_CONNAXIO_ESPOIR",
+      "-DCONFIG_FREERTOS_UNICORE=1"
+    ],
     "f_cpu": "240000000L",
-    "f_flash": "40000000L",
+    "f_flash": "80000000L",
     "flash_mode": "dio",
-    "hwids": [["0x1A86", "0x7523"]],
     "mcu": "esp32",
-    "variant": "esp32-poe"
+    "variant": "connaxio_espoir",
+    "hwids": [
+      [
+        "0x10C4",
+        "0x8D9A"
+      ]
+    ]
   },
   "connectivity": [
     "wifi",
@@ -18,18 +27,21 @@
     "ethernet",
     "can"
   ],
+  "debug": {
+    "openocd_board": "esp32-solo-1.cfg"
+  },
   "frameworks": [
     "arduino",
     "espidf"
   ],
-  "name": "OLIMEX ESP32-PoE",
+  "name": "Connaxio's Espoir",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
     "maximum_size": 4194304,
     "require_upload_port": true,
-    "speed": 460800
+    "speed": 921600
   },
-  "url": "https://www.olimex.com/Products/IoT/ESP32/ESP32-POE/open-source-hardware",
-  "vendor": "OLIMEX"
+  "url": "https://www.connaxio.com/electronics/espoir/",
+  "vendor": "Connaxio"
 }

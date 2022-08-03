@@ -1,13 +1,11 @@
 {
   "build": {
-    "arduino":{
-      "ldscript": "esp32s3_out.ld",
-      "partitions": "default_16MB.csv"
+    "arduino": {
+      "ldscript": "esp32s3_out.ld"
     },
     "core": "esp32",
     "extra_flags": [
-      "-DARDUINO_FEATHERS3",
-      "-DBOARD_HAS_PSRAM",
+      "-DARDUINO_ADAFRUIT_QTPY_ESP32S3_NOPSRAM",
       "-DARDUINO_USB_CDC_ON_BOOT=1",
       "-DARDUINO_RUNNING_CORE=1",
       "-DARDUINO_EVENT_RUNNING_CORE=1"
@@ -17,12 +15,20 @@
     "flash_mode": "qio",
     "hwids": [
       [
-        "0X303A",
-        "0x80D0"
+        "0x239A",
+        "0x8119"
+      ],
+      [
+        "0x239A",
+        "0x0119"
+      ],
+      [
+        "0x239A",
+        "0x811A"
       ]
     ],
     "mcu": "esp32s3",
-    "variant": "um_feathers3"
+    "variant": "adafruit_qtpy_esp32s3_nopsram"
   },
   "connectivity": [
     "wifi"
@@ -34,16 +40,24 @@
     "arduino",
     "espidf"
   ],
-  "name": "Unexpected Maker FeatherS3",
+  "name": "Adafruit QT Py ESP32-S3 No PSRAM",
   "upload": {
-    "flash_size": "16MB",
+    "arduino": {
+      "flash_extra_images": [
+        [
+          "0x410000",
+          "variants/adafruit_qtpy_esp32s3_nopsram/tinyuf2.bin"
+        ]
+      ]
+    },
+    "flash_size": "4MB",
     "maximum_ram_size": 327680,
-    "maximum_size": 16777216,
+    "maximum_size": 4194304,
     "use_1200bps_touch": true,
     "wait_for_upload_port": true,
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://unexpectedmaker.com/shop/feathers3",
-  "vendor": "Unexpected Maker"
+  "url": "https://www.adafruit.com/product/5426",
+  "vendor": "Adafruit"
 }

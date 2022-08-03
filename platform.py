@@ -88,7 +88,9 @@ class Espressif32Platform(PlatformBase):
                         sys.exit(1)
 
         if "espidf" in frameworks:
-            # Common package for IDF and mixed Arduino+IDF projects
+            if "arduino" in frameworks:
+                self.packages["framework-arduinoespressif32"]["version"] = "~3.20003.0"
+            # Common packages for IDF and mixed Arduino+IDF projects
             for p in self.packages:
                 if p in ("tool-cmake", "tool-ninja", "toolchain-%sulp" % mcu):
                     self.packages[p]["optional"] = False
@@ -108,12 +110,7 @@ class Espressif32Platform(PlatformBase):
             # RISC-V based toolchain for ESP32C3, ESP32S2, ESP32S3 ULP
             self.packages["toolchain-riscv32-esp"]["optional"] = False
 
-        is_legacy_project = (
-            build_core == "mbcwb"
-            or set(("arduino", "espidf")) == set(frameworks)
-        )
-
-        if is_legacy_project:
+        if build_core == "mbcwb":
             # Remove the main toolchains from PATH
             for toolchain in (
                 "toolchain-xtensa-esp32",
@@ -127,15 +124,8 @@ class Espressif32Platform(PlatformBase):
             self.packages["toolchain-xtensa32"] = {
                 "type": "toolchain",
                 "owner": "platformio",
-                "version": "~2.80400.0"
-                if "arduino" in frameworks and build_core != "mbcwb"
-                else "~2.50200.0",
+                "version": "~2.50200.0"
             }
-
-            # Legacy setting for mixed IDF+Arduino projects
-            if set(("arduino", "espidf")) == set(frameworks):
-                # Arduino component is not compatible with ESP-IDF >=4.1
-                self.packages["framework-espidf"]["version"] = "~3.40001.0"
 
             if build_core == "mbcwb":
                 self.packages["framework-arduinoespressif32"]["optional"] = True
@@ -169,6 +159,7 @@ class Espressif32Platform(PlatformBase):
         supported_debug_tools = [
             "cmsis-dap",
             "esp-prog",
+            "esp-bridge",
             "iot-bus-jtag",
             "jlink",
             "minimodule",
@@ -178,6 +169,9 @@ class Espressif32Platform(PlatformBase):
             "olimex-jtag-tiny",
             "tumpa",
         ]
+
+        if board.get("build.mcu", "") in ("esp32c3", "esp32s3"):
+            supported_debug_tools.append("esp-builtin")
 
         upload_protocol = board.manifest.get("upload", {}).get("protocol")
         upload_protocols = board.manifest.get("upload", {}).get("protocols", [])
@@ -190,7 +184,6 @@ class Espressif32Platform(PlatformBase):
         if "tools" not in debug:
             debug["tools"] = {}
 
-        # Only FTDI based debug probes
         for link in upload_protocols:
             if link in non_debug_protocols or link in debug["tools"]:
                 continue
@@ -202,6 +195,10 @@ class Espressif32Platform(PlatformBase):
                     openocd_interface = "ftdi/esp32s2_kaluga_v1"
                 else:
                     openocd_interface = "ftdi/esp32_devkitj_v1"
+            elif link == "esp-bridge":
+                openocd_interface = "esp_usb_bridge"
+            elif link == "esp-builtin":
+                openocd_interface = "esp_usb_jtag"
             else:
                 openocd_interface = "ftdi/" + link
 
@@ -264,16 +261,23 @@ class Espressif32Platform(PlatformBase):
         if any(ignore_conds):
             return
 
-        load_cmds = [
-            'monitor program_esp "{{{path}}}" {offset} verify'.format(
-                path=to_unix_path(item["path"]), offset=item["offset"]
-            )
-            for item in flash_images
-        ]
+        merged_firmware = build_extra_data.get("merged_firmware", False)
+        load_cmds = []
+        if not merged_firmware:
+            load_cmds.extend([
+                'monitor program_esp "{{{path}}}" {offset} verify'.format(
+                    path=to_unix_path(item["path"]), offset=item["offset"]
+                )
+                for item in flash_images
+            ])
+
         load_cmds.append(
             'monitor program_esp "{%s.bin}" %s verify'
             % (
-                to_unix_path(debug_config.build_data["prog_path"][:-4]),
+                to_unix_path(
+                    debug_config.build_data["prog_path"][:-4]
+                    + ("_merged" if merged_firmware else "")
+                ),
                 build_extra_data.get("application_offset", "0x10000"),
             )
         )

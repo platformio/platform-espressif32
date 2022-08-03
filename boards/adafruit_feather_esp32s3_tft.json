@@ -1,13 +1,12 @@
 {
   "build": {
-    "arduino":{
+    "arduino": {
       "ldscript": "esp32s3_out.ld",
-      "partitions": "default_16MB.csv"
+      "partitions": "partitions.csv"
     },
     "core": "esp32",
     "extra_flags": [
-      "-DARDUINO_FEATHERS3",
-      "-DBOARD_HAS_PSRAM",
+      "-DARDUINO_ADAFRUIT_FEATHER_ESP32S3_TFT",
       "-DARDUINO_USB_CDC_ON_BOOT=1",
       "-DARDUINO_RUNNING_CORE=1",
       "-DARDUINO_EVENT_RUNNING_CORE=1"
@@ -17,12 +16,20 @@
     "flash_mode": "qio",
     "hwids": [
       [
-        "0X303A",
-        "0x80D0"
+        "0x239A",
+        "0x811D"
+      ],
+      [
+        "0x239A",
+        "0x011D"
+      ],
+      [
+        "0x239A",
+        "0x811E"
       ]
     ],
     "mcu": "esp32s3",
-    "variant": "um_feathers3"
+    "variant": "adafruit_feather_esp32s3_tft"
   },
   "connectivity": [
     "wifi"
@@ -34,16 +41,24 @@
     "arduino",
     "espidf"
   ],
-  "name": "Unexpected Maker FeatherS3",
+  "name": "Adafruit Feather ESP32-S3 TFT",
   "upload": {
-    "flash_size": "16MB",
+    "arduino": {
+      "flash_extra_images": [
+        [
+          "0x2d0000",
+          "variants/adafruit_feather_esp32s3_tft/tinyuf2.bin"
+        ]
+      ]
+    },
+    "flash_size": "4MB",
     "maximum_ram_size": 327680,
-    "maximum_size": 16777216,
+    "maximum_size": 4194304,
     "use_1200bps_touch": true,
     "wait_for_upload_port": true,
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://unexpectedmaker.com/shop/feathers3",
-  "vendor": "Unexpected Maker"
+  "url": "https://www.adafruit.com/product/5483",
+  "vendor": "Adafruit"
 }

@@ -1,14 +1,12 @@
 {
   "build": {
-    "arduino":{
-      "ldscript": "esp32s3_out.ld",
-      "partitions": "default_16MB.csv"
+    "arduino": {
+      "ldscript": "esp32s3_out.ld"
     },
     "core": "esp32",
     "extra_flags": [
-      "-DARDUINO_FEATHERS3",
-      "-DBOARD_HAS_PSRAM",
-      "-DARDUINO_USB_CDC_ON_BOOT=1",
+      "-DARDUINO_ESP32S3_DEV",
+      "-DARDUINO_USB_MODE=1",
       "-DARDUINO_RUNNING_CORE=1",
       "-DARDUINO_EVENT_RUNNING_CORE=1"
     ],
@@ -17,12 +15,16 @@
     "flash_mode": "qio",
     "hwids": [
       [
-        "0X303A",
-        "0x80D0"
+        "0x303A",
+        "0x83CF"
+      ],
+      [
+        "0x303A",
+        "0x1001"
       ]
     ],
     "mcu": "esp32s3",
-    "variant": "um_feathers3"
+    "variant": "dfrobot_firebeetle2_esp32s3"
   },
   "connectivity": [
     "wifi"
@@ -34,16 +36,14 @@
     "arduino",
     "espidf"
   ],
-  "name": "Unexpected Maker FeatherS3",
+  "name": "DFRobot Firebeetle 2 ESP32-S3",
   "upload": {
-    "flash_size": "16MB",
+    "flash_size": "4MB",
     "maximum_ram_size": 327680,
-    "maximum_size": 16777216,
-    "use_1200bps_touch": true,
-    "wait_for_upload_port": true,
+    "maximum_size": 4194304,
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://unexpectedmaker.com/shop/feathers3",
-  "vendor": "Unexpected Maker"
+  "url": "https://www.dfrobot.com/product-1590.html",
+  "vendor": "DFRobot"
 }

@@ -24,7 +24,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "WeMos D1 MINI ESP32",
+  "name": "WEMOS D1 MINI ESP32",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
