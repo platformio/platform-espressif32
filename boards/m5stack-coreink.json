@@ -21,7 +21,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "M5Stick-Core Ink",
+  "name": "M5Stack-Core Ink",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,

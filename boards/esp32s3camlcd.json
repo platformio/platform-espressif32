@@ -33,7 +33,8 @@
     "openocd_target": "esp32s3.cfg"
   },
   "frameworks": [
-    "arduino"
+    "arduino",
+    "espidf"
   ],
   "name": "ESP32S3 CAM LCD",
   "upload": {

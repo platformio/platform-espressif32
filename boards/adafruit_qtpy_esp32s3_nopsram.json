@@ -1,55 +1,63 @@
 {
   "build": {
-    "arduino":{
+    "arduino": {
       "ldscript": "esp32s3_out.ld"
     },
     "core": "esp32",
     "extra_flags": [
-      "-DUNPHONE_SPIN=9",
-      "-DARDUINO_USB_CDC_ON_BOOT=0",
+      "-DARDUINO_ADAFRUIT_QTPY_ESP32S3_NOPSRAM",
+      "-DARDUINO_USB_CDC_ON_BOOT=1",
       "-DARDUINO_RUNNING_CORE=1",
       "-DARDUINO_EVENT_RUNNING_CORE=1"
     ],
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
-    "flash_mode": "dio",
+    "flash_mode": "qio",
     "hwids": [
       [
-        "0x16D0",
-        "0x1178"
+        "0x239A",
+        "0x8119"
+      ],
+      [
+        "0x239A",
+        "0x0119"
+      ],
+      [
+        "0x239A",
+        "0x811A"
       ]
     ],
     "mcu": "esp32s3",
-    "variant": "unphone9"
+    "variant": "adafruit_qtpy_esp32s3_nopsram"
   },
   "connectivity": [
     "wifi"
   ],
   "debug": {
-    "openocd_board": "esp32s3.cfg"
+    "openocd_target": "esp32s3.cfg"
   },
   "frameworks": [
     "arduino",
     "espidf"
   ],
-  "name": "unPhone 9",
+  "name": "Adafruit QT Py ESP32-S3 No PSRAM",
   "upload": {
     "arduino": {
       "flash_extra_images": [
         [
           "0x410000",
-          "variants/unphone9/tinyuf2.bin"
+          "variants/adafruit_qtpy_esp32s3_nopsram/tinyuf2.bin"
         ]
       ]
     },
-    "flash_size": "8MB",
+    "flash_size": "4MB",
     "maximum_ram_size": 327680,
-    "maximum_size": 8388608,
+    "maximum_size": 4194304,
     "use_1200bps_touch": true,
     "wait_for_upload_port": true,
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://unphone.net/",
-  "vendor": "University of Sheffield"
+  "url": "https://www.adafruit.com/product/5426",
+  "vendor": "Adafruit"
 }

@@ -32,11 +32,11 @@ IS_WINDOWS = sys.platform.startswith("win")
 class Esp32ExceptionDecoder(DeviceMonitorFilterBase):
     NAME = "esp32_exception_decoder"
 
+    BACKTRACE_PATTERN = re.compile(r"^Backtrace:(((\s?0x[0-9a-fA-F]{8}:0x[0-9a-fA-F]{8}))+)")
+    BACKTRACE_ADDRESS_PATTERN = re.compile(r'0x[0-9a-f]{8}:0x[0-9a-f]{8}')
+
     def __call__(self):
         self.buffer = ""
-        self.backtrace_re = re.compile(
-            r"^Backtrace: ?((0x[0-9a-fA-F]+:0x[0-9a-fA-F]+ ?)+)\s*"
-        )
 
         self.firmware_path = None
         self.addr2line_path = None
@@ -100,7 +100,7 @@ See https://docs.platformio.org/page/projectconf/build_configurations.html
                 self.buffer = ""
             last = idx + 1
 
-            m = self.backtrace_re.match(line)
+            m = self.BACKTRACE_PATTERN.match(line)
             if m is None:
                 continue
 
@@ -111,11 +111,11 @@ See https://docs.platformio.org/page/projectconf/build_configurations.html
         return text
 
     def get_backtrace(self, match):
-        trace = ""
+        trace = "\n"
         enc = "mbcs" if IS_WINDOWS else "utf-8"
         args = [self.addr2line_path, u"-fipC", u"-e", self.firmware_path]
         try:
-            for i, addr in enumerate(match.group(1).split()):
+            for i, addr in enumerate(self.BACKTRACE_ADDRESS_PATTERN.findall(match.group(1))):
                 output = (
                     subprocess.check_output(args + [addr])
                     .decode(enc)
