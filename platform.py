@@ -41,11 +41,6 @@ class Espressif32Platform(PlatformBase):
                 self.packages["tool-mkfatfs"]["optional"] = False
             else:
                 self.packages["tool-mkspiffs"]["optional"] = False
-        if variables.get("upload_protocol"):
-            if "darwin" in get_systype() and "arm64" in get_systype():
-                self.packages["tool-openocd-esp32-arm"]["optional"] = False
-            if not "arm64" in get_systype():
-                self.packages["tool-openocd-esp32"]["optional"] = False
         if os.path.isdir("ulp"):
             self.packages["toolchain-esp32ulp"]["optional"] = False
 
