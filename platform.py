@@ -41,6 +41,8 @@ class Espressif32Platform(PlatformBase):
                 self.packages["tool-mkfatfs"]["optional"] = False
             else:
                 self.packages["tool-mkspiffs"]["optional"] = False
+        if variables.get("upload_protocol"):
+            self.packages["tool-openocd-esp32"]["optional"] = False
         if os.path.isdir("ulp"):
             self.packages["toolchain-esp32ulp"]["optional"] = False
 
