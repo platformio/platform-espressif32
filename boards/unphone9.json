@@ -34,17 +34,9 @@
   ],
   "name": "unPhone 9",
   "upload": {
-    "arduino": {
-      "flash_extra_images": [
-        [
-          "0x410000",
-          "variants/unphone9/tinyuf2.bin"
-        ]
-      ]
-    },
     "flash_size": "8MB",
-    "maximum_ram_size": 327680,
-    "maximum_size": 8388608,
+    "maximum_ram_size": 8716288,
+    "maximum_size": 8323072,
     "use_1200bps_touch": true,
     "wait_for_upload_port": true,
     "require_upload_port": true,

@@ -29,8 +29,8 @@
   "name": "unPhone 8",
   "upload": {
     "flash_size": "8MB",
-    "maximum_ram_size": 327680,
-    "maximum_size": 8388608,
+    "maximum_ram_size": 2424832,
+    "maximum_size": 8323072,
     "use_1200bps_touch": true,
     "wait_for_upload_port": true,
     "require_upload_port": true,
