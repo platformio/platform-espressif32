@@ -93,12 +93,6 @@
       "owner": "tasmota",
       "version": "https://github.com/Jason2866/crosstool-NG/releases/download/8.4.0/toolchain-riscv32-esp.tar.gz"
     },
-    "tool-openocd-esp32-arm": {
-      "type": "debugger",
-      "optional": true,
-      "owner": "tasmota",
-      "version": "https://github.com/Jason2866/openocd-esp32/releases/download/v0.11.0-esp32-20220404/openocd-esp32-macos-arm64-0.11.0-esp32-20220424.zip"
-    },
     "toolchain-esp32ulp": {
       "type": "toolchain",
       "optional": true,
