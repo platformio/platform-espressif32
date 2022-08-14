@@ -422,16 +422,19 @@ elif upload_protocol == "esptool":
         env.Append(UPLOADERFLAGS=[image[0], env.subst(image[1])])
 
     if "uploadfs" in COMMAND_LINE_TARGETS:
+        before_reset = board.get("upload.before_reset", "default_reset"),
+        after_reset = board.get("upload.after_reset", "hard_reset"),
+        flash_size = board.get("upload.flash_size", "detect"),
         env.Replace(
             UPLOADERFLAGS=[
                 "--chip", mcu,
                 "--port", '"$UPLOAD_PORT"',
                 "--baud", "$UPLOAD_SPEED",
-                "--before", "default_reset",
-                "--after", "hard_reset",
+                "--before", before_reset,
+                "--after", after_reset,
                 "write_flash", "-z",
                 "--flash_mode", "$BOARD_FLASH_MODE",
-                "--flash_size", "detect",
+                "--flash_size", flash_size,
                 "$FS_START"
             ],
             UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS $SOURCE',
