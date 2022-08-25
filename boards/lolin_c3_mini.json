@@ -19,7 +19,7 @@
       ]
     ],
     "mcu": "esp32c3",
-    "variant": "esp32c3"
+    "variant": "lolin_c3_mini"
   },
   "connectivity": [
     "wifi"
