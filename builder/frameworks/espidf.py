@@ -728,11 +728,23 @@ def find_lib_deps(components_map, elf_config, link_args, ignore_components=None)
 
 
 def build_bootloader(sdk_config):
-    bootloader_src_dir = os.path.join(
+    bootloader_subproject_dir = os.path.join(
         FRAMEWORK_DIR, "components", "bootloader", "subproject"
     )
+    bootloader_project_dir = os.path.join(FRAMEWORK_DIR, "components", "bootloader")
+
+    bootloader_custom_dir = os.path.join(PROJECT_DIR, "bootloader_components")
+    if os.path.isdir(bootloader_custom_dir) :
+        bootloader_subproject_dir = os.path.join(
+            PROJECT_DIR, "bootloader_components", "subproject"
+        )
+        bootloader_project_dir = os.path.join(
+            FRAMEWORK_DIR, "bootloader_components"
+        )
+        sys.stderr.write("Found custom bootloader configuration!\n")
+
     code_model = get_cmake_code_model(
-        bootloader_src_dir,
+        bootloader_subproject_dir,
         os.path.join(BUILD_DIR, "bootloader"),
         [
             "-DIDF_TARGET=" + idf_variant,
@@ -742,9 +754,10 @@ def build_bootloader(sdk_config):
             "-DSDKCONFIG=" + SDKCONFIG_PATH,
             "-DLEGACY_INCLUDE_COMMON_HEADERS=",
             "-DEXTRA_COMPONENT_DIRS="
-            + os.path.join(FRAMEWORK_DIR, "components", "bootloader"),
+            + bootloader_project_dir,
         ],
     )
+
 
     if not code_model:
         sys.stderr.write("Error: Couldn't find code model for bootloader\n")
@@ -772,7 +785,7 @@ def build_bootloader(sdk_config):
     build_components(
         bootloader_env,
         components_map,
-        bootloader_src_dir,
+        bootloader_subproject_dir,
         "bootloader",
         debug_allowed=sdk_config.get("BOOTLOADER_COMPILER_OPTIMIZATION_DEBUG", False),
     )
