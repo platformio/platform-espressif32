@@ -2,7 +2,7 @@
   "build": {
     "arduino":{
       "ldscript": "esp32s3_out.ld",
-      "memory_type": "qspi_opi"
+      "memory_type": "qio_opi"
     },
     "core": "esp32",
     "extra_flags": [
