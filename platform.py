@@ -275,16 +275,23 @@ class Espressif32Platform(PlatformBase):
         if any(ignore_conds):
             return
 
-        load_cmds = [
-            'monitor program_esp "{{{path}}}" {offset} verify'.format(
-                path=to_unix_path(item["path"]), offset=item["offset"]
-            )
-            for item in flash_images
-        ]
+        merged_firmware = build_extra_data.get("merged_firmware", False)
+        load_cmds = []
+        if not merged_firmware:
+            load_cmds.extend([
+                'monitor program_esp "{{{path}}}" {offset} verify'.format(
+                    path=to_unix_path(item["path"]), offset=item["offset"]
+                )
+                for item in flash_images
+            ])
+
         load_cmds.append(
             'monitor program_esp "{%s.bin}" %s verify'
             % (
-                to_unix_path(debug_config.build_data["prog_path"][:-4]),
+                to_unix_path(
+                    debug_config.build_data["prog_path"][:-4]
+                    + ("_merged" if merged_firmware else "")
+                ),
                 build_extra_data.get("application_offset", "0x10000"),
             )
         )

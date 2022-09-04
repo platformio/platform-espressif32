@@ -324,6 +324,47 @@ target_size = env.AddPlatformTarget(
     "Calculate program size",
 )
 
+# Arduino core v2.0.4 contains updated bootloader images that have innacurate default
+# headers. This results in bootloops if firmware is flashed via OpenOCD (e.g. debugging
+# or uploading via debug tools). For this reason, before uploading or debugging we need
+# to adjust the bootloader binary according to --flash-size and --flash-mode arguments.
+# Note: This behavior doesn't occur if uploading is done via esptoolpy, as esptoolpy
+# overrides the binary image headers before flashing.
+bootloader_patch_required = bool(
+    env.get("PIOFRAMEWORK", []) == ["arduino"]
+    and (
+        "debug" in env.GetBuildType()
+        or env.subst("$UPLOAD_PROTOCOL") in board.get("debug.tools", {})
+    )
+)
+
+if bootloader_patch_required:
+    result = []
+    for offset, image in env.get("FLASH_EXTRA_IMAGES", []):
+        # 0x1000 for ESP32/S2, 0x0 for others
+        default_bootloader_offsets = ("0x0", "0x0000", "0x1000")
+        if offset in default_bootloader_offsets:
+            original_bootloader_path = env.subst(image)
+            image = join(env.subst("$BUILD_DIR"), "patched_bootloader.bin")
+            env.AddPreAction(
+                target_elf,
+                env.VerboseAction(" ".join([
+                    '"$PYTHONEXE"',
+                    join(platform.get_package_dir("tool-esptoolpy") or "", "esptool.py"),
+                    "--chip", mcu, "merge_bin",
+                    "-o", '"%s"' % image,
+                    "--flash_mode", _get_board_flash_mode(env),
+                    "--flash_freq", _get_board_f_flash(env),
+                    "--flash_size", board.get("upload.flash_size", "4MB"),
+                    "--target-offset", offset,
+                    offset, '"%s"' % original_bootloader_path
+                ]), "Updating bootloader headers")
+            )
+
+        result.append((offset, image))
+
+    env.Replace(FLASH_EXTRA_IMAGES=result)
+
 #
 # Target: Upload firmware or FS image
 #
@@ -508,6 +549,13 @@ env.AddPlatformTarget(
 if any("-Wl,-T" in f for f in env.get("LINKFLAGS", [])):
     print("Warning! '-Wl,-T' option for specifying linker scripts is deprecated. "
           "Please use 'board_build.ldscript' option in your 'platformio.ini' file.")
+
+#
+# A temporary workaround to propagate additional data to the debug configuration routine
+#
+
+Import("projenv")
+projenv["INTEGRATION_EXTRA_DATA"] = env.get("INTEGRATION_EXTRA_DATA")
 
 #
 # Default targets
