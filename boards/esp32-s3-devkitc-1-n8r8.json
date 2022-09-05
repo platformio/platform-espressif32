@@ -1,0 +1,55 @@
+{
+   "build":{
+      "arduino":{
+         "ldscript":"esp32s3_out.ld",
+         "memory_type":"qio_opi",
+         "partitions":"default_8MB.csv",
+         "note1": "https://github.com/espressif/arduino-esp32/discussions/6426#discussioncomment-2356715",
+		 "note2": "https://github.com/espressif/arduino-esp32/issues/6958#issuecomment-1179577764"
+      },
+      "core":"esp32",
+      "extra_flags":[
+         "-DARDUINO_ESP32S3_DEV",
+         "-DARDUINO_USB_MODE=1",
+         "-DARDUINO_RUNNING_CORE=1",
+         "-DARDUINO_EVENT_RUNNING_CORE=1",
+         "-DBOARD_HAS_PSRAM",
+         "-DARDUINO_USB_MODE=1"
+      ],
+      "f_cpu":"240000000L",
+      "f_flash":"80000000L",
+      "flash_mode":"qio",
+      "hwids":[
+         [
+            "0x303A",
+            "0x1001"
+         ]
+      ],
+      "mcu":"esp32s3",
+      "variant":"esp32s3"
+   },
+   "connectivity":[
+      "wifi"
+   ],
+   "debug":{
+      "default_tool":"esp-builtin",
+      "onboard_tools":[
+         "esp-builtin"
+      ],
+      "openocd_target":"esp32s3.cfg"
+   },
+   "frameworks":[
+      "arduino",
+      "espidf"
+   ],
+   "name":"Espressif ESP32-S3-DevKitC-1-N8R8 (8 Mbit QD, 8 Mbit OT PSRAM)",
+   "upload":{
+      "flash_size":"8MB",
+      "maximum_ram_size":327680,
+      "maximum_size":8388608,
+      "require_upload_port":true,
+      "speed":460800
+   },
+   "url":"https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1.html",
+   "vendor":"Espressif"
+}
