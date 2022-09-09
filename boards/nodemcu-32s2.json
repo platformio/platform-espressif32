@@ -1,6 +1,6 @@
 {
   "build": {
-    "arduino":{
+    "arduino": {
       "ldscript": "esp32s2_out.ld"
     },
     "core": "esp32",
@@ -21,7 +21,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "NodeMCU-32S2 (ESP-12K)",
+  "name": "Ai-Thinker NodeMCU-32S2 (ESP-12K)",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
