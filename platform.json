@@ -37,7 +37,7 @@
       "type": "framework",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/987/framework-arduinoespressif32-IDF_Arduino-83797312d3.tar.gz"
+      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/990/framework-arduinoespressif32-IDF_Arduino-bce2fe1fd3.zip"
     },
     "framework-espidf": {
       "type": "framework",
@@ -73,25 +73,25 @@
       "type": "toolchain",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/Jason2866/crosstool-NG/releases/download/8.4.0/toolchain-xtensa-esp32.tar.gz"
+      "version": "https://github.com/Jason2866/crosstool-NG/releases/download/v8.4.0/xtensa-esp32-elf.tar.gz"
     },
     "toolchain-xtensa-esp32s2-arm": {
       "type": "toolchain",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/Jason2866/crosstool-NG/releases/download/8.4.0/toolchain-xtensa-esp32s2.tar.gz"
+      "version": "https://github.com/Jason2866/crosstool-NG/releases/download/v8.4.0/xtensa-esp32s2-elf.tar.gz"
     },
     "toolchain-xtensa-esp32s3-arm": {
       "type": "toolchain",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/Jason2866/crosstool-NG/releases/download/8.4.0/toolchain-xtensa-esp32s3.tar.gz"
+      "version": "https://github.com/Jason2866/crosstool-NG/releases/download/v8.4.0/xtensa-esp32s3-elf.tar.gz"
     },
     "toolchain-riscv32-esp-arm": {
       "type": "toolchain",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/Jason2866/crosstool-NG/releases/download/8.4.0/toolchain-riscv32-esp.tar.gz"
+      "version": "https://github.com/Jason2866/crosstool-NG/releases/download/v8.4.0/riscv32-esp-elf.tar.gz"
     },
     "toolchain-esp32ulp": {
       "type": "toolchain",
