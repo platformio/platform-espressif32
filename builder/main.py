@@ -59,6 +59,8 @@ def _get_board_flash_mode(env):
 
 
 def _get_board_boot_mode(env):
+    if memory_type in ("opi_opi", "opi_qspi"):
+        return "opi"
     return env.BoardConfig().get("build.boot", "$BOARD_FLASH_MODE")
 
 
