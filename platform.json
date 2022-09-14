@@ -43,7 +43,7 @@
       "type": "framework",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/tasmota/esp-idf/releases/download/v4.4.3.2/esp-idf-v4.4.3.2.zip"
+      "version": "https://github.com/tasmota/esp-idf/releases/download/v4.4.3.3/esp-idf-v4.4.3.3.zip"
     },
     "toolchain-xtensa-esp32": {
       "type": "toolchain",
@@ -114,7 +114,7 @@
     "tool-esptoolpy": {
       "type": "uploader",
       "owner": "tasmota",
-      "version": "https://github.com/tasmota/esptool/releases/download/v4.2.1/esptool-4.2.1.zip"
+      "version": "https://github.com/tasmota/esptool/releases/download/v4.3/esptool-4.3.zip"
     },
     "tool-mbctool": {
       "optional": true,
