@@ -37,7 +37,7 @@
       "type": "framework",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/999/framework-arduinoespressif32-IDF_Arduino-e466fc4ea.zip"
+      "version": "https://github.com/tasmota/arduino-esp32/releases/download/2.0.5/framework-arduinoespressif32.zip"
     },
     "framework-espidf": {
       "type": "framework",
