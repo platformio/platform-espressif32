@@ -263,7 +263,7 @@ class Espressif32Platform(PlatformBase):
 
         if "openocd" in (debug_config.server or {}).get("executable", ""):
             debug_config.server["arguments"].extend(
-                ["-c", "adapter speed %s" % (debug_config.speed or "5000")]
+                ["-c", "adapter speed %s" % (debug_config.speed or "20000")]
             )
 
         ignore_conds = [
