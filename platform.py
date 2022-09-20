@@ -20,7 +20,6 @@ import re
 import requests
 
 from platformio.public import PlatformBase, to_unix_path
-from platformio.util import get_systype
 
 IS_WINDOWS = sys.platform.startswith("win")
 
@@ -87,41 +86,25 @@ class Espressif32Platform(PlatformBase):
                         sys.exit(1)
 
         if "espidf" in frameworks:
-            # Common package for IDF and mixed Arduino+IDF projects
+            # Common packages for IDF and mixed Arduino+IDF projects
             for p in self.packages:
                 if p in ("tool-cmake", "tool-ninja", "toolchain-%sulp" % mcu):
                     self.packages[p]["optional"] = False
                 elif p in ("tool-mconf", "tool-idf") and IS_WINDOWS:
                     self.packages[p]["optional"] = False
 
-        if not "arm64" in get_systype():
-            for available_mcu in ("esp32", "esp32s2", "esp32s3"):
-                if available_mcu == mcu:
-                    self.packages["toolchain-xtensa-%s" % mcu]["optional"] = False
-                else:
-                    self.packages.pop("toolchain-xtensa-%s" % available_mcu, None)
+        for available_mcu in ("esp32", "esp32s2", "esp32s3"):
+            if available_mcu == mcu:
+                self.packages["toolchain-xtensa-%s" % mcu]["optional"] = False
+            else:
+                self.packages.pop("toolchain-xtensa-%s" % available_mcu, None)
 
-            if mcu in ("esp32s2", "esp32s3", "esp32c3"):
-                self.packages.pop("toolchain-esp32ulp", None)
-                if mcu != "esp32s2":
-                    self.packages.pop("toolchain-esp32s2ulp", None)
-                # RISC-V based toolchain for ESP32C3, ESP32S2, ESP32S3 ULP
-                self.packages["toolchain-riscv32-esp"]["optional"] = False
-
-        if "darwin" in get_systype() and "arm64" in get_systype():
-            for available_mcu in ("esp32", "esp32s2", "esp32s3"):
-                if available_mcu == mcu:
-                    self.packages["toolchain-xtensa-%s-arm" % mcu]["optional"] = False
-                else:
-                    self.packages.pop("toolchain-xtensa-%s-arm" % available_mcu, None)
-
-            if mcu in ("esp32s2", "esp32s3", "esp32c3"):
-                self.packages.pop("toolchain-esp32ulp", None)
-                if mcu != "esp32s2":
-                    self.packages.pop("toolchain-esp32s2ulp", None)
-                # RISC-V based toolchain for ESP32C3, ESP32S2, ESP32S3 ULP
-                self.packages["toolchain-riscv32-esp-arm"]["optional"] = False
-
+        if mcu in ("esp32s2", "esp32s3", "esp32c3"):
+            self.packages.pop("toolchain-esp32ulp", None)
+            if mcu != "esp32s2":
+                self.packages.pop("toolchain-esp32s2ulp", None)
+            # RISC-V based toolchain for ESP32C3, ESP32S2, ESP32S3 ULP
+            self.packages["toolchain-riscv32-esp"]["optional"] = False
 
         if build_core == "mbcwb":
             # Remove the main toolchains from PATH
