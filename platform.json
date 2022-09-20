@@ -69,30 +69,6 @@
       "owner": "espressif",
       "version": "8.4.0+2021r2-patch5"
     },
-    "toolchain-xtensa-esp32-arm": {
-      "type": "toolchain",
-      "optional": true,
-      "owner": "tasmota",
-      "version": "https://github.com/Jason2866/crosstool-NG/releases/download/v8.4.0/xtensa-esp32-elf.tar.gz"
-    },
-    "toolchain-xtensa-esp32s2-arm": {
-      "type": "toolchain",
-      "optional": true,
-      "owner": "tasmota",
-      "version": "https://github.com/Jason2866/crosstool-NG/releases/download/v8.4.0/xtensa-esp32s2-elf.tar.gz"
-    },
-    "toolchain-xtensa-esp32s3-arm": {
-      "type": "toolchain",
-      "optional": true,
-      "owner": "tasmota",
-      "version": "https://github.com/Jason2866/crosstool-NG/releases/download/v8.4.0/xtensa-esp32s3-elf.tar.gz"
-    },
-    "toolchain-riscv32-esp-arm": {
-      "type": "toolchain",
-      "optional": true,
-      "owner": "tasmota",
-      "version": "https://github.com/Jason2866/crosstool-NG/releases/download/v8.4.0/riscv32-esp-elf.tar.gz"
-    },
     "toolchain-esp32ulp": {
       "type": "toolchain",
       "optional": true,
