@@ -50,14 +50,10 @@ mcu = board.get("build.mcu", "esp32")
 idf_variant = mcu.lower()
 
 FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
-if "darwin" in get_systype() and "arm64" in get_systype():
-    TOOLCHAIN_DIR = platform.get_package_dir(
-    "toolchain-%s" % ("riscv32-esp-arm" if mcu == "esp32c3" else ("xtensa-%s-arm" % mcu))
-    )
-if not "arm64" in get_systype():
-    TOOLCHAIN_DIR = platform.get_package_dir(
+TOOLCHAIN_DIR = platform.get_package_dir(
     "toolchain-%s" % ("riscv32-esp" if mcu == "esp32c3" else ("xtensa-%s" % mcu))
-    )
+)
+
 
 assert os.path.isdir(FRAMEWORK_DIR)
 assert os.path.isdir(TOOLCHAIN_DIR)

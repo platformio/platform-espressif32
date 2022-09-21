@@ -443,8 +443,6 @@ elif upload_protocol in debug_tools:
     openocd_args.extend(
         [
             "-c",
-            "adapter_khz %s" % env.GetProjectOption("debug_speed", "5000"),
-            "-c",
             "program_esp {{$SOURCE}} %s verify"
             % (
                 "$FS_START"
