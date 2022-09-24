@@ -28,16 +28,28 @@ from SCons.Script import DefaultEnvironment, SConscript
 
 env = DefaultEnvironment()
 board = env.BoardConfig()
-build_core = board.get("build.core", "").lower()
+extra_flags = board.get("build.extra_flags", "")
+extra_flags = [element.replace("-D", " ") for element in extra_flags]
+extra_flags = ''.join(extra_flags)
+build_flags = env.GetProjectOption("build_flags")
+build_flags = [element.replace("-D", " ") for element in build_flags]
+build_flags = ''.join(build_flags)
 
 SConscript("_embed_files.py", exports="env")
 
-if build_core == "mbcwb":
+if ("CORE32SOLO1" in extra_flags or "FRAMEWORK_ARDUINO_SOLO1" in build_flags) and ("arduino" in env.subst("$PIOFRAMEWORK") and "espidf" not in env.subst("$PIOFRAMEWORK")):
     SConscript(
         join(DefaultEnvironment().PioPlatform().get_package_dir(
-            "framework-arduino-mbcwb"), "tools", "platformio-esp-build.py"))
+            "framework-arduino-solo1"), "tools", "platformio-build.py"))
+    env["INTEGRATION_EXTRA_DATA"].update({"application_offset": env.subst("$ESP32_APP_OFFSET")})
 
-elif "espidf" not in env.subst("$PIOFRAMEWORK"):
+elif "arduino" in env.subst("$PIOFRAMEWORK") and "FRAMEWORK_ARDUINO_ITEAD" in build_flags and "espidf" not in env.subst("$PIOFRAMEWORK"):
+    SConscript(
+        join(DefaultEnvironment().PioPlatform().get_package_dir(
+            "framework-arduino-ITEAD"), "tools", "platformio-build.py"))
+    env["INTEGRATION_EXTRA_DATA"].update({"application_offset": env.subst("$ESP32_APP_OFFSET")})
+
+elif "arduino" in env.subst("$PIOFRAMEWORK") and "CORE32SOLO1" not in extra_flags and "FRAMEWORK_ARDUINO_ITEAD" not in build_flags and "espidf" not in env.subst("$PIOFRAMEWORK"):
     SConscript(
         join(DefaultEnvironment().PioPlatform().get_package_dir(
             "framework-arduinoespressif32"), "tools", "platformio-build.py"))

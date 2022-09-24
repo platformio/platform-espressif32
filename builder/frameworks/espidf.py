@@ -222,9 +222,9 @@ def populate_idf_env_vars(idf_env):
         os.path.dirname(env.subst("$PYTHONEXE")),
     ]
 
-    if mcu not in ("esp32c3", "esp32s3"):
+    if mcu not in ("esp32c3"):
         additional_packages.append(
-            os.path.join(platform.get_package_dir("toolchain-%sulp" % mcu), "bin"),
+            os.path.join(platform.get_package_dir("toolchain-esp32ulp"), "bin"),
         )
 
     if "windows" in get_systype():

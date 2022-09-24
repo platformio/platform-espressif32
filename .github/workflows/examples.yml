@@ -12,7 +12,6 @@ jobs:
           - "examples/arduino-ble5-advertising"
           - "examples/arduino-blink"
           - "examples/arduino-rmt-blink"
-          - "examples/arduino-briki-internal-libs"
           - "examples/arduino-usb-keyboard"
           - "examples/arduino-wifiscan"
           - "examples/espidf-arduino-blink"
@@ -27,9 +26,8 @@ jobs:
           - "examples/espidf-peripherals-uart"
           - "examples/espidf-peripherals-usb"
           - "examples/espidf-storage-sdcard"
-          - "examples/espidf-storage-spiffs"
-          - "examples/espidf-ulp-adc"
-          - "examples/espidf-ulp-pulse"
+          - "examples/espidf-ulp"
+          - "examples/espidf-ulp-riscv"
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3

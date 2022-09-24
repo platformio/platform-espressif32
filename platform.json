@@ -21,7 +21,6 @@
   "version": "2.0.5",
   "frameworks": {
     "arduino": {
-      "package": "framework-arduinoespressif32",
       "script": "builder/frameworks/arduino.py"
     },
     "espidf": {
@@ -35,9 +34,21 @@
   "packages": {
     "framework-arduinoespressif32": {
       "type": "framework",
-      "optional": true,
+      "optional": false,
       "owner": "tasmota",
       "version": "https://github.com/tasmota/arduino-esp32/releases/download/2.0.5/framework-arduinoespressif32.zip"
+    },
+     "framework-arduino-solo1": {
+      "type": "framework",
+      "optional": false,
+      "owner": "tasmota",
+      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/1014/framework-arduinoespressif32-solo1-IDF_Arduino-d772747b2.zip"
+    },
+     "framework-arduino-ITEAD": {
+      "type": "framework",
+      "optional": false,
+      "owner": "tasmota",
+      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/1013/framework-arduinoespressif32-ITEAD-IDF_Arduino-d772747b2.zip"
     },
     "framework-espidf": {
       "type": "framework",
@@ -72,30 +83,13 @@
     "toolchain-esp32ulp": {
       "type": "toolchain",
       "optional": true,
-      "owner": "platformio",
-      "version": "~1.22851.0"
-    },
-    "toolchain-esp32s2ulp": {
-      "type": "toolchain",
-      "optional": true,
-      "owner": "platformio",
-      "version": "~1.22851.0"
-    },
-    "framework-arduino-mbcwb": {
-      "type": "framework",
-      "optional": true,
-      "owner": "meteca",
-      "version": ">=2.1.1"
+      "owner": "jason2866",
+      "version": "https://github.com/Jason2866/crosstool-NG/releases/download/v8.4.0/esp32ulp-elf-2.35_20220830-linux_x86_64.zip"
     },
     "tool-esptoolpy": {
       "type": "uploader",
       "owner": "tasmota",
       "version": "https://github.com/tasmota/esptool/releases/download/v4.3/esptool-4.3.zip"
-    },
-    "tool-mbctool": {
-      "optional": true,
-      "owner": "meteca",
-      "version": ">=2.0.0"
     },
     "tool-openocd-esp32": {
       "type": "debugger",
@@ -122,7 +116,7 @@
     "tool-cmake": {
       "optional": true,
       "owner": "platformio",
-      "version": "~3.21.0"
+      "version": "~3.16.0"
     },
     "tool-ninja": {
       "optional": true,
@@ -141,3 +135,4 @@
     }
   }
 }
+

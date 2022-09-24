@@ -409,33 +409,6 @@ elif upload_protocol == "esptool":
     ]
 
 
-elif upload_protocol == "mbctool":
-    env.Replace(
-        UPLOADER=join(
-            platform.get_package_dir("tool-mbctool") or "", "bin", "mbctool"),
-        UPLOADERFLAGS=[
-            "--device", "esp",
-            "--speed", "$UPLOAD_SPEED",
-            "--port", '"$UPLOAD_PORT"',
-            "--upload",
-            "0x1000", join(
-                platform.get_package_dir("framework-arduino-mbcwb"),
-                "tools", "sdk", "bin", "bootloader_qio_80m.bin"),
-            "0x8000", join("$BUILD_DIR", "partitions.bin"),
-            "0xe000", join(
-                platform.get_package_dir("framework-arduino-mbcwb"),
-                "tools", "partitions", "boot_app0.bin"),
-            "0x10000", join("$BUILD_DIR", "${PROGNAME}.bin"),
-        ],
-        UPLOADCMD='"$UPLOADER" $UPLOADERFLAGS'
-    )
-    upload_actions = [
-        env.VerboseAction(env.AutodetectUploadPort,
-                          "Looking for upload port..."),
-        env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")
-    ]
-
-
 elif upload_protocol in debug_tools:
     openocd_args = ["-d%d" % (2 if int(ARGUMENTS.get("PIOVERBOSE", 0)) else 1)]
     openocd_args.extend(

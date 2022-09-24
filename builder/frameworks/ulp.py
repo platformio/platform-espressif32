@@ -34,16 +34,21 @@ ULP_BUILD_DIR = os.path.join(
 def prepare_ulp_env_vars(env):
     ulp_env.PrependENVPath("IDF_PATH", FRAMEWORK_DIR)
 
+    mcu = "32"
+    if "esp32s2" in idf_variant:
+        mcu = "32s2"
+    elif "esp32s3" in idf_variant:
+        mcu = "32s3"
+
     additional_packages = [
         os.path.join(
             platform.get_package_dir(
-                "toolchain-xtensa-esp%s"
-                % ("32s2" if idf_variant == "esp32s2" else "32")
+                "toolchain-xtensa-esp%s" % mcu
             ),
             "bin",
         ),
         os.path.join(
-            platform.get_package_dir("toolchain-%sulp" % idf_variant),
+            platform.get_package_dir("toolchain-esp32ulp"),
             "bin",
         ),
         platform.get_package_dir("tool-ninja"),
@@ -92,8 +97,8 @@ def generate_ulp_config(target_config):
             "components",
             "ulp",
             "cmake",
-            "toolchain-%s-ulp%s.cmake"
-            % (idf_variant, "-riscv" if riscv_ulp_enabled else ""),
+            "toolchain-%sulp%s.cmake"
+            % ("" if riscv_ulp_enabled else idf_variant + "-", "-riscv" if riscv_ulp_enabled else ""),
         ),
         '-DULP_S_SOURCES="%s"' % ";".join(ulp_sources),
         "-DULP_APP_NAME=ulp_main",
