@@ -34,16 +34,10 @@ ULP_BUILD_DIR = os.path.join(
 def prepare_ulp_env_vars(env):
     ulp_env.PrependENVPath("IDF_PATH", FRAMEWORK_DIR)
 
-    mcu = "32"
-    if "esp32s2" in idf_variant:
-        mcu = "32s2"
-    elif "esp32s3" in idf_variant:
-        mcu = "32s3"
-
     additional_packages = [
         os.path.join(
             platform.get_package_dir(
-                "toolchain-xtensa-esp%s" % mcu
+                "toolchain-xtensa-%s" % (idf_variant)
             ),
             "bin",
         ),
@@ -85,7 +79,7 @@ def get_component_includes(target_config):
 
 
 def generate_ulp_config(target_config):
-    riscv_ulp_enabled = sdk_config.get("ESP32S2_ULP_COPROC_RISCV", False)
+    riscv_ulp_enabled = sdk_config.get((idf_variant).upper() + "_ULP_COPROC_RISCV", False)
 
     ulp_sources = collect_ulp_sources()
     cmd = (
@@ -104,6 +98,7 @@ def generate_ulp_config(target_config):
         "-DULP_APP_NAME=ulp_main",
         "-DCOMPONENT_DIR=" + os.path.join(ulp_env.subst("$PROJECT_DIR"), "ulp"),
         '-DCOMPONENT_INCLUDES="%s"' % ";".join(get_component_includes(target_config)),
+        "-DIDF_TARGET=" + idf_variant,
         "-DIDF_PATH=" + fs.to_unix_path(FRAMEWORK_DIR),
         "-DSDKCONFIG_HEADER=" + os.path.join(BUILD_DIR, "config", "sdkconfig.h"),
         "-DPYTHON=" + env.subst("$PYTHONEXE"),
