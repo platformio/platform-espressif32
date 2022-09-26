@@ -242,7 +242,7 @@ env.Append(
                 "--chip", mcu, "elf2image",
                 "--flash_mode", "$BOARD_FLASH_MODE",
                 "--flash_freq", "${__get_board_f_flash(__env__)}",
-                "--flash_size", board.get("upload.flash_size", "detect"),
+                "--flash_size", board.get("upload.flash_size", "4MB"),
                 "-o", "$TARGET", "$SOURCES"
             ]), "Building $TARGET"),
             suffix=".bin"
@@ -391,11 +391,12 @@ elif upload_protocol == "esptool":
                 "--chip", mcu,
                 "--port", '"$UPLOAD_PORT"',
                 "--baud", "$UPLOAD_SPEED",
-                "--before", "default_reset",
-                "--after", "hard_reset",
+                "--before", board.get("upload.before_reset", "default_reset"),
+                "--after", board.get("upload.after_reset", "hard_reset"),
                 "write_flash", "-z",
-                "--flash_mode", "$BOARD_FLASH_MODE",
-                "--flash_size", "detect",
+                "--flash_mode", "${__get_board_flash_mode(__env__)}",
+                "--flash_freq", "${__get_board_f_flash(__env__)}",
+                "--flash_size", board.get("upload.flash_size", "detect"),
                 "$FS_START"
             ],
             UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS $SOURCE',
