@@ -36,25 +36,25 @@
     "toolchain-xtensa-esp32": {
       "type": "toolchain",
       "owner": "espressif",
-      "version": "8.4.0+2021r2-patch3"
+      "version": "8.4.0+2021r2-patch5"
     },
     "toolchain-xtensa-esp32s2": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "8.4.0+2021r2-patch3"
+      "version": "8.4.0+2021r2-patch5"
     },
      "toolchain-xtensa-esp32s3": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "8.4.0+2021r2-patch3"
+      "version": "8.4.0+2021r2-patch5"
     },
     "toolchain-riscv32-esp": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "8.4.0+2021r2-patch3"
+      "version": "8.4.0+2021r2-patch5"
     },
     "toolchain-esp32ulp": {
       "type": "toolchain",
@@ -72,7 +72,7 @@
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~3.20004.0"
+      "version": "https://github.com/espressif/arduino-esp32.git"
     },
     "framework-arduino-mbcwb": {
       "type": "framework",
@@ -84,7 +84,7 @@
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~3.40402.0"
+      "version": "https://github.com/espressif/esp-idf.git#release/v4.4"
     },
     "tool-esptoolpy": {
       "type": "uploader",
@@ -123,7 +123,7 @@
     "tool-cmake": {
       "optional": true,
       "owner": "platformio",
-      "version": "~3.16.0"
+      "version": "~3.21.0"
     },
     "tool-ninja": {
       "optional": true,
