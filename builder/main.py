@@ -22,10 +22,24 @@ from SCons.Script import (
 
 from platformio.util import get_serial_ports
 
+env = DefaultEnvironment()
+platform = env.PioPlatform()
+
 #
 # Helpers
 #
 
+extra_flags = ''.join([element.replace("-D", " ") for element in env.BoardConfig().get("build.extra_flags", "")])
+build_flags = ''.join([element.replace("-D", " ") for element in env.GetProjectOption("build_flags")])
+
+if "CORE32SOLO1" in extra_flags or "FRAMEWORK_ARDUINO_SOLO1" in build_flags:
+    FRAMEWORK_DIR = platform.get_package_dir("framework-arduino-solo1")
+    print ("Solo1 framework will be used")
+elif "CORE32ITEAD" in extra_flags or "FRAMEWORK_ARDUINO_ITEAD" in build_flags:
+    FRAMEWORK_DIR = platform.get_package_dir("framework-arduino-ITEAD")
+    print ("ITEAD framework will be used")
+else:
+    FRAMEWORK_DIR = platform.get_package_dir("framework-arduinoespressif32")
 
 def BeforeUpload(target, source, env):
     upload_options = {}
@@ -167,8 +181,6 @@ def __fetch_fs_size(target, source, env):
     return (target, source)
 
 
-env = DefaultEnvironment()
-platform = env.PioPlatform()
 board = env.BoardConfig()
 mcu = board.get("build.mcu", "esp32")
 toolchain_arch = "xtensa-%s" % mcu
@@ -356,9 +368,7 @@ if upload_protocol == "espota":
             "See https://docs.platformio.org/page/platforms/"
             "espressif32.html#over-the-air-ota-update\n")
     env.Replace(
-        UPLOADER=join(
-            platform.get_package_dir("framework-arduinoespressif32") or "",
-            "tools", "espota.py"),
+        UPLOADER=join(FRAMEWORK_DIR,"tools", "espota.py"),
         UPLOADERFLAGS=["--debug", "--progress", "-i", "$UPLOAD_PORT"],
         UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS -f $SOURCE'
     )
