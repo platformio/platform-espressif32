@@ -89,8 +89,9 @@ class Espressif32Platform(PlatformBase):
 
         if "espidf" in frameworks:
             # Common packages for IDF and mixed Arduino+IDF projects
+            self.packages["toolchain-esp32ulp"]["optional"] = False
             for p in self.packages:
-                if p in ("tool-cmake", "tool-ninja", "toolchain-%sulp" % mcu):
+                if p in ("tool-cmake", "tool-ninja"):
                     self.packages[p]["optional"] = False
                 elif p in ("tool-mconf", "tool-idf") and IS_WINDOWS:
                     self.packages[p]["optional"] = False
@@ -102,9 +103,8 @@ class Espressif32Platform(PlatformBase):
                 self.packages.pop("toolchain-xtensa-%s" % available_mcu, None)
 
         if mcu in ("esp32s2", "esp32s3", "esp32c3"):
-            self.packages.pop("toolchain-esp32ulp", None)
-            if mcu != "esp32s2":
-                self.packages.pop("toolchain-esp32s2ulp", None)
+            if mcu == "esp32c3":
+                self.packages.pop("toolchain-esp32ulp", None)
             # RISC-V based toolchain for ESP32C3, ESP32S2, ESP32S3 ULP
             self.packages["toolchain-riscv32-esp"]["optional"] = False
 

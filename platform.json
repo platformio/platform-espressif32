@@ -36,37 +36,31 @@
     "toolchain-xtensa-esp32": {
       "type": "toolchain",
       "owner": "espressif",
-      "version": "8.4.0+2021r2-patch3"
+      "version": "8.4.0+2021r2-patch5"
     },
     "toolchain-xtensa-esp32s2": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "8.4.0+2021r2-patch3"
+      "version": "8.4.0+2021r2-patch5"
     },
      "toolchain-xtensa-esp32s3": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "8.4.0+2021r2-patch3"
+      "version": "8.4.0+2021r2-patch5"
     },
     "toolchain-riscv32-esp": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "8.4.0+2021r2-patch3"
+      "version": "8.4.0+2021r2-patch5"
     },
     "toolchain-esp32ulp": {
       "type": "toolchain",
       "optional": true,
-      "owner": "platformio",
-      "version": "~1.22851.0"
-    },
-    "toolchain-esp32s2ulp": {
-      "type": "toolchain",
-      "optional": true,
-      "owner": "platformio",
-      "version": "~1.22851.0"
+      "owner": "espressif",
+      "version": "~2"
     },
     "framework-arduinoespressif32": {
       "type": "framework",
@@ -83,8 +77,8 @@
     "framework-espidf": {
       "type": "framework",
       "optional": true,
-      "owner": "platformio",
-      "version": "~3.40402.0"
+      "owner": "tasmota",
+      "version": "https://github.com/tasmota/esp-idf/releases/download/v4.4.3.5/esp-idf-v4.4.3.5.zip"
     },
     "tool-esptoolpy": {
       "type": "uploader",
@@ -123,7 +117,7 @@
     "tool-cmake": {
       "optional": true,
       "owner": "platformio",
-      "version": "~3.16.0"
+      "version": "~3.21.0"
     },
     "tool-ninja": {
       "optional": true,
@@ -142,3 +136,4 @@
     }
   }
 }
+

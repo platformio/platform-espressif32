@@ -26,8 +26,8 @@ jobs:
           - "examples/espidf-peripherals-usb"
           - "examples/espidf-storage-sdcard"
           - "examples/espidf-storage-spiffs"
-          - "examples/espidf-ulp-adc"
-          - "examples/espidf-ulp-pulse"
+          - "examples/espidf-ulp"
+          - "examples/espidf-ulp-riscv"
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
