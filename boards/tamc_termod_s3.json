@@ -1,29 +1,29 @@
 {
   "build": {
-    "arduino":{
+    "arduino": {
       "ldscript": "esp32s3_out.ld",
-      "partitions": "default_16MB.csv",
       "memory_type": "qio_qspi"
     },
     "core": "esp32",
     "extra_flags": [
-      "-DARDUINO_FEATHERS3",
-      "-DBOARD_HAS_PSRAM",
+      "-DARDUINO_TAMC_TERMOD_S3",
+      "-DARDUINO_USB_MODE=1",
       "-DARDUINO_USB_CDC_ON_BOOT=1",
       "-DARDUINO_RUNNING_CORE=1",
-      "-DARDUINO_EVENT_RUNNING_CORE=1"
+      "-DARDUINO_EVENT_RUNNING_CORE=1",
+      "-DBOARD_HAS_PSRAM"
     ],
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
     "flash_mode": "qio",
     "hwids": [
       [
-        "0X303A",
-        "0x80D0"
+        "0x303A",
+        "0x1001"
       ]
     ],
     "mcu": "esp32s3",
-    "variant": "um_feathers3"
+    "variant": "tamc_termod_s3"
   },
   "connectivity": [
     "wifi"
@@ -35,16 +35,14 @@
     "arduino",
     "espidf"
   ],
-  "name": "Unexpected Maker FeatherS3",
+  "name": "TAMC Termod S3",
   "upload": {
-    "flash_size": "16MB",
+    "flash_size": "8MB",
     "maximum_ram_size": 327680,
-    "maximum_size": 16777216,
-    "use_1200bps_touch": true,
-    "wait_for_upload_port": true,
+    "maximum_size": 8388608,
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://unexpectedmaker.com/shop/feathers3",
-  "vendor": "Unexpected Maker"
+  "url": "https://termod-s3.readthedocs.io/en/latest/",
+  "vendor": "TAMC"
 }

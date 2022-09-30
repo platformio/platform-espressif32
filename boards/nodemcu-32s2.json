@@ -1,30 +1,27 @@
 {
   "build": {
     "arduino": {
-      "ldscript": "esp32_out.ld"
+      "ldscript": "esp32s2_out.ld"
     },
     "core": "esp32",
-    "extra_flags": "-DARDUINO_Trueverit_ESP32_Universal_IoT_Driver_MK_III",
+    "extra_flags": "-DARDUINO_ESP32S2_DEV",
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
     "flash_mode": "qio",
-    "mcu": "esp32",
-    "variant": "esp32-trueverit-iot-driver-mkiii"
+    "mcu": "esp32s2",
+    "variant": "esp32s2"
   },
   "connectivity": [
-    "wifi",
-    "bluetooth",
-    "ethernet",
-    "can"
+    "wifi"
   ],
   "debug": {
-    "openocd_board": "esp-wroom-32.cfg"
+    "openocd_target": "esp32s2.cfg"
   },
   "frameworks": [
     "arduino",
     "espidf"
   ],
-  "name": "Trueverit ESP32 Universal IoT Driver MK III",
+  "name": "Ai-Thinker NodeMCU-32S2 (ESP-12K)",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
@@ -32,7 +29,6 @@
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://trueverit.com/",
-  "vendor": "Trueverit"
+  "url": "https://docs.ai-thinker.com/en/esp32s2",
+  "vendor": "Ai-Thinker"
 }
-

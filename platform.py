@@ -88,8 +88,6 @@ class Espressif32Platform(PlatformBase):
                         sys.exit(1)
 
         if "espidf" in frameworks:
-            if "arduino" in frameworks:
-                self.packages["framework-arduinoespressif32"]["version"] = "~3.20003.0"
             # Common packages for IDF and mixed Arduino+IDF projects
             for p in self.packages:
                 if p in ("tool-cmake", "tool-ninja", "toolchain-%sulp" % mcu):
@@ -249,7 +247,7 @@ class Espressif32Platform(PlatformBase):
 
         if "openocd" in (debug_config.server or {}).get("executable", ""):
             debug_config.server["arguments"].extend(
-                ["-c", "adapter_khz %s" % (debug_config.speed or "5000")]
+                ["-c", "adapter speed %s" % (debug_config.speed or "5000")]
             )
 
         ignore_conds = [

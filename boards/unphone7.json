@@ -1,34 +1,33 @@
 {
   "build": {
-    "arduino": {
+    "arduino":{
       "ldscript": "esp32_out.ld"
     },
     "core": "esp32",
     "extra_flags": [
-      "-DARDUINO_DYDK",
-      "-DBOARD_HAS_PSRAM",
-      "-mfix-esp32-psram-cache-issue",
-      "-mfix-esp32-psram-cache-strategy=memw"
+      "-DUNPHONE_SPIN=7",
+      "-DARDUINO_FEATHER_ESP32"
     ],
     "f_cpu": "240000000L",
-    "f_flash": "80000000L",
-    "flash_mode": "qio",
+    "f_flash": "40000000L",
+    "flash_mode": "dio",
     "mcu": "esp32",
-    "variant": "deneyapkart"
+    "variant": "feather_esp32"
   },
   "connectivity": [
     "wifi",
     "bluetooth",
-    "ethernet"
+    "ethernet",
+    "can"
   ],
   "debug": {
-    "openocd_board": "esp32-wrover.cfg"
+    "openocd_board": "esp-wroom-32.cfg"
   },
   "frameworks": [
     "arduino",
     "espidf"
   ],
-  "name": "Deneyap Kart",
+  "name": "unPhone 7",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
@@ -36,6 +35,6 @@
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://deneyapkart.org/magaza/urun-deneyap-kart.html",
-  "vendor": "Deneyap"
+  "url": "https://unphone.net/",
+  "vendor": "University of Sheffield"
 }

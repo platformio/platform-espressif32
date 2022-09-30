@@ -42,6 +42,23 @@ def BeforeUpload(target, source, env):
         env.Replace(UPLOAD_PORT=env.WaitForNewSerialPort(before_ports))
 
 
+def _get_board_memory_type(env):
+    board_config = env.BoardConfig()
+    default_type = "%s_%s" % (
+        board_config.get("build.flash_mode", "dio"),
+        board_config.get("build.psram_type", "qspi"),
+    )
+
+    return board_config.get(
+        "build.memory_type",
+        board_config.get(
+            "build.%s.memory_type"
+            % env.subst("$PIOFRAMEWORK").strip().replace(" ", "_"),
+            default_type,
+        ),
+    )
+
+
 def _get_board_f_flash(env):
     frequency = env.subst("$BOARD_F_FLASH")
     frequency = str(frequency).replace("L", "")
@@ -49,16 +66,24 @@ def _get_board_f_flash(env):
 
 
 def _get_board_flash_mode(env):
-    mode = env.subst("$BOARD_FLASH_MODE")
-    if mode == "qio":
-        return "dio"
-    elif mode == "qout":
+    if ["arduino"] == env.get("PIOFRAMEWORK") and _get_board_memory_type(env) in (
+        "opi_opi",
+        "opi_qspi",
+    ):
         return "dout"
+
+    mode = env.subst("$BOARD_FLASH_MODE")
+    if mode in ("qio", "qout"):
+        return "dio"
     return mode
 
 
 def _get_board_boot_mode(env):
-    return env.BoardConfig().get("build.boot", "$BOARD_FLASH_MODE")
+    memory_type = env.BoardConfig().get("build.arduino.memory_type", "")
+    build_boot = env.BoardConfig().get("build.boot", "$BOARD_FLASH_MODE")
+    if ["arduino"] == env.get("PIOFRAMEWORK") and memory_type in ("opi_opi", "opi_qspi"):
+        build_boot = "opi"
+    return build_boot
 
 
 def _parse_size(value):
@@ -176,6 +201,7 @@ env.Replace(
     __get_board_boot_mode=_get_board_boot_mode,
     __get_board_f_flash=_get_board_f_flash,
     __get_board_flash_mode=_get_board_flash_mode,
+    __get_board_memory_type=_get_board_memory_type,
 
     AR="%s-elf-ar" % toolchain_arch,
     AS="%s-elf-as" % toolchain_arch,
@@ -237,7 +263,7 @@ env.Append(
                 "--chip", mcu, "elf2image",
                 "--flash_mode", "$BOARD_FLASH_MODE",
                 "--flash_freq", "${__get_board_f_flash(__env__)}",
-                "--flash_size", board.get("upload.flash_size", "detect"),
+                "--flash_size", board.get("upload.flash_size", "4MB"),
                 "-o", "$TARGET", "$SOURCES"
             ]), "Building $TARGET"),
             suffix=".bin"
@@ -386,11 +412,12 @@ elif upload_protocol == "esptool":
                 "--chip", mcu,
                 "--port", '"$UPLOAD_PORT"',
                 "--baud", "$UPLOAD_SPEED",
-                "--before", "default_reset",
-                "--after", "hard_reset",
+                "--before", board.get("upload.before_reset", "default_reset"),
+                "--after", board.get("upload.after_reset", "hard_reset"),
                 "write_flash", "-z",
-                "--flash_mode", "$BOARD_FLASH_MODE",
-                "--flash_size", "detect",
+                "--flash_mode", "${__get_board_flash_mode(__env__)}",
+                "--flash_freq", "${__get_board_f_flash(__env__)}",
+                "--flash_size", board.get("upload.flash_size", "detect"),
                 "$FS_START"
             ],
             UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS $SOURCE',
@@ -436,7 +463,7 @@ elif upload_protocol in debug_tools:
     openocd_args.extend(
         [
             "-c",
-            "adapter_khz %s" % env.GetProjectOption("debug_speed", "5000"),
+            "adapter speed %s" % env.GetProjectOption("debug_speed", "5000"),
             "-c",
             "program_esp {{$SOURCE}} %s verify"
             % (

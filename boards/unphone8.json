@@ -2,49 +2,43 @@
   "build": {
     "arduino":{
       "ldscript": "esp32s3_out.ld",
-      "partitions": "default_16MB.csv",
-      "memory_type": "qio_qspi"
+      "partitions": "default_8MB.csv"
     },
     "core": "esp32",
     "extra_flags": [
-      "-DARDUINO_FEATHERS3",
       "-DBOARD_HAS_PSRAM",
-      "-DARDUINO_USB_CDC_ON_BOOT=1",
+      "-DUNPHONE_SPIN=8",
+      "-DARDUINO_USB_MODE=1",
+      "-DARDUINO_USB_CDC_ON_BOOT=0",
       "-DARDUINO_RUNNING_CORE=1",
       "-DARDUINO_EVENT_RUNNING_CORE=1"
     ],
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
     "flash_mode": "qio",
-    "hwids": [
-      [
-        "0X303A",
-        "0x80D0"
-      ]
-    ],
     "mcu": "esp32s3",
-    "variant": "um_feathers3"
+    "variant": "unphone8"
   },
   "connectivity": [
     "wifi"
   ],
   "debug": {
-    "openocd_target": "esp32s3.cfg"
+    "openocd_board": "esp32s3.cfg"
   },
   "frameworks": [
     "arduino",
     "espidf"
   ],
-  "name": "Unexpected Maker FeatherS3",
+  "name": "unPhone 8",
   "upload": {
-    "flash_size": "16MB",
-    "maximum_ram_size": 327680,
-    "maximum_size": 16777216,
+    "flash_size": "8MB",
+    "maximum_ram_size": 2424832,
+    "maximum_size": 8323072,
     "use_1200bps_touch": true,
     "wait_for_upload_port": true,
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://unexpectedmaker.com/shop/feathers3",
-  "vendor": "Unexpected Maker"
+  "url": "https://unphone.net/",
+  "vendor": "University of Sheffield"
 }

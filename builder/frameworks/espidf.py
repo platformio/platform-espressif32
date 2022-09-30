@@ -1047,6 +1047,7 @@ def install_python_deps():
         "future": ">=0.15.2",
         "pyparsing": ">=2.0.3,<2.4.0",
         "kconfiglib": "==13.7.1",
+        "idf-component-manager": "~=1.0"
     }
 
     installed_packages = _get_installed_pip_packages()
