@@ -21,7 +21,9 @@ import requests
 
 from platformio.public import PlatformBase, to_unix_path
 
+
 IS_WINDOWS = sys.platform.startswith("win")
+
 
 class Espressif32Platform(PlatformBase):
     def configure_default_packages(self, variables, targets):
@@ -109,7 +111,6 @@ class Espressif32Platform(PlatformBase):
 
         if board.get("build.mcu", "") in ("esp32c3", "esp32s3"):
             supported_debug_tools.append("esp-builtin")
-
 
         upload_protocol = board.manifest.get("upload", {}).get("protocol")
         upload_protocols = board.manifest.get("upload", {}).get("protocols", [])
