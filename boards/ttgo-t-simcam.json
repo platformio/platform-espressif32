@@ -1,30 +1,30 @@
 {
   "build": {
-    "arduino": {
+    "arduino":{
       "ldscript": "esp32s3_out.ld",
-      "partitions": "default_16MB.csv",
-      "memory_type": "qio_qspi"
+      "memory_type": "qio_opi"
     },
     "core": "esp32",
     "extra_flags": [
-      "-DARDUINO_PROS3",
       "-DBOARD_HAS_PSRAM",
-      "-DARDUINO_USB_CDC_ON_BOOT=1"
+      "-DARDUINO_ESP32S3_CAM_LCD",
+      "-DARDUINO_USB_MODE=1"
     ],
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
     "flash_mode": "qio",
     "hwids": [
       [
-        "0X303A",
-        "0x80D0"
+        "0x303A",
+        "0x1001"
       ]
     ],
     "mcu": "esp32s3",
-    "variant": "um_pros3"
+    "variant": "esp32s3"
   },
   "connectivity": [
-    "wifi"
+    "wifi",
+    "bluetooth"
   ],
   "debug": {
     "openocd_target": "esp32s3.cfg"
@@ -33,16 +33,15 @@
     "arduino",
     "espidf"
   ],
-  "name": "Unexpected Maker PROS3",
+  "name": "LilyGo T-SIMCAM ESP32-S3 16M QIO Flash 8MB OPI PSRAM",
   "upload": {
     "flash_size": "16MB",
     "maximum_ram_size": 327680,
     "maximum_size": 16777216,
-    "use_1200bps_touch": true,
-    "wait_for_upload_port": true,
     "require_upload_port": true,
+    "before_reset": "usb_reset",
     "speed": 460800
   },
-  "url": "https://unexpectedmaker.com/shop/pros3",
-  "vendor": "Unexpected Maker"
+  "url": "https://github.com/Xinyuan-LilyGO/LilyGo-Camera-Series",
+  "vendor": "LilyGo"
 }

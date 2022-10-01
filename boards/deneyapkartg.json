@@ -4,22 +4,16 @@
       "ldscript": "esp32c3_out.ld"
     },
     "core": "esp32",
-    "extra_flags": [
-      "-DARDUINO_LOLIN_C3_MINI",
-      "-DARDUINO_USB_MODE=1",
-      "-DARDUINO_USB_CDC_ON_BOOT=1"
-    ],
     "f_cpu": "160000000L",
     "f_flash": "80000000L",
     "flash_mode": "qio",
-    "hwids": [
-      [
-        "0X303A",
-        "0x1001"
-      ]
+    "extra_flags": [
+      "-DARDUINO_DYG",
+      "-DARDUINO_USB_MODE=1",
+      "-DARDUINO_USB_CDC_ON_BOOT=1"
     ],
     "mcu": "esp32c3",
-    "variant": "lolin_c3_mini"
+    "variant": "deneyapkartg"
   },
   "connectivity": [
     "wifi"
@@ -31,7 +25,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "WEMOS LOLIN C3 Mini",
+  "name": "Deneyap Kart G",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
@@ -39,6 +33,6 @@
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://www.wemos.cc/en/latest/c3/c3_mini.html",
-  "vendor": "WEMOS"
+  "url": "https://deneyapkart.org/en/",
+  "vendor": "Deneyap"
 }

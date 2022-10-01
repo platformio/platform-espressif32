@@ -6,8 +6,8 @@
     "core": "esp32",
     "extra_flags": "-DARDUINO_MGBOT_IOTIK32A",
     "f_cpu": "240000000L",
-    "f_flash": "40000000L",
-    "flash_mode": "dio",
+    "f_flash": "80000000L",
+    "flash_mode": "qio",
     "mcu": "esp32",
     "variant": "mgbot-iotik32a"
   },

@@ -1,14 +1,11 @@
 {
   "build": {
     "arduino": {
-      "ldscript": "esp32s3_out.ld",
-      "partitions": "default_16MB.csv",
-      "memory_type": "qio_qspi"
+      "ldscript": "esp32s2_out.ld"
     },
     "core": "esp32",
     "extra_flags": [
-      "-DARDUINO_PROS3",
-      "-DBOARD_HAS_PSRAM",
+      "-DARDUINO_Bee_S3",
       "-DARDUINO_USB_CDC_ON_BOOT=1"
     ],
     "f_cpu": "240000000L",
@@ -16,12 +13,12 @@
     "flash_mode": "qio",
     "hwids": [
       [
-        "0X303A",
-        "0x80D0"
+        "0x303A",
+        "0x8110"
       ]
     ],
     "mcu": "esp32s3",
-    "variant": "um_pros3"
+    "variant": "Bee_S3"
   },
   "connectivity": [
     "wifi"
@@ -33,16 +30,16 @@
     "arduino",
     "espidf"
   ],
-  "name": "Unexpected Maker PROS3",
+  "name": "Smart Bee S3",
   "upload": {
-    "flash_size": "16MB",
+    "flash_size": "8MB",
     "maximum_ram_size": 327680,
-    "maximum_size": 16777216,
+    "maximum_size": 8388608,
     "use_1200bps_touch": true,
     "wait_for_upload_port": true,
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://unexpectedmaker.com/shop/pros3",
-  "vendor": "Unexpected Maker"
+  "url": "https://github.com/strid3r21/BeeS3",
+  "vendor": "Smart Bee"
 }

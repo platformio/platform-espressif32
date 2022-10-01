@@ -1,12 +1,12 @@
 {
   "build": {
-    "arduino":{
+    "arduino": {
       "ldscript": "esp32_out.ld"
     },
     "core": "esp32",
     "extra_flags": "-DARDUINO_ESP32_DEVKIT_LIPO",
     "f_cpu": "240000000L",
-    "f_flash": "40000000L",
+    "f_flash": "80000000L",
     "flash_mode": "qio",
     "hwids": [["0x1A86", "0x7523"]],
     "mcu": "esp32",

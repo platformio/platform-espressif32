@@ -1,15 +1,24 @@
 {
   "build": {
-    "arduino":{
+    "arduino": {
       "ldscript": "esp32s2_out.ld"
     },
     "core": "esp32",
-    "extra_flags": "-DBOARD_HAS_PSRAM -DARDUINO_USB_MODE=0 -DARDUINO_USB_CDC_ON_BOOT=1",
+    "extra_flags": [
+      "-DARDUINO_Bee_Motion",
+      "-DARDUINO_USB_CDC_ON_BOOT=1"
+    ],
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
     "flash_mode": "qio",
+    "hwids": [
+      [
+        "0x303A",
+        "0x810D"
+      ]
+    ],
     "mcu": "esp32s2",
-    "variant": "adafruit_qtpy_esp32s2"
+    "variant": "Bee_Motion"
   },
   "connectivity": [
     "wifi"
@@ -21,14 +30,16 @@
     "arduino",
     "espidf"
   ],
-  "name": "Adafruit QT Py ESP32-S2",
+  "name": "Smart Bee Motion",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
     "maximum_size": 4194304,
+    "use_1200bps_touch": true,
+    "wait_for_upload_port": true,
     "require_upload_port": true,
-    "speed": 921600
+    "speed": 460800
   },
-  "url": "https://www.adafruit.com/product/5325",
-  "vendor": "Adafruit"
+  "url": "https://github.com/strid3r21/Bee-Motion",
+  "vendor": "Smart Bee"
 }
