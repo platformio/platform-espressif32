@@ -22,7 +22,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "Espressif ESP32-C3-DevKitM-1",
+  "name": "Espressif ESP32-C3-DevKitC-02",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
@@ -30,6 +30,6 @@
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/hw-reference/esp32c3/user-guide-devkitm-1.html",
+  "url": "https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/hw-reference/esp32c3/user-guide-devkitc-02.html",
   "vendor": "Espressif"
 }
