@@ -123,7 +123,7 @@ def _parse_partitions(env):
 
     result = []
     next_offset = 0
-    bound = 0x10000 # default value
+    bound = int(board.get("upload.offset_address", "0x10000"), 16) # default 0x10000
     with open(partitions_csv) as fp:
         for line in fp.readlines():
             line = line.strip()
