@@ -148,7 +148,7 @@ def _parse_partitions(env):
                 bound = next_offset
             next_offset = (next_offset + bound - 1) & ~(bound - 1)
             #print("Main Firmware will be flashed to:", hex(bound))
-    env["ESP32_APP_OFFSET"] = hex(bound)
+    env["ESP32_APP_OFFSET"] = str(hex(bound))
     return result
 
 
@@ -259,6 +259,8 @@ env.Replace(
     ESP32_FS_IMAGE_NAME=env.get(
         "ESP32_FS_IMAGE_NAME", env.get("ESP32_SPIFFS_IMAGE_NAME", filesystem)
     ),
+
+    ESP32_APP_OFFSET=board.get("upload.offset_address", "0x10000"),
 
     PROGSUFFIX=".elf"
 )
