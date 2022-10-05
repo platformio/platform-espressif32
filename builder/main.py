@@ -142,13 +142,13 @@ def _parse_partitions(env):
             }
             result.append(partition)
             next_offset = _parse_size(partition["offset"])
-            #print("App start from .csv:", hex(next_offset))
-            #print("Partition subtype from .csv:", partition["subtype"])
             if (partition["subtype"] == "ota_0"):
                 bound = next_offset
             next_offset = (next_offset + bound - 1) & ~(bound - 1)
-            #print("Main Firmware will be flashed to:", hex(bound))
-    env["ESP32_APP_OFFSET"] = str(hex(bound))
+    # Configure application partition offset
+    env.Replace(ESP32_APP_OFFSET=str(hex(bound)))
+    # Propagate application offset to debug configurations
+    env["INTEGRATION_EXTRA_DATA"].update({"application_offset": str(hex(bound))})
     return result
 
 
@@ -208,6 +208,7 @@ filesystem = board.get("build.filesystem", "spiffs")
 if mcu == "esp32c3":
     toolchain_arch = "riscv32-esp"
 
+
 if "INTEGRATION_EXTRA_DATA" not in env:
     env["INTEGRATION_EXTRA_DATA"] = {}
 
@@ -222,8 +223,7 @@ env.Replace(
     CC="%s-elf-gcc" % toolchain_arch,
     CXX="%s-elf-g++" % toolchain_arch,
     GDB="%s-elf-gdb" % toolchain_arch,
-    OBJCOPY=join(
-        platform.get_package_dir("tool-esptoolpy") or "", "esptool.py"),
+    OBJCOPY=join(platform.get_package_dir("tool-esptoolpy") or "", "esptool.py"),
     RANLIB="%s-elf-gcc-ranlib" % toolchain_arch,
     SIZETOOL="%s-elf-size" % toolchain_arch,
 
@@ -260,10 +260,11 @@ env.Replace(
         "ESP32_FS_IMAGE_NAME", env.get("ESP32_SPIFFS_IMAGE_NAME", filesystem)
     ),
 
-    ESP32_APP_OFFSET=board.get("upload.offset_address", "0x10000"),
+    ESP32_APP_OFFSET=env.get("INTEGRATION_EXTRA_DATA").get("application_offset"),
 
     PROGSUFFIX=".elf"
 )
+
 
 # Allow user to override via pre:script
 if env.get("PROGNAME", "program") == "program":
@@ -443,6 +444,7 @@ elif upload_protocol == "esptool":
 
 
 elif upload_protocol in debug_tools:
+    _parse_partitions(env)
     openocd_args = ["-d%d" % (2 if int(ARGUMENTS.get("PIOVERBOSE", 0)) else 1)]
     openocd_args.extend(
         debug_tools.get(upload_protocol).get("server").get("arguments", []))
@@ -453,9 +455,7 @@ elif upload_protocol in debug_tools:
             % (
                 "$FS_START"
                 if "uploadfs" in COMMAND_LINE_TARGETS
-                else board.get(
-                    "upload.offset_address", "$ESP32_APP_OFFSET"
-                )
+                else env.get("INTEGRATION_EXTRA_DATA").get("application_offset")
             ),
         ]
     )
@@ -510,12 +510,11 @@ env.AddPlatformTarget(
 )
 
 #
-# Information about obsolete method of specifying linker scripts
+# A temporary workaround to propagate additional data to the debug configuration routine
 #
 
-if any("-Wl,-T" in f for f in env.get("LINKFLAGS", [])):
-    print("Warning! '-Wl,-T' option for specifying linker scripts is deprecated. "
-          "Please use 'board_build.ldscript' option in your 'platformio.ini' file.")
+Import("projenv")
+projenv["INTEGRATION_EXTRA_DATA"] = env.get("INTEGRATION_EXTRA_DATA")
 
 #
 # Default targets
