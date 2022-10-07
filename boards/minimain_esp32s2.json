@@ -1,0 +1,50 @@
+{
+  "build": {
+    "arduino": {
+      "ldscript": "esp32s2_out.ld",
+      "partitions": "partitions-4MB-tinyuf2.csv"
+    },
+    "core": "esp32",
+    "extra_flags": [
+      "-DARDUINO_DEPARTMENT_OF_ALCHEMY_MINIMAIN_ESP32S2",
+      "-DARDUINO_RUNNING_CORE=1",
+      "-DARDUINO_EVENT_RUNNING_CORE=1",
+      "-DBOARD_HAS_PSRAM",
+      "-DARDUINO_USB_MODE=1",
+      "-DARDUINO_USB_CDC_ON_BOOT=1"
+    ],
+    "f_cpu": "240000000L",
+    "f_flash": "80000000L",
+    "flash_mode": "qio",
+    "hwids": [
+      [
+        "0x303A",
+        "0x80FF"
+      ]
+    ],
+    "mcu": "esp32s2",
+    "variant": "department_of_alchemy_minimain_esp32s2"
+  },
+  "connectivity": [
+    "wifi"
+  ],
+  "debug": {
+    "openocd_target": "esp32s2.cfg"
+  },
+  "frameworks": [
+    "arduino",
+    "espidf"
+  ],
+  "name": "Deparment of Alchemy MiniMain ESP32-S2",
+  "upload": {
+    "flash_size": "4MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 4194304,
+    "use_1200bps_touch": true,
+    "wait_for_upload_port": true,
+    "require_upload_port": true,
+    "speed": 460800
+  },
+  "url": "https://github.com/DepartmentOfAlchemy/minimain-esp32-s2",
+  "vendor": "Deparment of Alchemy"
+}

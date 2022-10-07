@@ -12,13 +12,13 @@
     "RISC-V"
   ],
   "engines": {
-    "platformio": "^5"
+    "platformio": "^6"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/platformio/platform-espressif32.git"
   },
-  "version": "4.2.0",
+  "version": "5.2.0",
   "frameworks": {
     "arduino": {
       "package": "framework-arduinoespressif32",
@@ -39,6 +39,12 @@
       "version": "8.4.0+2021r2-patch3"
     },
     "toolchain-xtensa-esp32s2": {
+      "type": "toolchain",
+      "optional": true,
+      "owner": "espressif",
+      "version": "8.4.0+2021r2-patch3"
+    },
+     "toolchain-xtensa-esp32s3": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
@@ -66,7 +72,7 @@
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~3.20002.0"
+      "version": "~3.20005.0"
     },
     "framework-arduino-mbcwb": {
       "type": "framework",
@@ -78,13 +84,12 @@
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~3.40302.0",
-      "optionalVersions": ["~3.40001.0"]
+      "version": "~3.40402.0"
     },
     "tool-esptoolpy": {
       "type": "uploader",
       "owner": "platformio",
-      "version": "~1.30300.0"
+      "version": "~1.40201.0"
     },
     "tool-mbctool": {
       "optional": true,

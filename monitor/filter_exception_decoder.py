@@ -17,23 +17,26 @@ import re
 import subprocess
 import sys
 
-from platformio.compat import path_to_unicode, WINDOWS
 from platformio.project.exception import PlatformioException
-from platformio.project.helpers import load_project_ide_data
-from platformio.commands.device import DeviceMonitorFilter
+from platformio.public import (
+    DeviceMonitorFilterBase,
+    load_build_metadata,
+)
 
 # By design, __init__ is called inside miniterm and we can't pass context to it.
 # pylint: disable=attribute-defined-outside-init
 
+IS_WINDOWS = sys.platform.startswith("win")
 
-class Esp32ExceptionDecoder(DeviceMonitorFilter):
+
+class Esp32ExceptionDecoder(DeviceMonitorFilterBase):
     NAME = "esp32_exception_decoder"
+
+    BACKTRACE_PATTERN = re.compile(r"^Backtrace:(((\s?0x[0-9a-fA-F]{8}:0x[0-9a-fA-F]{8}))+)")
+    BACKTRACE_ADDRESS_PATTERN = re.compile(r'0x[0-9a-f]{8}:0x[0-9a-f]{8}')
 
     def __call__(self):
         self.buffer = ""
-        self.backtrace_re = re.compile(
-            r"^Backtrace: ?((0x[0-9a-fA-F]+:0x[0-9a-fA-F]+ ?)+)\s*"
-        )
 
         self.firmware_path = None
         self.addr2line_path = None
@@ -51,9 +54,9 @@ See https://docs.platformio.org/page/projectconf/build_configurations.html
         return self
 
     def setup_paths(self):
-        self.project_dir = path_to_unicode(os.path.abspath(self.project_dir))
+        self.project_dir = os.path.abspath(self.project_dir)
         try:
-            data = load_project_ide_data(self.project_dir, self.environment)
+            data = load_build_metadata(self.project_dir, self.environment)
             self.firmware_path = data["prog_path"]
             if not os.path.isfile(self.firmware_path):
                 sys.stderr.write(
@@ -97,7 +100,7 @@ See https://docs.platformio.org/page/projectconf/build_configurations.html
                 self.buffer = ""
             last = idx + 1
 
-            m = self.backtrace_re.match(line)
+            m = self.BACKTRACE_PATTERN.match(line)
             if m is None:
                 continue
 
@@ -108,11 +111,11 @@ See https://docs.platformio.org/page/projectconf/build_configurations.html
         return text
 
     def get_backtrace(self, match):
-        trace = ""
-        enc = "mbcs" if WINDOWS else "utf-8"
+        trace = "\n"
+        enc = "mbcs" if IS_WINDOWS else "utf-8"
         args = [self.addr2line_path, u"-fipC", u"-e", self.firmware_path]
         try:
-            for i, addr in enumerate(match.group(1).split()):
+            for i, addr in enumerate(self.BACKTRACE_ADDRESS_PATTERN.findall(match.group(1))):
                 output = (
                     subprocess.check_output(args + [addr])
                     .decode(enc)

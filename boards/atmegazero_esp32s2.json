@@ -1,7 +1,8 @@
 {
   "build": {
     "arduino":{
-      "ldscript": "esp32s2_out.ld"
+      "ldscript": "esp32s2_out.ld",
+      "partitions": "partitions-16MB-tinyuf2.csv"
     },
     "core": "esp32",
     "extra_flags": [
@@ -32,14 +33,6 @@
   ],
   "name": "EspinalLab ATMegaZero ESP32-S2",
   "upload": {
-    "arduino": {
-      "flash_extra_images": [
-        [
-          "0x2d0000",
-          "variants/atmegazero_esp32s2/tinyuf2.bin"
-        ]
-      ]
-    },
     "flash_size": "16MB",
     "maximum_ram_size": 327680,
     "maximum_size": 16777216,
