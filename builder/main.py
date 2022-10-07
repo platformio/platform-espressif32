@@ -208,7 +208,6 @@ filesystem = board.get("build.filesystem", "spiffs")
 if mcu == "esp32c3":
     toolchain_arch = "riscv32-esp"
 
-
 if "INTEGRATION_EXTRA_DATA" not in env:
     env["INTEGRATION_EXTRA_DATA"] = {}
 
@@ -264,7 +263,6 @@ env.Replace(
 
     PROGSUFFIX=".elf"
 )
-
 
 # Allow user to override via pre:script
 if env.get("PROGNAME", "program") == "program":
@@ -508,13 +506,6 @@ env.AddPlatformTarget(
     ],
     "Erase Flash",
 )
-
-#
-# A temporary workaround to propagate additional data to the debug configuration routine
-#
-
-Import("projenv")
-projenv["INTEGRATION_EXTRA_DATA"] = env.get("INTEGRATION_EXTRA_DATA")
 
 #
 # Default targets
