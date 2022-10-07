@@ -109,7 +109,7 @@ def _parse_partitions(env):
 
     result = []
     next_offset = 0
-    bound = 0x10000 # default value
+    bound = int(board.get("upload.offset_address", "0x10000"), 16) # default 0x10000
     with open(partitions_csv) as fp:
         for line in fp.readlines():
             line = line.strip()
@@ -131,7 +131,10 @@ def _parse_partitions(env):
             if (partition["subtype"] == "ota_0"):
                 bound = next_offset
             next_offset = (next_offset + bound - 1) & ~(bound - 1)
-    env["ESP32_APP_OFFSET"] = hex(bound)
+    # Configure application partition offset
+    env.Replace(ESP32_APP_OFFSET=str(hex(bound)))
+    # Propagate application offset to debug configurations
+    env["INTEGRATION_EXTRA_DATA"].update({"application_offset": str(hex(bound))})
     return result
 
 
@@ -245,6 +248,7 @@ env.Replace(
         "ESP32_FS_IMAGE_NAME", env.get("ESP32_SPIFFS_IMAGE_NAME", filesystem)
     ),
 
+    ESP32_APP_OFFSET=env.get("INTEGRATION_EXTRA_DATA").get("application_offset"),
     PROGSUFFIX=".elf"
 )
 
@@ -454,6 +458,7 @@ elif upload_protocol == "mbctool":
 
 
 elif upload_protocol in debug_tools:
+    _parse_partitions(env)
     openocd_args = ["-d%d" % (2 if int(ARGUMENTS.get("PIOVERBOSE", 0)) else 1)]
     openocd_args.extend(
         debug_tools.get(upload_protocol).get("server").get("arguments", []))
@@ -466,8 +471,8 @@ elif upload_protocol in debug_tools:
             % (
                 "$FS_START"
                 if "uploadfs" in COMMAND_LINE_TARGETS
-                else board.get(
-                    "upload.offset_address", "$ESP32_APP_OFFSET"
+                else env.get(
+                    "INTEGRATION_EXTRA_DATA").get("application_offset"
                 )
             ),
         ]
