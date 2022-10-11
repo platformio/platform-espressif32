@@ -34,10 +34,8 @@ build_flags = ''.join([element.replace("-D", " ") for element in env.GetProjectO
 
 if "CORE32SOLO1" in extra_flags or "FRAMEWORK_ARDUINO_SOLO1" in build_flags:
     FRAMEWORK_DIR = platform.get_package_dir("framework-arduino-solo1")
-    print ("Solo1 framework will be used")
 elif "CORE32ITEAD" in extra_flags or "FRAMEWORK_ARDUINO_ITEAD" in build_flags:
     FRAMEWORK_DIR = platform.get_package_dir("framework-arduino-ITEAD")
-    print ("ITEAD framework will be used")
 else:
     FRAMEWORK_DIR = platform.get_package_dir("framework-arduinoespressif32")
 
