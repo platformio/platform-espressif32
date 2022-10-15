@@ -100,7 +100,7 @@ class Espressif32Platform(PlatformBase):
 
         # debug tools
         debug = board.manifest.get("debug", {})
-        non_debug_protocols = ["esptool", "espota", "mbctool"]
+        non_debug_protocols = ["esptool", "espota"]
         supported_debug_tools = [
             "cmsis-dap",
             "esp-prog",
