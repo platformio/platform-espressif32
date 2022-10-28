@@ -18,7 +18,7 @@
     "type": "git",
     "url": "https://github.com/tasmota/platform-espressif32.git"
   },
-  "version": "2.0.5",
+  "version": "2.0.5+2",
   "frameworks": {
     "arduino": {
       "script": "builder/frameworks/arduino.py"
@@ -36,25 +36,25 @@
       "type": "framework",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/tasmota/arduino-esp32/releases/download/2.0.5.1/framework-arduinoespressif32.zip"
+      "version": "https://github.com/tasmota/arduino-esp32/releases/download/2.0.5.2/framework-arduinoespressif32.zip"
     },
      "framework-arduino-solo1": {
       "type": "framework",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/tasmota/arduino-esp32/releases/download/2.0.5.1/framework-arduinoespressif32-solo1.zip"
+      "version": "https://github.com/tasmota/arduino-esp32/releases/download/2.0.5.2/framework-arduinoespressif32-solo1.zip"
     },
      "framework-arduino-ITEAD": {
       "type": "framework",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/tasmota/arduino-esp32/releases/download/2.0.5.1/framework-arduinoespressif32-ITEAD.zip"
+      "version": "https://github.com/tasmota/arduino-esp32/releases/download/2.0.5.2/framework-arduinoespressif32-ITEAD.zip"
     },
     "framework-espidf": {
       "type": "framework",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/tasmota/esp-idf/releases/download/v4.4.3.5/esp-idf-v4.4.3.5.zip"
+      "version": "https://github.com/tasmota/esp-idf/releases/download/v4.4.3.6/esp-idf-v4.4.3.6.zip"
     },
     "toolchain-xtensa-esp32": {
       "type": "toolchain",
@@ -89,7 +89,7 @@
     "tool-esptoolpy": {
       "type": "uploader",
       "owner": "tasmota",
-      "version": "https://github.com/tasmota/esptool/releases/download/v4.3/esptool-4.3.zip"
+      "version": "https://github.com/tasmota/esptool/releases/download/v4.3.1/esptool-4.3.1.zip"
     },
     "tool-openocd-esp32": {
       "type": "debugger",

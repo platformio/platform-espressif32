@@ -1,13 +1,18 @@
 name: Examples
 
-on: [push, pull_request]
+on:
+  workflow_dispatch:      # Manually start a workflow
+  push:
+    paths-ignore:
+    - '.github/**'        # Ignore changes towards the .github directory
+    - '**.md'             # Do no build if *.md files changes
 
 jobs:
   build:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macOS-12]
         example:
           - "examples/arduino-ble5-advertising"
           - "examples/arduino-blink"
@@ -34,7 +39,7 @@ jobs:
         with:
           submodules: "recursive"
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: "3.9"
       - name: Install dependencies
