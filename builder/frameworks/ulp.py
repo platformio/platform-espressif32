@@ -83,6 +83,7 @@ def generate_ulp_config(target_config):
     riscv_ulp_enabled = sdk_config.get("ESP32S2_ULP_COPROC_RISCV", False)
 
     ulp_sources = collect_ulp_sources()
+    ulp_sources.sort()
     cmd = (
         os.path.join(platform.get_package_dir("tool-cmake"), "bin", "cmake"),
         "-DCMAKE_GENERATOR=Ninja",
