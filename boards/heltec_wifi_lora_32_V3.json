@@ -10,7 +10,7 @@
     ],
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
-    "flash_mode": "qio",
+    "flash_mode": "dio",
     "hwids": [
       [
         "0x303A",
@@ -36,7 +36,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "Heltec WiFi Kit 32 (V3)",
+  "name": "Heltec WiFi LoRa 32 (V3)",
   "upload": {
     "flash_size": "8MB",
     "maximum_ram_size": 327680,
