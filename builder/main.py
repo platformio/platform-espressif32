@@ -66,7 +66,7 @@ def _get_board_f_flash(env):
 
 
 def _get_board_flash_mode(env):
-    if ["arduino"] == env.get("PIOFRAMEWORK") and _get_board_memory_type(env) in (
+    if _get_board_memory_type(env) in (
         "opi_opi",
         "opi_qspi",
     ):
@@ -81,7 +81,7 @@ def _get_board_flash_mode(env):
 def _get_board_boot_mode(env):
     memory_type = env.BoardConfig().get("build.arduino.memory_type", "")
     build_boot = env.BoardConfig().get("build.boot", "$BOARD_FLASH_MODE")
-    if ["arduino"] == env.get("PIOFRAMEWORK") and memory_type in ("opi_opi", "opi_qspi"):
+    if memory_type in ("opi_opi", "opi_qspi"):
         build_boot = "opi"
     return build_boot
 
