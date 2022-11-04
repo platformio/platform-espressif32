@@ -7,7 +7,7 @@
     "extra_flags": "-DARDUINO_TTGO_T7_V13_Mini32",
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
-    "flash_mode": "qio",
+    "flash_mode": "dio",
     "mcu": "esp32",
     "variant": "ttgo-t7-v13-mini32"
   },

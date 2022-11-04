@@ -7,7 +7,7 @@
     "extra_flags": "-DARDUINO_QUANTUM",
     "f_cpu": "240000000L",
     "f_flash": "40000000L",
-    "flash_mode": "qio",
+    "flash_mode": "dio",
     "mcu": "esp32",
     "variant": "quantum"
   },

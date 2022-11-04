@@ -6,7 +6,7 @@
     "core": "esp32",
     "f_cpu": "160000000L",
     "f_flash": "80000000L",
-    "flash_mode": "qio",
+    "flash_mode": "dio",
     "extra_flags": [
       "-DARDUINO_DYG",
       "-DARDUINO_USB_MODE=1",
