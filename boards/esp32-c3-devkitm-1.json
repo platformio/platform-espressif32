@@ -6,7 +6,7 @@
     "core": "esp32",
     "f_cpu": "160000000L",
     "f_flash": "80000000L",
-    "flash_mode": "dio",
+    "flash_mode": "qio",
     "extra_flags": "-DARDUINO_ESP32C3_DEV",
     "mcu": "esp32c3",
     "variant": "esp32c3"
