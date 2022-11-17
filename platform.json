@@ -78,7 +78,7 @@
       "type": "framework",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/tasmota/esp-idf/releases/download/v4.4.3.5/esp-idf-v4.4.3.5.zip"
+      "version": "https://github.com/tasmota/esp-idf/releases/download/v4.4.3/esp-idf-v4.4.3.zip"
     },
     "tool-esptoolpy": {
       "type": "uploader",
