@@ -18,6 +18,13 @@
     "ethernet",
     "can"
   ],
+  "debug": {
+    "default_tool": "ftdi",
+    "onboard_tools": [
+      "ftdi"
+    ],
+    "openocd_board": "esp32-wrover-kit-3.3v.cfg\" -c \"adapter driver ftdi;ftdi vid_pid 0x0403 0x6011"
+  },
   "frameworks": [
     "arduino",
     "espidf"
@@ -28,7 +35,12 @@
     "maximum_ram_size": 327680,
     "maximum_size": 2097152,
     "require_upload_port": true,
-    "speed": 460800
+    "speed": 460800,
+    "protocols": [
+      "esptool",
+      "espota",
+      "ftdi"
+    ]
   },
   "url": "https://www.u-blox.com/en/product/nina-w10-series",
   "vendor": "u-blox"
