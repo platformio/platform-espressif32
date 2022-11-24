@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macOS-12]
+        os: [ubuntu-22.04, windows-2022, macOS-12]
         example:
           - "examples/arduino-ble5-advertising"
           - "examples/arduino-blink"
