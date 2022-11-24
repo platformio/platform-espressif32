@@ -36,25 +36,25 @@
       "type": "framework",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/tasmota/arduino-esp32/releases/download/2.0.5.3/framework-arduinoespressif32.zip"
+      "version": "https://cdn.jsdelivr.net/gh/tasmota/arduino-esp32@releases/download/2.0.5.3/framework-arduinoespressif32.zip"
     },
      "framework-arduino-solo1": {
       "type": "framework",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/tasmota/arduino-esp32/releases/download/2.0.5.3/framework-arduinoespressif32-solo1.zip"
+      "version": "https://cdn.jsdelivr.net/gh/tasmota/arduino-esp32@releases/download/2.0.5.3/framework-arduinoespressif32-solo1.zip"
     },
      "framework-arduino-ITEAD": {
       "type": "framework",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/tasmota/arduino-esp32/releases/download/2.0.5.3/framework-arduinoespressif32-ITEAD.zip"
+      "version": "https://cdn.jsdelivr.net/gh/tasmota/arduino-esp32@releases/download/2.0.5.3/framework-arduinoespressif32-ITEAD.zip"
     },
     "framework-espidf": {
       "type": "framework",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/tasmota/esp-idf/releases/download/v4.4.3/esp-idf-v4.4.3.zip"
+      "version": "https://cdn.jsdelivr.net/gh/tasmota/esp-idf@releases/download/v4.4.3/esp-idf-v4.4.3.zip"
     },
     "toolchain-xtensa-esp32": {
       "type": "toolchain",
@@ -89,7 +89,7 @@
     "tool-esptoolpy": {
       "type": "uploader",
       "owner": "tasmota",
-      "version": "https://github.com/tasmota/esptool/releases/download/v4.4/esptool-4.4.zip"
+      "version": "https://cdn.jsdelivr.net/gh/tasmota/esptool@releases/download/v4.4/esptool-4.4.zip"
     },
     "tool-openocd-esp32": {
       "type": "debugger",
