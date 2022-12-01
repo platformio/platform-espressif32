@@ -18,8 +18,8 @@
     "flash_mode": "qio",
     "hwids": [
       [
-        "0X303A",
-        "0x80D0"
+        "0x303A",
+        "0x1001"
       ]
     ],
     "mcu": "esp32s3",
