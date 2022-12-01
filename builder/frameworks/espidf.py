@@ -214,7 +214,7 @@ def get_cmake_code_model(src_dir, build_dir, extra_args=None):
 
 
 def populate_idf_env_vars(idf_env):
-    idf_env["IDF_PATH"] = FRAMEWORK_DIR
+    idf_env["IDF_PATH"] = fs.to_unix_path(FRAMEWORK_DIR)
     additional_packages = [
         os.path.join(TOOLCHAIN_DIR, "bin"),
         platform.get_package_dir("tool-ninja"),
