@@ -22,6 +22,8 @@ kinds of creative coding, interactive objects, spaces or physical experiences.
 http://arduino.cc/en/Reference/HomePage
 """
 
+import copy
+
 from os.path import join
 
 from SCons.Script import DefaultEnvironment, SConscript
@@ -42,3 +44,13 @@ elif "espidf" not in env.subst("$PIOFRAMEWORK"):
         join(DefaultEnvironment().PioPlatform().get_package_dir(
             "framework-arduinoespressif32"), "tools", "platformio-build.py"))
     env["INTEGRATION_EXTRA_DATA"].update({"application_offset": env.subst("$ESP32_APP_OFFSET")})
+
+#
+# To embed firmware checksum a special argument for esptool.py is required
+#
+
+action = copy.deepcopy(env["BUILDERS"]["ElfToBin"].action)
+action.cmd_list = env["BUILDERS"]["ElfToBin"].action.cmd_list.replace(
+    "-o", "--elf-sha256-offset 0xb0 -o"
+)
+env["BUILDERS"]["ElfToBin"].action = action
