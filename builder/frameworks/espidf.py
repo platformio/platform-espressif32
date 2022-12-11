@@ -1042,6 +1042,7 @@ def install_python_deps():
 
     deps = {
         # https://github.com/platformio/platform-espressif32/issues/635
+        "wheel": ">=0.35.1",
         "cryptography": ">=2.1.4,<35.0.0",
         "future": ">=0.15.2",
         "pyparsing": ">=2.0.3,<2.4.0",
