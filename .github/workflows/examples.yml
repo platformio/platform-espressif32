@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macOS-12]
+        os: [ubuntu-22.04, windows-2022, macOS-12]
         example:
           - "examples/arduino-ble5-advertising"
           - "examples/arduino-blink"
@@ -41,9 +41,11 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: "3.11"
       - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip
+          pip install wheel
           pip install -U https://github.com/platformio/platformio/archive/develop.zip
           pio pkg install --global --platform symlink://.
       - name: Build examples
