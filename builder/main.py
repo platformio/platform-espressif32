@@ -492,6 +492,21 @@ env.AddPlatformTarget(
     "uploadfsota", target_firm, upload_actions, "Upload Filesystem Image OTA")
 
 #
+# Target: Erase Flash and Upload
+#
+
+env.AddPlatformTarget(
+    "erase_upload",
+    target_firm,
+    [
+        env.VerboseAction(env.AutodetectUploadPort, "Looking for serial port..."),
+        env.VerboseAction("$ERASECMD", "Erasing..."),
+        env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")
+    ],
+    "Erase Flash and Upload",
+)
+
+#
 # Target: Erase Flash
 #
 
