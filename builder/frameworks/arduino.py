@@ -46,3 +46,47 @@ elif "arduino" in env.subst("$PIOFRAMEWORK") and "CORE32SOLO1" not in extra_flag
     SConscript(
         join(DefaultEnvironment().PioPlatform().get_package_dir(
             "framework-arduinoespressif32"), "tools", "platformio-build.py"))
+
+def install_python_deps():
+    def _get_installed_pip_packages():
+        result = {}
+        packages = {}
+        pip_output = subprocess.check_output(
+            [env.subst("$PYTHONEXE"), "-m", "pip", "list", "--format=json"]
+        )
+        try:
+            packages = json.loads(pip_output)
+        except:
+            print("Warning! Couldn't extract the list of installed Python packages.")
+            return {}
+        for p in packages:
+            result[p["name"]] = pepver_to_semver(p["version"])
+
+        return result
+
+    deps = {
+        "zopfli": ">=0.2.2"
+    }
+
+    installed_packages = _get_installed_pip_packages()
+    packages_to_install = []
+    for package, spec in deps.items():
+        if package not in installed_packages:
+            packages_to_install.append(package)
+        else:
+            version_spec = semantic_version.Spec(spec)
+            if not version_spec.match(installed_packages[package]):
+                packages_to_install.append(package)
+
+    if packages_to_install:
+        env.Execute(
+            env.VerboseAction(
+                (
+                    '"$PYTHONEXE" -m pip install -U --force-reinstall '
+                    + " ".join(['"%s%s"' % (p, deps[p]) for p in packages_to_install])
+                ),
+                "Installing Python dependencies",
+            )
+        )
+
+install_python_deps()
