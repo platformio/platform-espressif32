@@ -22,8 +22,13 @@ kinds of creative coding, interactive objects, spaces or physical experiences.
 http://arduino.cc/en/Reference/HomePage
 """
 
+import subprocess
+import json
+import semantic_version
 from os.path import join
-from SCons.Script import DefaultEnvironment, SConscript
+
+from SCons.Script import COMMAND_LINE_TARGETS, DefaultEnvironment, SConscript
+from platformio.package.version import pepver_to_semver
 
 env = DefaultEnvironment()
 
