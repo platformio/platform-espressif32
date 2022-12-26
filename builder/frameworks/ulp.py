@@ -36,14 +36,11 @@ def prepare_ulp_env_vars(env):
 
     additional_packages = [
         os.path.join(
-            platform.get_package_dir(
-                "toolchain-xtensa-esp%s"
-                % ("32s2" if idf_variant == "esp32s2" else "32")
-            ),
+            platform.get_package_dir("toolchain-xtensa-%s" % idf_variant),
             "bin",
         ),
         os.path.join(
-            platform.get_package_dir("toolchain-%sulp" % idf_variant),
+            platform.get_package_dir("toolchain-esp32ulp"),
             "bin",
         ),
         platform.get_package_dir("tool-ninja"),
@@ -99,6 +96,7 @@ def generate_ulp_config(target_config):
         "-DULP_APP_NAME=ulp_main",
         "-DCOMPONENT_DIR=" + os.path.join(ulp_env.subst("$PROJECT_DIR"), "ulp"),
         '-DCOMPONENT_INCLUDES="%s"' % ";".join(get_component_includes(target_config)),
+        "-DIDF_TARGET=%s" % idf_variant,
         "-DIDF_PATH=" + fs.to_unix_path(FRAMEWORK_DIR),
         "-DSDKCONFIG_HEADER=" + os.path.join(BUILD_DIR, "config", "sdkconfig.h"),
         "-DPYTHON=" + env.subst("$PYTHONEXE"),
