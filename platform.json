@@ -60,13 +60,7 @@
       "type": "toolchain",
       "optional": true,
       "owner": "platformio",
-      "version": "~1.22851.0"
-    },
-    "toolchain-esp32s2ulp": {
-      "type": "toolchain",
-      "optional": true,
-      "owner": "platformio",
-      "version": "~1.22851.0"
+      "version": "~1.23500.0"
     },
     "framework-arduinoespressif32": {
       "type": "framework",
