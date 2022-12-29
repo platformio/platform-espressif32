@@ -89,7 +89,7 @@
     "tool-esptoolpy": {
       "type": "uploader",
       "owner": "tasmota",
-      "version": "https://github.com/Jason2866/esptool/releases/download/v4.4.1/esptool.zip"
+      "version": "https://github.com/tasmota/esptool/releases/download/v4.4.1/esptool-4.4.1.zip"
     },
     "tool-openocd-esp32": {
       "type": "debugger",
