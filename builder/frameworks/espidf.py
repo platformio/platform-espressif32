@@ -215,7 +215,7 @@ def get_cmake_code_model(src_dir, build_dir, extra_args=None):
 
 
 def populate_idf_env_vars(idf_env):
-    idf_env["IDF_PATH"] = FRAMEWORK_DIR
+    idf_env["IDF_PATH"] = fs.to_unix_path(FRAMEWORK_DIR)
     additional_packages = [
         os.path.join(TOOLCHAIN_DIR, "bin"),
         platform.get_package_dir("tool-ninja"),
@@ -223,9 +223,9 @@ def populate_idf_env_vars(idf_env):
         os.path.dirname(env.subst("$PYTHONEXE")),
     ]
 
-    if mcu not in ("esp32c3", "esp32s3"):
+    if mcu != "esp32c3":
         additional_packages.append(
-            os.path.join(platform.get_package_dir("toolchain-%sulp" % mcu), "bin"),
+            os.path.join(platform.get_package_dir("toolchain-esp32ulp"), "bin"),
         )
 
     if "windows" in get_systype():
