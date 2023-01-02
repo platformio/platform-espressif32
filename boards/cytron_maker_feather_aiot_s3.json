@@ -1,0 +1,56 @@
+{
+  "build": {
+    "arduino": {
+      "ldscript": "esp32s3_out.ld",
+      "memory_type": "qio_opi",
+      "partitions": "partitions-8MB-tinyuf2.csv"
+    },
+    "core": "esp32",
+    "extra_flags": [
+      "-DARDUINO_CYTRON_MAKER_FEATHER_AIOT_S3",
+      "-DARDUINO_USB_CDC_ON_BOOT=1",
+      "-DBOARD_HAS_PSRAM",
+      "-DARDUINO_RUNNING_CORE=1",
+      "-DARDUINO_EVENT_RUNNING_CORE=1"
+    ],
+    "f_cpu": "240000000L",
+    "f_flash": "80000000L",
+    "flash_mode": "qio",
+    "hwids": [
+      [
+        "0x303A",
+        "0x80F8"
+      ]
+    ],
+    "mcu": "esp32s3",
+    "variant": "cytron_maker_feather_aiot_s3"
+  },
+  "connectivity": [
+    "wifi"
+  ],
+  "debug": {
+    "openocd_target": "esp32s3.cfg"
+  },
+  "frameworks": [
+    "arduino",
+    "espidf"
+  ],
+  "name": "Cytron Maker Feather AIoT S3",
+  "upload": {
+    "arduino": {
+      "flash_extra_images": [
+        [
+          "0x410000",
+          "variants/cytron_maker_feather_aiot_s3/tinyuf2.bin"
+        ]
+      ]
+    },
+    "flash_size": "8MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 8388608,
+    "require_upload_port": true,
+    "speed": 460800
+  },
+  "url": "https://sg.cytron.io/c-development-tools/c-maker-series/p-v-maker-feather-aiot-s3-simplifying-aiot-with-esp32",
+  "vendor": "Cytron Technologies"
+}
