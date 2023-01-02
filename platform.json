@@ -84,7 +84,7 @@
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "~2"
+      "version": "~1.23500.0"
     },
     "tool-esptoolpy": {
       "type": "uploader",
