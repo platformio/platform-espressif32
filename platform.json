@@ -83,7 +83,7 @@
     "toolchain-esp32ulp": {
       "type": "toolchain",
       "optional": true,
-      "owner": "espressif",
+      "owner": "platformio",
       "version": "~1.23500.0"
     },
     "tool-esptoolpy": {
