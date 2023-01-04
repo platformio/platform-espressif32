@@ -1,10 +1,8 @@
 /*
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 
 
 #ifndef __ESP_EDDYSTONE_API_H__
@@ -57,8 +55,8 @@ static inline uint32_t big_endian_read_32(const uint8_t *buffer, uint8_t pos)
 }
 
 /*
- * The esp eddystone API. 
- * This function is called to decode eddystone information from adv_data. 
+ * The esp eddystone API.
+ * This function is called to decode eddystone information from adv_data.
  * The res points to the result struct.
  *
  */
@@ -67,4 +65,3 @@ esp_err_t esp_eddystone_decode(const uint8_t* buf, uint8_t len, esp_eddystone_re
 //bool esp_eddystone_is_eddystone_packet(.....);
 
 #endif /* __ESP_EDDYSTONE_API_H__ */
-
