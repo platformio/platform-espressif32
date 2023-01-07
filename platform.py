@@ -66,6 +66,19 @@ class Espressif32Platform(PlatformBase):
                 elif p in ("tool-mconf", "tool-idf") and IS_WINDOWS:
                     self.packages[p]["optional"] = False
 
+            if "arduino" in frameworks:
+                # Downgrade the IDF version for mixed Arduino+IDF projects
+                self.packages["framework-espidf"]["version"] = "https://github.com/tasmota/esp-idf/releases/download/v4.4.3.20221227/esp-idf-v4.4.3.zip"
+            else:
+                # Use the latest toolchains available for IDF v5.0
+                for target in (
+                    "xtensa-esp32",
+                    "xtensa-esp32s2",
+                    "xtensa-esp32s3",
+                    "riscv32-esp"
+                ):
+                    self.packages["toolchain-%s" % target]["version"] = "11.2.0+2022r1"
+
         for available_mcu in ("esp32", "esp32s2", "esp32s3"):
             if available_mcu == mcu:
                 self.packages["toolchain-xtensa-%s" % mcu]["optional"] = False

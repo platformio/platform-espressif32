@@ -77,7 +77,7 @@ def get_component_includes(target_config):
 
 
 def generate_ulp_config(target_config):
-    riscv_ulp_enabled = sdk_config.get((idf_variant).upper() + "_ULP_COPROC_RISCV", False)
+    riscv_ulp_enabled = sdk_config.get("ULP_COPROC_TYPE_RISCV", False)
 
     ulp_sources = collect_ulp_sources()
     ulp_sources.sort()

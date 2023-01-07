@@ -1,0 +1,196 @@
+name: Build Tests
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - release-*
+      - gh-workflows
+  pull_request:
+    branches:
+      - main
+      - develop
+
+env:
+  PLATFORM: posix
+  TESTS: yes
+  OPENSSL_INSTALL_PATH: C:\Program Files\OpenSSL-Win64\
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        CC: ["gcc", "clang"]
+        TLS: ["no", "openssl", "gnutls", "mbedtls"]
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup
+        run: |
+          sudo apt-get update && sudo apt-get install -y libcunit1-dev libmbedtls-dev libgnutls28-dev libtool libtool-bin exuberant-ctags valgrind
+          ./autogen.sh
+      - name: configure no-TLS
+        if: matrix.TLS == 'no'
+        run: |
+          mkdir build-${{matrix.TLS}}-${{matrix.CC}}
+          cd build-${{matrix.TLS}}-${{matrix.CC}}
+          $GITHUB_WORKSPACE/configure --disable-silent-rules --disable-documentation --enable-examples --enable-tests --disable-dtls CC=${{matrix.CC}}
+      - name: configure TLS
+        if: matrix.TLS != 'no'
+        run: |
+          mkdir build-${{matrix.TLS}}-${{matrix.CC}}
+          cd build-${{matrix.TLS}}-${{matrix.CC}}
+          "$GITHUB_WORKSPACE/configure" --disable-silent-rules --disable-documentation --enable-examples --enable-tests --with-${{matrix.TLS}} CC=${{matrix.CC}}
+      - name: compile
+        run: |
+          cd build-${{matrix.TLS}}-${{matrix.CC}}
+          make EXTRA_CFLAGS=-Werror && make check EXTRA_CFLAGS=-Werror
+      - name: test
+        run: |
+          cd build-${{matrix.TLS}}-${{matrix.CC}}
+          libtool --mode=execute valgrind --track-origins=yes --leak-check=yes --show-reachable=yes --error-exitcode=123 --quiet --suppressions=$GITHUB_WORKSPACE/tests/valgrind_suppression tests/testdriver
+  tinydtls-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: setup
+        run: |
+          sudo apt-get update && sudo apt-get install -y libcunit1-dev libtool libtool-bin exuberant-ctags valgrind
+          ./autogen.sh
+      - name: configure
+        run: |
+          $GITHUB_WORKSPACE/configure --disable-silent-rules --disable-documentation --enable-examples --enable-tests --with-tinydtls
+      - name: compile
+        run: |
+          make EXTRA_CFLAGS=-Werror && make check EXTRA_CFLAGS=-Werror
+      - name: test
+        run: |
+          LD_LIBRARY_PATH=ext/tinydtls libtool --mode=execute valgrind --track-origins=yes --leak-check=yes --show-reachable=yes --error-exitcode=123 --quiet --suppressions=$GITHUB_WORKSPACE/tests/valgrind_suppression tests/testdriver
+  cmake-build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        TLS: ["no", "openssl", "gnutls", "mbedtls", "tinydtls"]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: setup
+        run: |
+          sudo apt-get update && sudo apt-get install -y libcunit1-dev libmbedtls-dev libgnutls28-dev
+          cmake -E make_directory $GITHUB_WORKSPACE}/build-${{matrix.TLS}}-cmake
+      - name: configure no-TLS
+        if: matrix.TLS == 'no'
+        run: |
+          cd $GITHUB_WORKSPACE}/build-${{matrix.TLS}}-cmake
+          cmake $GITHUB_WORKSPACE -DENABLE_EXAMPLES=ON -DENABLE_TESTS=ON -DENABLE_DTLS=OFF -DENABLE_DOCS=OFF
+      - name: configure TLS
+        if: matrix.TLS != 'no'
+        run: |
+          cd $GITHUB_WORKSPACE}/build-${{matrix.TLS}}-cmake
+          cmake $GITHUB_WORKSPACE -DENABLE_EXAMPLES=ON -DENABLE_TESTS=ON -DENABLE_DTLS=ON -DENABLE_DOCS=OFF -DDTLS_BACKEND=${{matrix.TLS}}
+      - name: build
+        run: |
+          cd $GITHUB_WORKSPACE}/build-${{matrix.TLS}}-cmake
+          cmake --build .
+  other-build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        OS: ["contiki", "lwip"]
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup
+        run: |
+          ./autogen.sh
+      - name: configure
+        run: |
+          $GITHUB_WORKSPACE/configure --disable-documentation --disable-examples --disable-tests --disable-dtls
+      - name: compile
+        run: |
+          make -C examples/${{matrix.OS}}
+  ms-build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1
+
+      - name: Install OpenSSL on Windows (choco)
+        run: |
+          choco install openssl
+        shell: cmd
+
+      - name: Build sln
+        shell: cmd
+        run: call .\scripts\msbuild.sln.cmd
+
+  additional-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: setup
+        run: |
+          sudo apt-get update && sudo apt-get install -y libgnutls28-dev libtool libtool-bin exuberant-ctags
+          ./autogen.sh
+      - name: configure
+        run: ./configure --disable-tests --disable-documentation
+      - name: build
+        run: |
+          make
+          make -C tests/oss-fuzz -f Makefile.ci check clean
+  documentation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: setup
+        run: |
+          sudo apt-get update && sudo apt-get install -y libtool libtool-bin exuberant-ctags graphviz doxygen libxml2-utils xsltproc docbook-xml docbook-xsl asciidoc
+          ./autogen.sh
+      - name: configure
+        run: ./configure --disable-tests --enable-documentation --prefix $GITHUB_WORKSPACE/test-install
+      - name: manuals check
+        run: |
+          make -C man
+      - name: manual page examples check
+        run: |
+          man/examples-code-check man
+      - name: doxygen check
+        run: |
+          make -C doc
+      - name: installation check
+        run: |
+          make install && ls -lR $GITHUB_WORKSPACE/test-install
+  distribution:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: setup
+        run: |
+          sudo apt-get update && sudo apt-get install -y libcunit1-dev libtool libtool-bin exuberant-ctags graphviz doxygen libxml2-utils xsltproc docbook-xml docbook-xsl asciidoc
+          ./autogen.sh
+      - name: configure
+        run: |
+          mkdir build-dist
+          cd build-dist
+          $GITHUB_WORKSPACE/configure --enable-silent-rules --enable-documentation --enable-examples --disable-dtls
+      - name: build distribution
+        run: |
+          cd build-dist
+          make dist
+      - name: check distribution build
+        run: |
+          cd build-dist
+          $GITHUB_WORKSPACE/scripts/github_dist.sh
+        shell: bash

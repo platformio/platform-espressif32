@@ -1,0 +1,47 @@
+###############################################################################
+#
+#  Copyright (c) 2022 Contributors to the Eclipse Foundation
+#
+#  See the LICENSE file(s) distributed with this work for additional
+#  information regarding copyright ownership.
+#
+#  This program and the accompanying materials are made available under the
+#  terms of the Eclipse Public License 1.0 
+#  which is available at http://www.eclipse.org/legal/epl-v10.html
+#  and the Eclipse Distribution License v. 1.0
+#  available at http://www.eclipse.org/org/documents/edl-v10.php
+#
+#  SPDX-License-Identifier: EPL-1.0
+#
+#  Contributors:
+#     Achim Kraus - initial confiuration
+#
+###############################################################################
+
+menu "tinyDTLS Settings"
+
+config LIBTINYDTLS
+      bool "Enable libtinydtls"
+      help
+        This option enables the libtinydtls as a Zephyr module.
+
+if LIBTINYDTLS
+   config LIBTINYDTLS_PSK
+      bool "Enable PSK"
+      default y
+      help
+        This option enables the PSK cipher suites.
+   config LIBTINYDTLS_ECDHE_ECDSA
+      bool "Enable ECDHE_ECDSA"
+      default n
+      help
+        This option enables the ECDHE_ECDSA cipher suites.
+
+endif # LIBTINYDTLS
+endmenu
+
+if LIBTINYDTLS
+module = TINYDTLS
+module-str = tinyDTLS
+source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+endif # LIBTINYDTLS
