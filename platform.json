@@ -83,13 +83,13 @@
     "toolchain-esp32ulp": {
       "type": "toolchain",
       "optional": true,
-      "owner": "espressif",
-      "version": "~2"
+      "owner": "platformio",
+      "version": "~1.23500.0"
     },
     "tool-esptoolpy": {
       "type": "uploader",
       "owner": "tasmota",
-      "version": "https://github.com/tasmota/esptool/releases/download/v4.4.1/esptool-4.4.1.zip"
+      "version": "https://github.com/tasmota/esptool/releases/download/v4.4.2/esptool-4.4.2.zip"
     },
     "tool-openocd-esp32": {
       "type": "debugger",

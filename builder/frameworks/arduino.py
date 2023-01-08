@@ -57,7 +57,14 @@ def install_python_deps():
         result = {}
         packages = {}
         pip_output = subprocess.check_output(
-            [env.subst("$PYTHONEXE"), "-m", "pip", "list", "--format=json"]
+            [
+                env.subst("$PYTHONEXE"),
+                "-m",
+                "pip",
+                "list",
+                "--format=json",
+                "--disable-pip-version-check",
+            ]
         )
         try:
             packages = json.loads(pip_output)
