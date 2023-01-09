@@ -77,7 +77,7 @@ def get_component_includes(target_config):
 
 
 def generate_ulp_config(target_config):
-    riscv_ulp_enabled = sdk_config.get("ESP32S2_ULP_COPROC_RISCV", False)
+    riscv_ulp_enabled = sdk_config.get("ULP_COPROC_TYPE_RISCV", False)
 
     ulp_sources = collect_ulp_sources()
     ulp_sources.sort()
@@ -90,8 +90,8 @@ def generate_ulp_config(target_config):
             "components",
             "ulp",
             "cmake",
-            "toolchain-%s-ulp%s.cmake"
-            % (idf_variant, "-riscv" if riscv_ulp_enabled else ""),
+            "toolchain-%sulp%s.cmake"
+            % ("" if riscv_ulp_enabled else idf_variant + "-", "-riscv" if riscv_ulp_enabled else ""),
         ),
         '-DULP_S_SOURCES="%s"' % ";".join(ulp_sources),
         "-DULP_APP_NAME=ulp_main",
