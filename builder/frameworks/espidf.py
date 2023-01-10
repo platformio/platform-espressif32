@@ -75,10 +75,10 @@ BUILD_DIR = env.subst("$BUILD_DIR")
 PROJECT_DIR = env.subst("$PROJECT_DIR")
 PROJECT_SRC_DIR = env.subst("$PROJECT_SRC_DIR")
 CMAKE_API_REPLY_PATH = os.path.join(".cmake", "api", "v1", "reply")
-SDKCONFIG_PATH = board.get(
+SDKCONFIG_PATH =  os.path.expandvars(board.get(
     "build.esp-idf.sdkconfig_path",
     os.path.join(PROJECT_DIR, "sdkconfig.%s" % env.subst("$PIOENV")),
-)
+))
 
 
 def get_project_lib_includes(env):
