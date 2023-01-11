@@ -1,8 +1,7 @@
 {
   "build": {
     "arduino":{
-      "ldscript": "esp32s3_out.ld",
-      "partitions": "partitions.csv"
+      "ldscript": "esp32s3_out.ld"
     },
     "core": "esp32",
     "extra_flags": [
