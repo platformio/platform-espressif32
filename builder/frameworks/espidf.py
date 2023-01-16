@@ -25,6 +25,7 @@ import json
 import subprocess
 import sys
 import os
+import pkg_resources
 
 import click
 import semantic_version
@@ -49,6 +50,9 @@ board = env.BoardConfig()
 mcu = board.get("build.mcu", "esp32")
 idf_variant = mcu.lower()
 
+# Required until Arduino switches to v5
+IDF5 = platform.get_package_version(
+    "framework-espidf").split(".")[1].startswith("5")
 FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
 TOOLCHAIN_DIR = platform.get_package_dir(
     "toolchain-%s" % ("riscv32-esp" if mcu == "esp32c3" else ("xtensa-%s" % mcu))
@@ -585,6 +589,7 @@ def _fix_component_relative_include(config, build_flags, source_index):
     build_flags = build_flags.replace("..", os.path.dirname(source_file_path) + "/..")
     return build_flags
 
+
 def prepare_build_envs(config, default_env, debug_allowed=True):
     build_envs = []
     target_compile_groups = config.get("compileGroups")
@@ -1073,14 +1078,14 @@ def install_python_deps():
         # https://github.com/platformio/platform-espressif32/issues/635
         "cryptography": ">=2.1.4,<35.0.0",
         "future": ">=0.15.2",
-        "pyparsing": ">=3"
-        if platform.get_package_version("framework-espidf")
-        .split(".")[1]
-        .startswith("5")
-        else ">=2.0.3,<2.4.0",
+        "pyparsing": ">=2.0.3,<2.4.0",
         "kconfiglib": "==13.7.1",
         "idf-component-manager": "~=1.0",
     }
+
+    if IDF5:
+        # Remove specific versions for IDF5 as not required
+        deps = {dep: "" for dep in deps}
 
     installed_packages = _get_installed_pip_packages()
     packages_to_install = []
@@ -1096,21 +1101,34 @@ def install_python_deps():
         env.Execute(
             env.VerboseAction(
                 (
-                    '"$PYTHONEXE" -m pip install -U --force-reinstall '
-                    + " ".join(['"%s%s"' % (p, deps[p]) for p in packages_to_install])
+                    '"$PYTHONEXE" -m pip install -U '
+                    + " ".join(
+                        [
+                            '"%s%s"' % (p, deps[p])
+                            for p in packages_to_install
+                        ]
+                    )
                 ),
                 "Installing ESP-IDF's Python dependencies",
             )
         )
 
-    # a special "esp-windows-curses" python package is required on Windows for Menuconfig
-    if "windows" in get_systype():
-        import pkg_resources
+    if "windows" in get_systype() and "windows-curses" not in installed_packages:
+        env.Execute(
+            env.VerboseAction(
+                "$PYTHONEXE -m pip install windows-curses",
+                "Installing windows-curses package",
+            )
+        )
 
-        if "esp-windows-curses" not in {pkg.key for pkg in pkg_resources.working_set}:
+        # A special "esp-windows-curses" python package is required on Windows
+        # for Menuconfig on IDF <5
+        if not IDF5 and "esp-windows-curses" not in {
+            pkg.key for pkg in pkg_resources.working_set
+        }:
             env.Execute(
                 env.VerboseAction(
-                    '$PYTHONEXE -m pip install "file://%s/tools/kconfig_new/esp-windows-curses" windows-curses'
+                    '$PYTHONEXE -m pip install "file://%s/tools/kconfig_new/esp-windows-curses"'
                     % FRAMEWORK_DIR,
                     "Installing windows-curses package",
                 )
