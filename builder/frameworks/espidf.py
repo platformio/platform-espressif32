@@ -1092,7 +1092,7 @@ def install_python_deps():
     for package, spec in deps.items():
         if package not in installed_packages:
             packages_to_install.append(package)
-        else:
+        elif spec:
             version_spec = semantic_version.Spec(spec)
             if not version_spec.match(installed_packages[package]):
                 packages_to_install.append(package)
