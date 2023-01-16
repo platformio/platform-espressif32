@@ -25,6 +25,7 @@ import json
 import subprocess
 import sys
 import os
+import pkg_resources
 
 import click
 import semantic_version
@@ -49,6 +50,9 @@ board = env.BoardConfig()
 mcu = board.get("build.mcu", "esp32")
 idf_variant = mcu.lower()
 
+# Required until Arduino switches to v5
+IDF5 = platform.get_package_version(
+    "framework-espidf").split(".")[1].startswith("5")
 FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
 TOOLCHAIN_DIR = platform.get_package_dir(
     "toolchain-%s" % ("riscv32-esp" if mcu == "esp32c3" else ("xtensa-%s" % mcu))
@@ -576,6 +580,16 @@ def generate_project_ld_script(sdk_config, ignore_targets=None):
     )
 
 
+# A temporary workaround to avoid modifying CMake mainly for the "heap" library.
+# The "tlsf.c" source file in this library has an include flag relative
+# to CMAKE_CURRENT_SOURCE_DIR which breaks PlatformIO builds that have a
+# different working directory
+def _fix_component_relative_include(config, build_flags, source_index):
+    source_file_path = config["sources"][source_index]["path"]
+    build_flags = build_flags.replace("..", os.path.dirname(source_file_path) + "/..")
+    return build_flags
+
+
 def prepare_build_envs(config, default_env, debug_allowed=True):
     build_envs = []
     target_compile_groups = config.get("compileGroups")
@@ -597,6 +611,10 @@ def prepare_build_envs(config, default_env, debug_allowed=True):
         for cc in compile_commands:
             build_flags = cc.get("fragment")
             if not build_flags.startswith("-D"):
+                if build_flags.startswith("-include") and ".." in build_flags:
+                    source_index = cg.get("sourceIndexes")[0]
+                    build_flags = _fix_component_relative_include(
+                        config, build_flags, source_index)
                 build_env.AppendUnique(**build_env.ParseFlags(build_flags))
         build_env.AppendUnique(CPPDEFINES=defines, CPPPATH=includes)
         if sys_includes:
@@ -639,9 +657,17 @@ def compile_source_files(
                 else:
                     obj_path = os.path.join(obj_path, os.path.basename(src_path))
 
+            preserve_source_file_extension = board.get(
+                "build.esp-idf.preserve_source_file_extension", False
+            )
+
             objects.append(
                 build_envs[compile_group_idx].StaticObject(
-                    target=os.path.splitext(obj_path)[0] + ".o",
+                    target=(
+                        obj_path
+                        if preserve_source_file_extension
+                        else os.path.splitext(obj_path)[0]
+                    ) + ".o",
                     source=os.path.realpath(src_path),
                 )
             )
@@ -1029,7 +1055,14 @@ def install_python_deps():
         result = {}
         packages = {}
         pip_output = subprocess.check_output(
-            [env.subst("$PYTHONEXE"), "-m", "pip", "list", "--format=json"]
+            [
+                env.subst("$PYTHONEXE"),
+                "-m",
+                "pip",
+                "list",
+                "--format=json",
+                "--disable-pip-version-check",
+            ]
         )
         try:
             packages = json.loads(pip_output)
@@ -1047,15 +1080,19 @@ def install_python_deps():
         "future": ">=0.15.2",
         "pyparsing": ">=2.0.3,<2.4.0",
         "kconfiglib": "==13.7.1",
-        "idf-component-manager": "~=1.0"
+        "idf-component-manager": "~=1.0",
     }
+
+    if IDF5:
+        # Remove specific versions for IDF5 as not required
+        deps = {dep: "" for dep in deps}
 
     installed_packages = _get_installed_pip_packages()
     packages_to_install = []
     for package, spec in deps.items():
         if package not in installed_packages:
             packages_to_install.append(package)
-        else:
+        elif spec:
             version_spec = semantic_version.Spec(spec)
             if not version_spec.match(installed_packages[package]):
                 packages_to_install.append(package)
@@ -1064,21 +1101,34 @@ def install_python_deps():
         env.Execute(
             env.VerboseAction(
                 (
-                    '"$PYTHONEXE" -m pip install -U --force-reinstall '
-                    + " ".join(['"%s%s"' % (p, deps[p]) for p in packages_to_install])
+                    '"$PYTHONEXE" -m pip install -U '
+                    + " ".join(
+                        [
+                            '"%s%s"' % (p, deps[p])
+                            for p in packages_to_install
+                        ]
+                    )
                 ),
                 "Installing ESP-IDF's Python dependencies",
             )
         )
 
-    # a special "esp-windows-curses" python package is required on Windows for Menuconfig
-    if "windows" in get_systype():
-        import pkg_resources
+    if "windows" in get_systype() and "windows-curses" not in installed_packages:
+        env.Execute(
+            env.VerboseAction(
+                "$PYTHONEXE -m pip install windows-curses",
+                "Installing windows-curses package",
+            )
+        )
 
-        if "esp-windows-curses" not in {pkg.key for pkg in pkg_resources.working_set}:
+        # A special "esp-windows-curses" python package is required on Windows
+        # for Menuconfig on IDF <5
+        if not IDF5 and "esp-windows-curses" not in {
+            pkg.key for pkg in pkg_resources.working_set
+        }:
             env.Execute(
                 env.VerboseAction(
-                    '$PYTHONEXE -m pip install "file://%s/tools/kconfig_new/esp-windows-curses" windows-curses'
+                    '$PYTHONEXE -m pip install "file://%s/tools/kconfig_new/esp-windows-curses"'
                     % FRAMEWORK_DIR,
                     "Installing windows-curses package",
                 )
@@ -1471,4 +1521,6 @@ env.Replace(
 )
 
 # Propagate application offset to debug configurations
-env["INTEGRATION_EXTRA_DATA"].update({"application_offset": env.subst("$ESP32_APP_OFFSET")})
+env["INTEGRATION_EXTRA_DATA"].update(
+    {"application_offset": env.subst("$ESP32_APP_OFFSET")}
+)

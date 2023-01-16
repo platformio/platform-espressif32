@@ -261,7 +261,7 @@ env.Append(
             action=env.VerboseAction(" ".join([
                 '"$PYTHONEXE" "$OBJCOPY"',
                 "--chip", mcu, "elf2image",
-                "--flash_mode", "$BOARD_FLASH_MODE",
+                "--flash_mode", "${__get_board_flash_mode(__env__)}",
                 "--flash_freq", "${__get_board_f_flash(__env__)}",
                 "--flash_size", board.get("upload.flash_size", "4MB"),
                 "-o", "$TARGET", "$SOURCES"

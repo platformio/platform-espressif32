@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: General libcoap Information
+    url: https://libcoap.net/
+    about: General information about libcoap
+  - name: General libcoap Documentation
+    url: https://libcoap.net/documentation.html
+    about: Documentation information for libcoap
+  - name: Latest libcoap API Documentation
+    url: https://libcoap.net/doc/reference/develop/modules.html
+    about: Latest API information for libcoap
+  - name: Latest libcoap Manual Pages
+    url: https://libcoap.net/doc/reference/develop/manpage.html
+    about: Latest Manual Pages and Examples for libcoap
