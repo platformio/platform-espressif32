@@ -94,8 +94,13 @@ def install_python_deps():
         env.Execute(
             env.VerboseAction(
                 (
-                    '"$PYTHONEXE" -m pip install -U --force-reinstall '
-                    + " ".join(['"%s%s"' % (p, deps[p]) for p in packages_to_install])
+                    '"$PYTHONEXE" -m pip install -U '
+                    + " ".join(
+                        [
+                            '"%s%s"' % (p, deps[p])
+                            for p in packages_to_install
+                        ]
+                    )
                 ),
                 "Installing Python dependencies",
             )
