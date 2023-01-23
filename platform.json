@@ -1,7 +1,7 @@
 {
   "name": "espressif32",
   "title": "Espressif 32",
-  "description": "Espressif Systems is a privately held fabless semiconductor company. They provide wireless communications and Wi-Fi chips which are widely used in mobile devices and the Internet of Things applications.",
+  "description": "ESP32 is a series of low-cost, low-power system on a chip microcontrollers with integrated Wi-Fi and Bluetooth. ESP32 integrates an antenna switch, RF balun, power amplifier, low-noise receive amplifier, filters, and power management modules.",
   "homepage": "https://espressif.com/",
   "license": "Apache-2.0",
   "keywords": [
