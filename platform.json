@@ -36,7 +36,7 @@
       "type": "framework",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/tasmota/arduino-esp32/releases/download/2.0.6/framework-arduinoespressif32.zip"
+      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/1138/framework-arduinoespressif32-master-49551cc48c.zip"
     },
      "framework-arduino-solo1": {
       "type": "framework",
@@ -54,36 +54,31 @@
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~3.50000.0",
-      "optionalVersions": "https://github.com/tasmota/esp-idf/releases/download/v4.4.3.20221227/esp-idf-v4.4.3.zip"
+      "version": "~3.50000.0"
     },
     "toolchain-xtensa-esp32": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "8.4.0+2021r2-patch5",
-      "optionalVersions": ["11.2.0+2022r1"]
+      "version": "11.2.0+2022r1"
     },
     "toolchain-xtensa-esp32s2": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "8.4.0+2021r2-patch5",
-      "optionalVersions": ["11.2.0+2022r1"]
+      "version": "11.2.0+2022r1"
     },
     "toolchain-xtensa-esp32s3": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "8.4.0+2021r2-patch5",
-      "optionalVersions": ["11.2.0+2022r1"]
+      "version": "11.2.0+2022r1"
     },
     "toolchain-riscv32-esp": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "8.4.0+2021r2-patch5",
-      "optionalVersions": ["11.2.0+2022r1"]
+      "version": "11.2.0+2022r1"
     },
     "toolchain-esp32ulp": {
       "type": "toolchain",
