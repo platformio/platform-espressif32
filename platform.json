@@ -54,7 +54,7 @@
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~3.50000.0"
+      "version": "https://github.com/Jason2866/esp-idf/releases/download/v5.0.0/esp-idf-v5.0.0.zip"
     },
     "toolchain-xtensa-esp32": {
       "type": "toolchain",
