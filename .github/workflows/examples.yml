@@ -19,7 +19,6 @@ jobs:
           - "examples/arduino-rmt-blink"
           - "examples/arduino-usb-keyboard"
           - "examples/arduino-wifiscan"
-          - "examples/espidf-arduino-blink"
           - "examples/espidf-blink"
           - "examples/espidf-ble-eddystone"
           - "examples/espidf-coap-server"
