@@ -33,7 +33,7 @@ class Esp32ExceptionDecoder(DeviceMonitorFilterBase):
     NAME = "esp32_exception_decoder"
 
     BACKTRACE_PATTERN = re.compile(r"^Backtrace:(((\s?0x[0-9a-fA-F]{8}:0x[0-9a-fA-F]{8}))+)")
-    BACKTRACE_ADDRESS_PATTERN = re.compile(r'0x[0-9a-f]{8}:0x[0-9a-f]{8}')
+    BACKTRACE_ADDRESS_PATTERN = re.compile(r'0x[0-9a-fA-F]{8}:0x[0-9a-fA-F]{8}')
 
     def __call__(self):
         self.buffer = ""
