@@ -25,6 +25,7 @@ import json
 import subprocess
 import sys
 import os
+import pkg_resources
 
 import click
 import semantic_version
@@ -36,10 +37,16 @@ from SCons.Script import (
 )
 
 from platformio import fs
+from platformio.compat import IS_WINDOWS
 from platformio.proc import exec_command
-from platformio.util import get_systype
 from platformio.builder.tools.piolib import ProjectAsLibBuilder
 from platformio.package.version import get_original_version, pepver_to_semver
+
+# Added to avoid conflicts between installed Python packages from
+# the IDF virtual environment and PlatformIO Core
+# Note: This workaround can be safely deleted when PlatformIO 6.1.7 is released
+if os.environ.get("PYTHONPATH"):
+    del os.environ["PYTHONPATH"]
 
 env = DefaultEnvironment()
 env.SConscript("_embed_files.py", exports="env")
@@ -49,6 +56,8 @@ board = env.BoardConfig()
 mcu = board.get("build.mcu", "esp32")
 idf_variant = mcu.lower()
 
+# Required until Arduino switches to v5
+IDF5 = platform.get_package_version("framework-espidf").split(".")[1].startswith("5")
 FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
 TOOLCHAIN_DIR = platform.get_package_dir(
     "toolchain-%s" % ("riscv32-esp" if mcu == "esp32c3" else ("xtensa-%s" % mcu))
@@ -215,20 +224,20 @@ def get_cmake_code_model(src_dir, build_dir, extra_args=None):
 
 
 def populate_idf_env_vars(idf_env):
-    idf_env["IDF_PATH"] = FRAMEWORK_DIR
+    idf_env["IDF_PATH"] = fs.to_unix_path(FRAMEWORK_DIR)
     additional_packages = [
         os.path.join(TOOLCHAIN_DIR, "bin"),
         platform.get_package_dir("tool-ninja"),
         os.path.join(platform.get_package_dir("tool-cmake"), "bin"),
-        os.path.dirname(env.subst("$PYTHONEXE")),
+        os.path.dirname(get_python_exe()),
     ]
 
-    if mcu not in ("esp32c3", "esp32s3"):
+    if mcu != "esp32c3":
         additional_packages.append(
-            os.path.join(platform.get_package_dir("toolchain-%sulp" % mcu), "bin"),
+            os.path.join(platform.get_package_dir("toolchain-esp32ulp"), "bin"),
         )
 
-    if "windows" in get_systype():
+    if IS_WINDOWS:
         additional_packages.append(platform.get_package_dir("tool-mconf"))
 
     idf_env["PATH"] = os.pathsep.join(additional_packages + [idf_env["PATH"]])
@@ -555,7 +564,7 @@ def generate_project_ld_script(sdk_config, ignore_targets=None):
     }
 
     cmd = (
-        '"$PYTHONEXE" "{script}" --input $SOURCE '
+        '"$ESPIDF_PYTHONEXE" "{script}" --input $SOURCE '
         '--config "{config}" --fragments {fragments} --output $TARGET '
         '--kconfig "{kconfig}" --env-file "{env_file}" '
         '--libraries-file "{libraries_list}" '
@@ -574,6 +583,16 @@ def generate_project_ld_script(sdk_config, ignore_targets=None):
         ),
         env.VerboseAction(cmd, "Generating project linker script $TARGET"),
     )
+
+
+# A temporary workaround to avoid modifying CMake mainly for the "heap" library.
+# The "tlsf.c" source file in this library has an include flag relative
+# to CMAKE_CURRENT_SOURCE_DIR which breaks PlatformIO builds that have a
+# different working directory
+def _fix_component_relative_include(config, build_flags, source_index):
+    source_file_path = config["sources"][source_index]["path"]
+    build_flags = build_flags.replace("..", os.path.dirname(source_file_path) + "/..")
+    return build_flags
 
 
 def prepare_build_envs(config, default_env, debug_allowed=True):
@@ -597,6 +616,10 @@ def prepare_build_envs(config, default_env, debug_allowed=True):
         for cc in compile_commands:
             build_flags = cc.get("fragment")
             if not build_flags.startswith("-D"):
+                if build_flags.startswith("-include") and ".." in build_flags:
+                    source_index = cg.get("sourceIndexes")[0]
+                    build_flags = _fix_component_relative_include(
+                        config, build_flags, source_index)
                 build_env.AppendUnique(**build_env.ParseFlags(build_flags))
         build_env.AppendUnique(CPPDEFINES=defines, CPPPATH=includes)
         if sys_includes:
@@ -639,9 +662,17 @@ def compile_source_files(
                 else:
                     obj_path = os.path.join(obj_path, os.path.basename(src_path))
 
+            preserve_source_file_extension = board.get(
+                "build.esp-idf.preserve_source_file_extension", False
+            )
+
             objects.append(
                 build_envs[compile_group_idx].StaticObject(
-                    target=os.path.splitext(obj_path)[0] + ".o",
+                    target=(
+                        obj_path
+                        if preserve_source_file_extension
+                        else os.path.splitext(obj_path)[0]
+                    ) + ".o",
                     source=os.path.realpath(src_path),
                 )
             )
@@ -737,7 +768,7 @@ def build_bootloader(sdk_config):
         [
             "-DIDF_TARGET=" + idf_variant,
             "-DPYTHON_DEPS_CHECKED=1",
-            "-DPYTHON=" + env.subst("$PYTHONEXE"),
+            "-DPYTHON=" + get_python_exe(),
             "-DIDF_PATH=" + FRAMEWORK_DIR,
             "-DSDKCONFIG=" + SDKCONFIG_PATH,
             "-DLEGACY_INCLUDE_COMMON_HEADERS=",
@@ -892,7 +923,7 @@ def generate_empty_partition_image(binary_path, image_size):
         binary_path,
         None,
         env.VerboseAction(
-            '"$PYTHONEXE" "%s" %s $TARGET'
+            '"$ESPIDF_PYTHONEXE" "%s" %s $TARGET'
             % (
                 os.path.join(
                     FRAMEWORK_DIR,
@@ -917,7 +948,7 @@ def get_partition_info(pt_path, pt_offset, pt_params):
         env.Exit(1)
 
     cmd = [
-        env.subst("$PYTHONEXE"),
+        get_python_exe(),
         os.path.join(FRAMEWORK_DIR, "components", "partition_table", "parttool.py"),
         "-q",
         "--partition-table-offset",
@@ -974,7 +1005,7 @@ def generate_mbedtls_bundle(sdk_config):
         FRAMEWORK_DIR, "components", "mbedtls", "esp_crt_bundle"
     )
 
-    cmd = [env.subst("$PYTHONEXE"), os.path.join(default_crt_dir, "gen_crt_bundle.py")]
+    cmd = [get_python_exe(), os.path.join(default_crt_dir, "gen_crt_bundle.py")]
 
     crt_args = ["--input"]
     if sdk_config.get("MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_FULL", False):
@@ -1025,11 +1056,18 @@ def generate_mbedtls_bundle(sdk_config):
 
 
 def install_python_deps():
-    def _get_installed_pip_packages():
+    def _get_installed_pip_packages(python_exe_path):
         result = {}
         packages = {}
         pip_output = subprocess.check_output(
-            [env.subst("$PYTHONEXE"), "-m", "pip", "list", "--format=json"]
+            [
+                python_exe_path,
+                "-m",
+                "pip",
+                "list",
+                "--format=json",
+                "--disable-pip-version-check",
+            ]
         )
         try:
             packages = json.loads(pip_output)
@@ -1047,15 +1085,20 @@ def install_python_deps():
         "future": ">=0.15.2",
         "pyparsing": ">=2.0.3,<2.4.0",
         "kconfiglib": "==13.7.1",
-        "idf-component-manager": "~=1.0"
+        "idf-component-manager": "~=1.0",
     }
 
-    installed_packages = _get_installed_pip_packages()
+    if IDF5:
+        # Remove specific versions for IDF5 as not required
+        deps = {dep: "" for dep in deps}
+
+    python_exe_path = get_python_exe()
+    installed_packages = _get_installed_pip_packages(python_exe_path)
     packages_to_install = []
     for package, spec in deps.items():
         if package not in installed_packages:
             packages_to_install.append(package)
-        else:
+        elif spec:
             version_spec = semantic_version.Spec(spec)
             if not version_spec.match(installed_packages[package]):
                 packages_to_install.append(package)
@@ -1064,29 +1107,81 @@ def install_python_deps():
         env.Execute(
             env.VerboseAction(
                 (
-                    '"$PYTHONEXE" -m pip install -U --force-reinstall '
+                    '"%s" -m pip install -U ' % python_exe_path
                     + " ".join(['"%s%s"' % (p, deps[p]) for p in packages_to_install])
                 ),
                 "Installing ESP-IDF's Python dependencies",
             )
         )
 
-    # a special "esp-windows-curses" python package is required on Windows for Menuconfig
-    if "windows" in get_systype():
-        import pkg_resources
+    if IS_WINDOWS and "windows-curses" not in installed_packages:
+        env.Execute(
+            env.VerboseAction(
+                '"%s" -m pip install windows-curses' % python_exe_path,
+                "Installing windows-curses package",
+            )
+        )
 
-        if "esp-windows-curses" not in {pkg.key for pkg in pkg_resources.working_set}:
+        # A special "esp-windows-curses" python package is required on Windows
+        # for Menuconfig on IDF <5
+        if not IDF5 and "esp-windows-curses" not in {
+            pkg.key for pkg in pkg_resources.working_set
+        }:
             env.Execute(
                 env.VerboseAction(
-                    '$PYTHONEXE -m pip install "file://%s/tools/kconfig_new/esp-windows-curses" windows-curses'
-                    % FRAMEWORK_DIR,
+                    '"%s" -m pip install "file://%s/tools/kconfig_new/esp-windows-curses"'
+                    % (python_exe_path, FRAMEWORK_DIR),
                     "Installing windows-curses package",
                 )
             )
 
 
+def get_python_exe():
+    def _create_venv(venv_dir):
+        pip_path = os.path.join(
+            venv_dir,
+            "Scripts" if IS_WINDOWS else "bin",
+            "pip" + (".exe" if IS_WINDOWS else ""),
+        )
+        if not os.path.isfile(pip_path):
+            # Use the built-in PlatformIO Python to create a standalone IDF virtual env
+            env.Execute(
+                env.VerboseAction(
+                    '"$PYTHONEXE" -m venv --clear "%s"' % venv_dir,
+                    "Creating a virtual environment for IDF Python dependencies",
+                )
+            )
+
+        assert os.path.isfile(
+            pip_path
+        ), "Error: Failed to create a proper virtual environment. Missing the pip binary!"
+
+    # The name of the IDF venv contains the IDF version to avoid possible conflicts and
+    # unnecessary reinstallation of Python dependencies in cases when Arduino
+    # as an IDF component requires a different version of the IDF package and
+    # hence a different set of Python deps or their versions
+    idf_version = get_original_version(platform.get_package_version("framework-espidf"))
+    venv_dir = os.path.join(
+        env.subst("$PROJECT_CORE_DIR"), "penv", ".espidf-" + idf_version)
+
+    if not os.path.isdir(venv_dir):
+        _create_venv(venv_dir)
+
+    python_exe_path = os.path.join(
+        venv_dir,
+        "Scripts" if IS_WINDOWS else "bin",
+        "python" + (".exe" if IS_WINDOWS else ""),
+    )
+
+    assert os.path.isfile(python_exe_path), (
+        "Error: Missing Python executable file `%s`" % python_exe_path
+    )
+
+    return python_exe_path
+
+
 #
-# ESP-IDF requires Python packages with specific versions
+# ESP-IDF requires Python packages with specific versions in a virtual environment
 #
 
 install_python_deps()
@@ -1185,7 +1280,7 @@ project_codemodel = get_cmake_code_model(
         "-DIDF_TARGET=" + idf_variant,
         "-DPYTHON_DEPS_CHECKED=1",
         "-DEXTRA_COMPONENT_DIRS:PATH=" + ";".join(extra_components),
-        "-DPYTHON=" + env.subst("$PYTHONEXE"),
+        "-DPYTHON=" + get_python_exe(),
         "-DSDKCONFIG=" + SDKCONFIG_PATH,
     ]
     + click.parser.split_arg_string(board.get("build.cmake_extra_args", "")),
@@ -1323,7 +1418,7 @@ partition_table = env.Command(
     os.path.join("$BUILD_DIR", "partitions.bin"),
     "$PARTITIONS_TABLE_CSV",
     env.VerboseAction(
-        '"$PYTHONEXE" "%s" -q --offset "%s" --flash-size "%s" $SOURCE $TARGET'
+        '"$ESPIDF_PYTHONEXE" "%s" -q --offset "%s" --flash-size "%s" $SOURCE $TARGET'
         % (
             os.path.join(
                 FRAMEWORK_DIR, "components", "partition_table", "gen_esp32part.py"
@@ -1346,6 +1441,7 @@ env.MergeFlags(project_flags)
 env.Prepend(
     CPPPATH=app_includes["plain_includes"],
     CPPDEFINES=project_defines,
+    ESPIDF_PYTHONEXE=get_python_exe(),
     LINKFLAGS=extra_flags,
     LIBS=libs,
     FLASH_EXTRA_IMAGES=[
@@ -1471,4 +1567,6 @@ env.Replace(
 )
 
 # Propagate application offset to debug configurations
-env["INTEGRATION_EXTRA_DATA"].update({"application_offset": env.subst("$ESP32_APP_OFFSET")})
+env["INTEGRATION_EXTRA_DATA"].update(
+    {"application_offset": env.subst("$ESP32_APP_OFFSET")}
+)

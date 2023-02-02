@@ -4,14 +4,17 @@
       "ldscript": "esp32s2_out.ld"
     },
     "core": "esp32",
-    "extra_flags": "-DARDUINO_DYM",
+    "extra_flags": [
+      "-DARDUINO_DYM",
+      "-DARDUINO_USB_CDC_ON_BOOT=1"
+    ],
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
     "flash_mode": "qio",
     "hwids": [
       [
         "0x303A",
-        "0x0002"
+        "0x8141"
       ]
     ],
     "mcu": "esp32s2",

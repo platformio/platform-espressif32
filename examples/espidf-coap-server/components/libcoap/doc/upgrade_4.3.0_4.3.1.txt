@@ -1,0 +1,6 @@
+= Upgrade from 4.3.0 to 4.3.1
+
+== Summary
+
+The source and binary APIs are the same for 4.3.0 and 4.3.1 with just extra
+functionality making it forward, but not necessarily backward compatible.

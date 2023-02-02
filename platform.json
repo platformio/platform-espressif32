@@ -1,7 +1,7 @@
 {
   "name": "espressif32",
   "title": "Espressif 32",
-  "description": "Espressif Systems is a privately held fabless semiconductor company. They provide wireless communications and Wi-Fi chips which are widely used in mobile devices and the Internet of Things applications.",
+  "description": "ESP32 is a series of low-cost, low-power system on a chip microcontrollers with integrated Wi-Fi and Bluetooth. ESP32 integrates an antenna switch, RF balun, power amplifier, low-noise receive amplifier, filters, and power management modules.",
   "homepage": "https://espressif.com/",
   "license": "Apache-2.0",
   "keywords": [
@@ -18,7 +18,7 @@
     "type": "git",
     "url": "https://github.com/platformio/platform-espressif32.git"
   },
-  "version": "5.2.0",
+  "version": "6.0.0",
   "frameworks": {
     "arduino": {
       "package": "framework-arduinoespressif32",
@@ -36,43 +36,41 @@
     "toolchain-xtensa-esp32": {
       "type": "toolchain",
       "owner": "espressif",
-      "version": "8.4.0+2021r2-patch3"
+      "version": "8.4.0+2021r2-patch5",
+      "optionalVersions": ["11.2.0+2022r1"]
     },
     "toolchain-xtensa-esp32s2": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "8.4.0+2021r2-patch3"
+      "version": "8.4.0+2021r2-patch5",
+      "optionalVersions": ["11.2.0+2022r1"]
     },
      "toolchain-xtensa-esp32s3": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "8.4.0+2021r2-patch3"
+      "version": "8.4.0+2021r2-patch5",
+      "optionalVersions": ["11.2.0+2022r1"]
     },
     "toolchain-riscv32-esp": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "8.4.0+2021r2-patch3"
+      "version": "8.4.0+2021r2-patch5",
+      "optionalVersions": ["11.2.0+2022r1"]
     },
     "toolchain-esp32ulp": {
       "type": "toolchain",
       "optional": true,
       "owner": "platformio",
-      "version": "~1.22851.0"
-    },
-    "toolchain-esp32s2ulp": {
-      "type": "toolchain",
-      "optional": true,
-      "owner": "platformio",
-      "version": "~1.22851.0"
+      "version": "~1.23500.0"
     },
     "framework-arduinoespressif32": {
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~3.20005.0"
+      "version": "~3.20006.0"
     },
     "framework-arduino-mbcwb": {
       "type": "framework",
@@ -84,12 +82,13 @@
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~3.40402.0"
+      "version": "~3.50000.0",
+      "optionalVersions": ["~3.40403.0"]
     },
     "tool-esptoolpy": {
       "type": "uploader",
       "owner": "platformio",
-      "version": "~1.40201.0"
+      "version": "~1.40400.0"
     },
     "tool-mbctool": {
       "optional": true,
