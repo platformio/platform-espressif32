@@ -1,3 +1,0 @@
-[submodule "aws-iot-device-sdk-embedded-C"]
-	path = aws-iot-device-sdk-embedded-C
-	url = https://github.com/espressif/aws-iot-device-sdk-embedded-C.git
