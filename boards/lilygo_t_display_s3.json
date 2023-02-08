@@ -41,7 +41,7 @@
     "name": "LilyGO T-Display-S3",
     "upload": {
         "flash_size": "16MB",
-        "maximum_ram_size": 327680,
+        "maximum_ram_size": 524288,
         "maximum_size": 16777216,
         "require_upload_port": true,
         "speed": 921600
