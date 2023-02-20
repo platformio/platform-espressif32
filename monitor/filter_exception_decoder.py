@@ -37,6 +37,7 @@ class Esp32ExceptionDecoder(DeviceMonitorFilterBase):
     ANSI_ESCAPE_PATTERN = re.compile(r'(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~]')
 
     def __call__(self):
+        self.prebuffer = ""
         self.buffer = ""
 
         self.firmware_path = None
@@ -89,6 +90,11 @@ See https://docs.platformio.org/page/projectconf/build_configurations.html
         return False
 
     def rx(self, text):
+        self.prebuffer += text
+        idx = self.prebuffer.rfind("\n")
+        text = self.prebuffer[:idx+1]
+        self.prebuffer = self.prebuffer[idx+1:]
+
         if not self.enabled:
             return text
 
@@ -107,6 +113,9 @@ See https://docs.platformio.org/page/projectconf/build_configurations.html
             last = idx + 1
 
             strip_line = self.strip_ansi(line)
+            # sys.stderr.write(
+            #     "%s: strip_line='%s'\n" % (self.__class__.__name__, strip_line.encode("ascii", "backslashreplace"))
+            # )
 
             m = self.BACKTRACE_PATTERN.match(strip_line)
             if m is None:
