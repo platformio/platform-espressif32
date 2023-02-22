@@ -113,10 +113,6 @@ See https://docs.platformio.org/page/projectconf/build_configurations.html
             last = idx + 1
 
             strip_line = self.strip_ansi(line)
-            # sys.stderr.write(
-            #     "%s: strip_line='%s'\n" % (self.__class__.__name__, strip_line.encode("ascii", "backslashreplace"))
-            # )
-
             m = self.BACKTRACE_PATTERN.match(strip_line)
             if m is None:
                 continue
