@@ -29,7 +29,7 @@
   "name": "DFRobot Firebeetle 2 ESP32-E",
   "upload": {
     "flash_size": "4MB",
-    "maximum_ram_size": 532480,
+    "maximum_ram_size": 327680,
     "maximum_size": 4194304,
     "require_upload_port": true,
     "speed": 460800
