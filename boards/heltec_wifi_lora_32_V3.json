@@ -1,16 +1,19 @@
 {
   "build": {
-    "arduino":{
+    "arduino": {
       "ldscript": "esp32s3_out.ld",
       "partitions": "default_8MB.csv"
     },
     "core": "esp32",
     "extra_flags": [
-      "-DARDUINO_HELTEC_WIFI_LORA_32_V3"
+      "-DARDUINO_heltec_wifi_lora_32_V3",
+      "-DARDUINO_USB_MODE=1",
+      "-DARDUINO_RUNNING_CORE=1",
+      "-DARDUINO_EVENT_RUNNING_CORE=1"
     ],
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
-    "flash_mode": "dio",
+    "flash_mode": "qio",
     "hwids": [
       [
         "0x303A",
@@ -26,10 +29,6 @@
     "lora"
   ],
   "debug": {
-    "default_tool": "esp-builtin",
-    "onboard_tools": [
-      "esp-builtin"
-    ],
     "openocd_target": "esp32s3.cfg"
   },
   "frameworks": [
@@ -44,6 +43,6 @@
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1.html",
+  "url": "https://heltec.org/project/wifi-lora-32-v3/",
   "vendor": "Heltec"
 }
