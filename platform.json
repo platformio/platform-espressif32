@@ -54,7 +54,7 @@
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~3.50000.0"
+      "version": "~3.50001.0"
     },
     "toolchain-xtensa-esp32": {
       "type": "toolchain",
