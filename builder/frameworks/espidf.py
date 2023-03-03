@@ -620,7 +620,10 @@ def prepare_build_envs(config, default_env, debug_allowed=True):
                     source_index = cg.get("sourceIndexes")[0]
                     build_flags = _fix_component_relative_include(
                         config, build_flags, source_index)
-                build_env.AppendUnique(**build_env.ParseFlags(build_flags))
+                parsed_flags = build_env.ParseFlags(build_flags)
+                build_env.AppendUnique(**parsed_flags)
+                if cg.get("language", "") == "ASM":
+                    build_env.AppendUnique(ASFLAGS=parsed_flags.get("CCFLAGS", []))
         build_env.AppendUnique(CPPDEFINES=defines, CPPPATH=includes)
         if sys_includes:
             build_env.Append(CCFLAGS=[("-isystem", inc) for inc in sys_includes])
