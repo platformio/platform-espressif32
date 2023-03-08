@@ -2,26 +2,20 @@
   "build": {
     "arduino": {
       "ldscript": "esp32s3_out.ld",
-      "memory_type": "qio_opi"
+      "memory_type": "qio_qspi"
     },
     "core": "esp32",
     "extra_flags": [
-      "-DARDUINO_DYDK1Av2",
-      "-DBOARD_HAS_PSRAM",
+      "-DARDUINO_Edgebox_ESP_100",
       "-DARDUINO_USB_MODE=1",
-      "-DARDUINO_USB_CDC_ON_BOOT=1"
+      "-DARDUINO_RUNNING_CORE=1",
+      "-DARDUINO_EVENT_RUNNING_CORE=1"
     ],
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
     "flash_mode": "qio",
-    "hwids": [
-      [
-        "0x303A",
-        "0x8147"
-      ]
-    ],
     "mcu": "esp32s3",
-    "variant": "deneyapkart1Av2"
+    "variant": "Edgebox-ESP-100"
   },
   "connectivity": [
     "wifi"
@@ -33,16 +27,14 @@
     "arduino",
     "espidf"
   ],
-  "name": "Deneyap Kart 1A v2",
+  "name": "Seeed Studio Edgebox-ESP-100",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
     "maximum_size": 4194304,
-    "use_1200bps_touch": true,
-    "wait_for_upload_port": true,
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://wiki.banana-pi.org/BPI-Leaf-S3",
-  "vendor": "Deneyap"
+  "url": "https://www.seeedstudio.com/EdgeBox-ESP-100-p-5490.html",
+  "vendor": "Seeed Studio"
 }
