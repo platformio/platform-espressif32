@@ -3,7 +3,7 @@
     "arduino": {
       "ldscript": "esp32s3_out.ld",
       "memory_type": "qio_opi",
-      "partitions": "app3M_fat9M_16MB.csv"
+      "partitions": "default_16MB.csv"
     },
     "core": "esp32",
     "extra_flags": [
