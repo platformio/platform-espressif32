@@ -1013,8 +1013,10 @@ def generate_mbedtls_bundle(sdk_config):
     crt_args = ["--input"]
     if sdk_config.get("MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_FULL", False):
         crt_args.append(os.path.join(default_crt_dir, "cacrt_all.pem"))
+        crt_args.append(os.path.join(default_crt_dir, "cacrt_local.pem"))
     elif sdk_config.get("MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_CMN", False):
         crt_args.append(os.path.join(default_crt_dir, "cacrt_all.pem"))
+        crt_args.append(os.path.join(default_crt_dir, "cacrt_local.pem"))
         cmd.extend(
             ["--filter", os.path.join(default_crt_dir, "cmn_crt_authorities.csv")]
         )
