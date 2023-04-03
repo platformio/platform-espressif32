@@ -9,11 +9,13 @@
       "-DARDUINO_DYDK1Av2",
       "-DBOARD_HAS_PSRAM",
       "-DARDUINO_USB_MODE=1",
-      "-DARDUINO_USB_CDC_ON_BOOT=1"
+      "-DARDUINO_USB_CDC_ON_BOOT=1",
+      "-DARDUINO_RUNNING_CORE=1",
+      "-DARDUINO_EVENT_RUNNING_CORE=1"
     ],
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
-    "flash_mode": "qio",
+    "flash_mode": "dio",
     "hwids": [
       [
         "0x303A",
@@ -24,7 +26,8 @@
     "variant": "deneyapkart1Av2"
   },
   "connectivity": [
-    "wifi"
+    "wifi",
+    "bluetooth"
   ],
   "debug": {
     "openocd_target": "esp32s3.cfg"
@@ -38,11 +41,9 @@
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
     "maximum_size": 4194304,
-    "use_1200bps_touch": true,
-    "wait_for_upload_port": true,
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://wiki.banana-pi.org/BPI-Leaf-S3",
-  "vendor": "Deneyap"
+  "url": "https://magaza.deneyapkart.org/tr/product/detail/deneyap-kart-1a-v2-type-c",
+  "vendor": "T3 Foundation"
 }

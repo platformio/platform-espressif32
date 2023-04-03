@@ -10,7 +10,7 @@
     ],
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
-    "flash_mode": "qio",
+    "flash_mode": "dio",
     "hwids": [
       [
         "0x303A",
@@ -21,9 +21,7 @@
     "variant": "deneyapmini"
   },
   "connectivity": [
-    "wifi",
-    "bluetooth",
-    "ethernet"
+    "wifi"
   ],
   "debug": {
     "openocd_target": "esp32s2.cfg"
@@ -37,11 +35,9 @@
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
     "maximum_size": 4194304,
-    "use_1200bps_touch": true,
-    "wait_for_upload_port": true,
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://deneyapkart.org/magaza/urun-deneyap-kart-mini.html",
-  "vendor": "Deneyap"
+  "url": "https://magaza.deneyapkart.org/tr/product/detail/deneyap-mini",
+  "vendor": "T3 Foundation"
 }
