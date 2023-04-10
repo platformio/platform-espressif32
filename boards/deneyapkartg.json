@@ -4,19 +4,20 @@
       "ldscript": "esp32c3_out.ld"
     },
     "core": "esp32",
-    "f_cpu": "160000000L",
-    "f_flash": "80000000L",
-    "flash_mode": "qio",
     "extra_flags": [
       "-DARDUINO_DYG",
       "-DARDUINO_USB_MODE=1",
       "-DARDUINO_USB_CDC_ON_BOOT=1"
     ],
+    "f_cpu": "160000000L",
+    "f_flash": "80000000L",
+    "flash_mode": "qio",
     "mcu": "esp32c3",
     "variant": "deneyapkartg"
   },
   "connectivity": [
-    "wifi"
+    "wifi",
+    "bluetooth"
   ],
   "debug": {
     "openocd_target": "esp32c3.cfg"
@@ -33,6 +34,6 @@
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://deneyapkart.org/en/",
-  "vendor": "Deneyap"
+  "url": "https://magaza.deneyapkart.org/tr/product/detail/deneyap-kart-g-type-c",
+  "vendor": "T3 Foundation"
 }

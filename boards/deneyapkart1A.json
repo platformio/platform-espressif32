@@ -7,6 +7,8 @@
     "extra_flags": [
       "-DARDUINO_DYDK1A",
       "-DBOARD_HAS_PSRAM",
+      "-DARDUINO_RUNNING_CORE=1",
+      "-DARDUINO_EVENT_RUNNING_CORE=1",
       "-mfix-esp32-psram-cache-issue",
       "-mfix-esp32-psram-cache-strategy=memw"
     ],
@@ -18,8 +20,7 @@
   },
   "connectivity": [
     "wifi",
-    "bluetooth",
-    "ethernet"
+    "bluetooth"
   ],
   "debug": {
     "openocd_board": "esp32-wrover.cfg"
@@ -36,6 +37,6 @@
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://deneyapkart.org/magaza/urun-deneyap-kart.html",
-  "vendor": "Deneyap"
+  "url": "https://magaza.deneyapkart.org/tr/product/detail/deneyap-kart-1a",
+  "vendor": "T3 Foundation"
 }
