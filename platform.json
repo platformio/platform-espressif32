@@ -60,7 +60,7 @@
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "11.2.0+2022r18"
+      "version": "11.2.0+2022r1"
     },
     "toolchain-xtensa-esp32s2": {
       "type": "toolchain",
