@@ -18,7 +18,7 @@
     "type": "git",
     "url": "https://github.com/tasmota/platform-espressif32.git"
   },
-  "version": "2023.01.0",
+  "version": "2023.04.00",
   "frameworks": {
     "arduino": {
       "script": "builder/frameworks/arduino.py"
@@ -60,25 +60,25 @@
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "11.2.0+2022r1"
+      "version": "12.2.0_20230208"
     },
     "toolchain-xtensa-esp32s2": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "11.2.0+2022r1"
+      "version": "12.2.0_20230208"
     },
     "toolchain-xtensa-esp32s3": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "11.2.0+2022r1"
+      "version": "12.2.0_20230208"
     },
     "toolchain-riscv32-esp": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "11.2.0+2022r1"
+      "version": "12.2.0_20230208"
     },
     "toolchain-esp32ulp": {
       "type": "toolchain",
