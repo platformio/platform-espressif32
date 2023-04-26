@@ -19,7 +19,7 @@ See `platform` [documentation](https://docs.platformio.org/en/latest/projectconf
 ```ini
 [env:stable]
 ; recommended to pin to a version, see https://github.com/platformio/platform-espressif32/releases
-; platform = espressif32^6.0.1
+; platform = espressif32 @ ^6.0.1
 platform = espressif32
 board = ...
 ...
