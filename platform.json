@@ -25,10 +25,7 @@
     },
     "espidf": {
       "package": "framework-espidf",
-      "script": "builder/frameworks/espidf.py",
-      "description": "ESP-IDF is the official development framework for the ESP32 and ESP32-S Series SoCs.",
-      "homepage": "https://docs.espressif.com/projects/esp-idf/en/latest/esp32/",
-      "title": "Espressif IoT Development Framework"
+      "script": "builder/frameworks/espidf.py"
     }
   },
   "packages": {
