@@ -5,8 +5,8 @@
     },
     "core": "esp32",
     "extra_flags": [
-      "-DBOARD_HAS_PSRAM",
       "-DARDUINO_DYMv2",
+      "-DBOARD_HAS_PSRAM",
       "-DARDUINO_USB_CDC_ON_BOOT=1"
     ],
     "f_cpu": "240000000L",
@@ -22,9 +22,7 @@
     "variant": "deneyapminiv2"
   },
   "connectivity": [
-    "wifi",
-    "bluetooth",
-    "ethernet"
+    "wifi"
   ],
   "debug": {
     "openocd_target": "esp32s2.cfg"
@@ -43,6 +41,6 @@
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://deneyapkart.org/magaza/urun-deneyap-kart-mini.html",
-  "vendor": "Deneyap"
+  "url": "https://magaza.deneyapkart.org/tr/product/detail/deneyap-mini-v2-type-c",
+  "vendor": "T3 Foundation"
 }

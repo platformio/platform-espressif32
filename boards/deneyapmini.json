@@ -21,9 +21,7 @@
     "variant": "deneyapmini"
   },
   "connectivity": [
-    "wifi",
-    "bluetooth",
-    "ethernet"
+    "wifi"
   ],
   "debug": {
     "openocd_target": "esp32s2.cfg"
@@ -42,6 +40,6 @@
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://deneyapkart.org/magaza/urun-deneyap-kart-mini.html",
-  "vendor": "Deneyap"
+  "url": "https://magaza.deneyapkart.org/tr/product/detail/deneyap-mini",
+  "vendor": "T3 Foundation"
 }

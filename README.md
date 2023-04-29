@@ -14,8 +14,12 @@ ESP32 is a series of low-cost, low-power system on a chip microcontrollers with 
 
 ## Stable version
 
+See `platform` [documentation](https://docs.platformio.org/en/latest/projectconf/sections/env/options/platform/platform.html#projectconf-env-platform) for details.
+
 ```ini
 [env:stable]
+; recommended to pin to a version, see https://github.com/platformio/platform-espressif32/releases
+; platform = espressif32 @ ^6.0.1
 platform = espressif32
 board = ...
 ...
