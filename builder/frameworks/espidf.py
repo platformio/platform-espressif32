@@ -1275,6 +1275,10 @@ if "arduino" in env.subst("$PIOFRAMEWORK"):
         "the `variant` field! The default `esp32` variant will be used."
     )
     extra_components.append(ARDUINO_FRAMEWORK_DIR)
+    # Add path to internal Arduino libraries so that the LDF will be able to find them
+    env.Append(
+        LIBSOURCE_DIRS=[os.path.join(ARDUINO_FRAMEWORK_DIR, "libraries")]
+    )
 
 print("Reading CMake configuration...")
 project_codemodel = get_cmake_code_model(
