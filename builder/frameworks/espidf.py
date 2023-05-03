@@ -84,7 +84,7 @@ BUILD_DIR = env.subst("$BUILD_DIR")
 PROJECT_DIR = env.subst("$PROJECT_DIR")
 PROJECT_SRC_DIR = env.subst("$PROJECT_SRC_DIR")
 CMAKE_API_REPLY_PATH = os.path.join(".cmake", "api", "v1", "reply")
-SDKCONFIG_PATH =  os.path.expandvars(board.get(
+SDKCONFIG_PATH = os.path.expandvars(board.get(
     "build.esp-idf.sdkconfig_path",
     os.path.join(PROJECT_DIR, "sdkconfig.%s" % env.subst("$PIOENV")),
 ))
@@ -1276,6 +1276,10 @@ if "arduino" in env.subst("$PIOFRAMEWORK"):
         "the `variant` field! The default `esp32` variant will be used."
     )
     extra_components.append(ARDUINO_FRAMEWORK_DIR)
+    # Add path to internal Arduino libraries so that the LDF will be able to find them
+    env.Append(
+        LIBSOURCE_DIRS=[os.path.join(ARDUINO_FRAMEWORK_DIR, "libraries")]
+    )
 
 print("Reading CMake configuration...")
 project_codemodel = get_cmake_code_model(
