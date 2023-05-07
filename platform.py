@@ -289,10 +289,14 @@ class Espressif32Platform(PlatformBase):
         def _parse_version(original_version):
             assert original_version
             match = re.match(r"^gcc(\d+)_(\d+)_(\d+)\-esp\-(.+)$", original_version)
-            if not match:
-                raise ValueError("Bad package version `%s`" % original_version)
-            assert len(match.groups()) == 4
-            return "%s.%s.%s+%s" % (match.groups())
+            if match:
+                assert len(match.groups()) == 4
+                return "%s.%s.%s+%s" % (match.groups())
+            match = re.match(r"esp-(\d+r\d+-\w+)-(\d+)\.(\d+)\.(\d+)", original_version)    
+            if match:
+                assert len(match.groups()) == 4
+                return "%s.%s.%s+%s" % (match.group(2),match.group(3),match.group(4),match.group(1))
+            raise ValueError("Bad package version `%s`" % original_version)
 
         if not tool_deps:
             raise ValueError(
