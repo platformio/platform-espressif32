@@ -302,16 +302,25 @@ def get_app_includes(app_config):
 
 
 def extract_defines(compile_group):
-    result = []
-    result.extend(
-        [
-            d.get("define").replace('"', '\\"').strip()
-            for d in compile_group.get("defines", [])
-        ]
-    )
+    def _normalize_define(define_string):
+        define_string = define_string.strip()
+        if "=" in define_string:
+            define, value = define_string.split("=", maxsplit=1)
+            if '"' in value and not value.startswith("\\"):
+                # Escape only raw values
+                value = value.replace('"', '\\"')
+            return (define, value)
+        return define_string
+
+    result = [
+        _normalize_define(d.get("define", ""))
+        for d in compile_group.get("defines", []) if d
+    ]
+
     for f in compile_group.get("compileCommandFragments", []):
         if f.get("fragment", "").startswith("-D"):
-            result.append(f["fragment"][2:])
+            result.append(_normalize_define(f["fragment"][2:]))
+
     return result
 
 
