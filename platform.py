@@ -288,11 +288,24 @@ class Espressif32Platform(PlatformBase):
     def extract_toolchain_versions(tool_deps):
         def _parse_version(original_version):
             assert original_version
-            match = re.match(r"^gcc(\d+)_(\d+)_(\d+)\-esp\-(.+)$", original_version)
-            if not match:
-                raise ValueError("Bad package version `%s`" % original_version)
-            assert len(match.groups()) == 4
-            return "%s.%s.%s+%s" % (match.groups())
+            version_patterns = (
+                r"^gcc(?P<MAJOR>\d+)_(?P<MINOR>\d+)_(?P<PATCH>\d+)-esp-(?P<EXTRA>.+)$",
+                r"^esp-(?P<EXTRA>.+)-(?P<MAJOR>\d+)\.(?P<MINOR>\d+)\.?(?P<PATCH>\d+)$",
+                r"^esp-(?P<MAJOR>\d+)\.(?P<MINOR>\d+)\.(?P<PATCH>\d+)(_(?P<EXTRA>.+))?$",
+            )
+            for pattern in version_patterns:
+                match = re.search(pattern, original_version)
+                if match:
+                    result = "%s.%s.%s" % (
+                        match.group("MAJOR"),
+                        match.group("MINOR"),
+                        match.group("PATCH"),
+                    )
+                    if match.group("EXTRA"):
+                        result = result + "+%s" % match.group("EXTRA")
+                    return result
+
+            raise ValueError("Bad package version `%s`" % original_version)
 
         if not tool_deps:
             raise ValueError(
