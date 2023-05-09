@@ -33,49 +33,49 @@
       "type": "framework",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/1314/framework-arduinoespressif32-release_v5.1-ff37e959a1.zip"
+      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/1341/framework-arduinoespressif32-release_v5.1-86f6b6c08b.zip"
     },
      "framework-arduino-solo1": {
       "type": "framework",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/1314/framework-arduinoespressif32-release_v5.1-ff37e959a1.zip"
+      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/1341/framework-arduinoespressif32-release_v5.1-86f6b6c08b.zip"
     },
      "framework-arduino-ITEAD": {
       "type": "framework",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/1314/framework-arduinoespressif32-release_v5.1-ff37e959a1.zip"
+      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/1341/framework-arduinoespressif32-release_v5.1-86f6b6c08b.zip"
     },
     "framework-espidf": {
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~3.50001.0"
+      "version": "https://github.com/tasmota/esp-idf/releases/download/v5.1.0.20230509/esp-idf-v5.1.0.zip"
     },
     "toolchain-xtensa-esp32": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "11.2.0+2022r1"
+      "version": "12.2.0+20230208"
     },
     "toolchain-xtensa-esp32s2": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "11.2.0+2022r1"
+      "version": "12.2.0+20230208"
     },
     "toolchain-xtensa-esp32s3": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "11.2.0+2022r1"
+      "version": "12.2.0+20230208"
     },
     "toolchain-riscv32-esp": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "11.2.0+2022r1"
+      "version": "12.2.0+20230208"
     },
     "toolchain-esp32ulp": {
       "type": "toolchain",
