@@ -84,10 +84,10 @@ BUILD_DIR = env.subst("$BUILD_DIR")
 PROJECT_DIR = env.subst("$PROJECT_DIR")
 PROJECT_SRC_DIR = env.subst("$PROJECT_SRC_DIR")
 CMAKE_API_REPLY_PATH = os.path.join(".cmake", "api", "v1", "reply")
-SDKCONFIG_PATH = board.get(
+SDKCONFIG_PATH = os.path.expandvars(board.get(
     "build.esp-idf.sdkconfig_path",
     os.path.join(PROJECT_DIR, "sdkconfig.%s" % env.subst("$PIOENV")),
-)
+))
 
 
 def get_project_lib_includes(env):
@@ -302,16 +302,25 @@ def get_app_includes(app_config):
 
 
 def extract_defines(compile_group):
-    result = []
-    result.extend(
-        [
-            d.get("define").replace('"', '\\"').strip()
-            for d in compile_group.get("defines", [])
-        ]
-    )
+    def _normalize_define(define_string):
+        define_string = define_string.strip()
+        if "=" in define_string:
+            define, value = define_string.split("=", maxsplit=1)
+            if '"' in value and not value.startswith("\\"):
+                # Escape only raw values
+                value = value.replace('"', '\\"')
+            return (define, value)
+        return define_string
+
+    result = [
+        _normalize_define(d.get("define", ""))
+        for d in compile_group.get("defines", []) if d
+    ]
+
     for f in compile_group.get("compileCommandFragments", []):
         if f.get("fragment", "").startswith("-D"):
-            result.append(f["fragment"][2:])
+            result.append(_normalize_define(f["fragment"][2:]))
+
     return result
 
 
@@ -1013,8 +1022,10 @@ def generate_mbedtls_bundle(sdk_config):
     crt_args = ["--input"]
     if sdk_config.get("MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_FULL", False):
         crt_args.append(os.path.join(default_crt_dir, "cacrt_all.pem"))
+        crt_args.append(os.path.join(default_crt_dir, "cacrt_local.pem"))
     elif sdk_config.get("MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_CMN", False):
         crt_args.append(os.path.join(default_crt_dir, "cacrt_all.pem"))
+        crt_args.append(os.path.join(default_crt_dir, "cacrt_local.pem"))
         cmd.extend(
             ["--filter", os.path.join(default_crt_dir, "cmn_crt_authorities.csv")]
         )
