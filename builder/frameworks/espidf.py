@@ -1101,6 +1101,7 @@ def install_python_deps():
         "pyparsing": ">=2.0.3,<2.4.0",
         "kconfiglib": "==13.7.1",
         "idf-component-manager": "~=1.2",
+        "esp-idf-kconfig": ">=1.1.0",
     }
 
     if IDF5:
