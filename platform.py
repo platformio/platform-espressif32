@@ -66,14 +66,14 @@ class Espressif32Platform(PlatformBase):
                 elif p in ("tool-mconf", "tool-idf") and IS_WINDOWS:
                     self.packages[p]["optional"] = False
 
-                # Use the latest toolchains available for IDF v5.0
+                # Use the latest toolchains available for IDF v5.1
                 for target in (
                     "xtensa-esp32",
                     "xtensa-esp32s2",
                     "xtensa-esp32s3",
                     "riscv32-esp"
                 ):
-                    self.packages["toolchain-%s" % target]["version"] = "11.2.0+2022r1"
+                    self.packages["toolchain-%s" % target]["version"] = "12.2.0+20230208"
 
         for available_mcu in ("esp32", "esp32s2", "esp32s3"):
             if available_mcu == mcu:
