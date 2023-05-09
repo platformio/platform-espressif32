@@ -1102,6 +1102,7 @@ def install_python_deps():
         "kconfiglib": "==13.7.1",
         "idf-component-manager": "~=1.2",
         "esp-idf-kconfig": ">=1.1.0",
+        "urllib3": "<2",
     }
 
     if IDF5:
