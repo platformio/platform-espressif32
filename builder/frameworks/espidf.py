@@ -84,7 +84,7 @@ BUILD_DIR = env.subst("$BUILD_DIR")
 PROJECT_DIR = env.subst("$PROJECT_DIR")
 PROJECT_SRC_DIR = env.subst("$PROJECT_SRC_DIR")
 CMAKE_API_REPLY_PATH = os.path.join(".cmake", "api", "v1", "reply")
-SDKCONFIG_PATH =  os.path.expandvars(board.get(
+SDKCONFIG_PATH = os.path.expandvars(board.get(
     "build.esp-idf.sdkconfig_path",
     os.path.join(PROJECT_DIR, "sdkconfig.%s" % env.subst("$PIOENV")),
 ))
@@ -302,16 +302,25 @@ def get_app_includes(app_config):
 
 
 def extract_defines(compile_group):
-    result = []
-    result.extend(
-        [
-            d.get("define").replace('"', '\\"').strip()
-            for d in compile_group.get("defines", [])
-        ]
-    )
+    def _normalize_define(define_string):
+        define_string = define_string.strip()
+        if "=" in define_string:
+            define, value = define_string.split("=", maxsplit=1)
+            if '"' in value and not value.startswith("\\"):
+                # Escape only raw values
+                value = value.replace('"', '\\"')
+            return (define, value)
+        return define_string
+
+    result = [
+        _normalize_define(d.get("define", ""))
+        for d in compile_group.get("defines", []) if d
+    ]
+
     for f in compile_group.get("compileCommandFragments", []):
         if f.get("fragment", "").startswith("-D"):
-            result.append(f["fragment"][2:])
+            result.append(_normalize_define(f["fragment"][2:]))
+
     return result
 
 
@@ -1276,6 +1285,10 @@ if "arduino" in env.subst("$PIOFRAMEWORK"):
         "the `variant` field! The default `esp32` variant will be used."
     )
     extra_components.append(ARDUINO_FRAMEWORK_DIR)
+    # Add path to internal Arduino libraries so that the LDF will be able to find them
+    env.Append(
+        LIBSOURCE_DIRS=[os.path.join(ARDUINO_FRAMEWORK_DIR, "libraries")]
+    )
 
 print("Reading CMake configuration...")
 project_codemodel = get_cmake_code_model(
