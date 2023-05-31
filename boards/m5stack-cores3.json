@@ -2,11 +2,11 @@
   "build": {
     "arduino":{
       "ldscript": "esp32s3_out.ld",
-      "partitions": "default_8MB.csv"
+      "partitions": "default_16MB.csv"
     },
     "core": "esp32",
     "extra_flags": [
-      "-DARDUINO_ESP32S3_DEV",
+      "-DARDUINO_M5STACK_CORES3",
       "-DARDUINO_USB_MODE=1",
       "-DARDUINO_RUNNING_CORE=1",
       "-DARDUINO_EVENT_RUNNING_CORE=1"
@@ -17,7 +17,7 @@
     "hwids": [
       [
         "0x303A",
-        "0x1001"
+        "0x8119"
       ]
     ],
     "mcu": "esp32s3",
@@ -39,11 +39,11 @@
   ],
   "name": "M5Stack CoreS3",
   "upload": {
-    "flash_size": "8MB",
+    "flash_size": "16MB",
     "maximum_ram_size": 327680,
     "maximum_size": 8388608,
     "require_upload_port": true,
-    "speed": 460800
+    "speed": 921600
   },
   "url": "https://docs.m5stack.com/en/core/CoreS3",
   "vendor": "M5Stack"
