@@ -1189,13 +1189,13 @@ def ensure_python_venv_available():
                 )
                 env.Exit(1)
 
-            # Use the built-in PlatformIO Python to create a standalone IDF virtual env
-            env.Execute(
-                env.VerboseAction(
-                    '"$PYTHONEXE" -m venv --clear "%s"' % venv_dir,
-                "Creating a new virtual environment for IDF Python dependencies",
-                )
+        # Use the built-in PlatformIO Python to create a standalone IDF virtual env
+        env.Execute(
+            env.VerboseAction(
+                '"$PYTHONEXE" -m venv --clear "%s"' % venv_dir,
+            "Creating a new virtual environment for IDF Python dependencies",
             )
+        )
 
         assert os.path.isfile(
             pip_path
