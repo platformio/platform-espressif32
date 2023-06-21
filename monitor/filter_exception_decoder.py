@@ -17,7 +17,7 @@ import re
 import subprocess
 import sys
 
-from platformio.project.exception import PlatformioException
+from platformio.exception import PlatformioException
 from platformio.public import (
     DeviceMonitorFilterBase,
     load_build_metadata,
