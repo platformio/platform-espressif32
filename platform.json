@@ -78,7 +78,7 @@
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~3.40403.0"
+      "version": "~3.40405.0"
     },
     "tool-esptoolpy": {
       "type": "uploader",
