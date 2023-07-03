@@ -25,7 +25,7 @@
     "wifi"
   ],
   "debug": {
-    "openocd_board": "esp32s2.cfg"
+    "openocd_target": "esp32s2.cfg"
   },
   "frameworks": [
     "arduino",
