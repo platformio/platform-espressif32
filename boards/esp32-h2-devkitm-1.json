@@ -2,7 +2,14 @@
   "build": {
     "core": "esp32",
     "f_cpu": "96000000L",
-    "f_flash": "64000000L",
+    "f_flash": "48000000L",
+    "flash_freq": "64000000L",
+    "hwids": [
+      [
+        "0x303A",
+        "0x1001"
+      ]
+    ],
     "flash_mode": "qio",
     "mcu": "esp32h2",
     "variant": "esp32h2"
@@ -20,6 +27,7 @@
   "name": "Espressif ESP32-H2-DevKit",
   "upload": {
     "flash_size": "4MB",
+    "flash_freq": "64000000L",
     "maximum_ram_size": 327680,
     "maximum_size": 4194304,
     "require_upload_port": true,
