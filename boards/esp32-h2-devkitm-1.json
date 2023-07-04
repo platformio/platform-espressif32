@@ -4,6 +4,7 @@
     "f_cpu": "96000000L",
     "f_flash": "48000000L",
     "flash_freq": "64000000L",
+    "img_freq": "48000000L",
     "hwids": [
       [
         "0x303A",
