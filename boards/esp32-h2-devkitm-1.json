@@ -1,18 +1,21 @@
 {
   "build": {
+    "arduino": {
+      "ldscript": "esp32h2_out.ld"
+    },
     "core": "esp32",
     "f_cpu": "96000000L",
     "flash_freq": "64000000L",
     "img_freq": "48000000L",
+    "flash_mode": "qio",
+    "mcu": "esp32h2",
+    "variant": "esp32h2"
     "hwids": [
       [
         "0x303A",
         "0x1001"
       ]
-    ],
-    "flash_mode": "qio",
-    "mcu": "esp32h2",
-    "variant": "esp32h2"
+    ]
   },
   "connectivity": [
     "wifi"
