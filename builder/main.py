@@ -73,15 +73,15 @@ def _get_board_memory_type(env):
 def _get_board_img_freq(env):
     board_config = env.BoardConfig()
     img_freq = board_config.get("build.img_freq", "")
-    img_freq = str(img_freq).replace("L", "")
-    print("img_freq: ", img_freq)
     if img_freq =="":
-        img_freq = env.subst("$BOARD_F_FLASH")
-        img_freq = str(img_freq).replace("L", "")
+        img_freq = board_config.get("build.f_flash", "")
+    img_freq = str(img_freq).replace("L", "")
     return str(int(int(img_freq) / 1000000)) + "m"
 
+
 def _get_board_f_flash(env):
-    frequency = env.subst("$BOARD_F_FLASH")
+    board_config = env.BoardConfig()
+    frequency = board_config.get("build.f_flash", "")
     frequency = str(frequency).replace("L", "")
     return str(int(int(frequency) / 1000000)) + "m"
 
@@ -220,8 +220,8 @@ if "INTEGRATION_EXTRA_DATA" not in env:
 
 env.Replace(
     __get_board_boot_mode=_get_board_boot_mode,
-    __get_board_img_freq=_get_board_img_freq,
     __get_board_f_flash=_get_board_f_flash,
+    __get_board_img_freq=_get_board_img_freq,
     __get_board_flash_mode=_get_board_flash_mode,
     __get_board_memory_type=_get_board_memory_type,
 
