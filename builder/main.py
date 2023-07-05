@@ -273,7 +273,7 @@ env.Append(
                 '"$PYTHONEXE" "$OBJCOPY"',
                 "--chip", mcu, "elf2image",
                 "--dont-append-digest",
-                "--flash_mode", "keep",
+                "--flash_mode", "${__get_board_flash_mode(__env__)}",
                 "--flash_freq", "keep",
                 "--flash_size", board.get("upload.flash_size", "4MB"),
                 "-o", "$TARGET", "$SOURCES"
@@ -407,7 +407,7 @@ elif upload_protocol == "esptool":
             "--before", board.get("upload.before_reset", "default_reset"),
             "--after", board.get("upload.after_reset", "hard_reset"),
             "write_flash", "-z",
-            "--flash_mode", "keep",
+            "--flash_mode", "${__get_board_flash_mode(__env__)}",
             "--flash_freq", "keep",
             "--flash_size", board.get("upload.flash_size", "detect")
         ],
