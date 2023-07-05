@@ -74,10 +74,6 @@ def _get_board_memory_type(env):
 def _get_board_f_flash(env):
     frequency = env.subst("$BOARD_F_FLASH")
     frequency = str(frequency).replace("L", "")
-    img_freq = str(env.BoardConfig().get("build.arduino.img_freq", ""))
-    if not "" in img_freq:
-        frequency = str(img_freq).replace("L", "")
-        print("Frequency img_frq: ", img_freq) 
     return str(int(int(frequency) / 1000000)) + "m"
 
 
