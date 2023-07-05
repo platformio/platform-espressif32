@@ -9,7 +9,7 @@
     "img_freq": "48000000L",
     "flash_mode": "qio",
     "mcu": "esp32h2",
-    "variant": "esp32h2"
+    "variant": "esp32h2",
     "hwids": [
       [
         "0x303A",
