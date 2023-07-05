@@ -274,7 +274,7 @@ env.Append(
                 "--chip", mcu, "elf2image",
                 "--dont-append-digest",
                 "--flash_mode", "${__get_board_flash_mode(__env__)}",
-                "--flash_freq", "keep",
+                "--flash_freq", "${__get_board_f_flash(__env__)}",
                 "--flash_size", board.get("upload.flash_size", "4MB"),
                 "-o", "$TARGET", "$SOURCES"
             ]), "Building $TARGET"),
@@ -407,7 +407,7 @@ elif upload_protocol == "esptool":
             "--before", board.get("upload.before_reset", "default_reset"),
             "--after", board.get("upload.after_reset", "hard_reset"),
             "write_flash", "-z",
-            "--flash_mode", "${__get_board_flash_mode(__env__)}",
+            "--flash_mode", "keep",
             "--flash_freq", "keep",
             "--flash_size", board.get("upload.flash_size", "detect")
         ],
@@ -425,8 +425,8 @@ elif upload_protocol == "esptool":
                 "--before", board.get("upload.before_reset", "default_reset"),
                 "--after", board.get("upload.after_reset", "hard_reset"),
                 "write_flash", "-z",
-                "--flash_mode", "${__get_board_flash_mode(__env__)}",
-                "--flash_freq", "${__get_board_f_flash(__env__)}",
+                "--flash_mode", "keep",
+                "--flash_freq", "keep",
                 "--flash_size", board.get("upload.flash_size", "detect"),
                 "$FS_START"
             ],
