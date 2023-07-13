@@ -534,6 +534,12 @@ if any("-Wl,-T" in f for f in env.get("LINKFLAGS", [])):
           "Please use 'board_build.ldscript' option in your 'platformio.ini' file.")
 
 #
+# Override memory inspection behavior
+#
+
+env.SConscript("sizedata.py", exports="env")
+
+#
 # Default targets
 #
 
