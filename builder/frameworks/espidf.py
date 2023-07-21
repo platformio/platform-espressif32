@@ -1547,6 +1547,7 @@ if "__test" not in COMMAND_LINE_TARGETS or env.GetProjectOption(
         + get_project_lib_includes(env)
     )
 
+    project_env.ProcessFlags(env.get("SRC_BUILD_FLAGS"))
     env.Append(
         PIOBUILDFILES=compile_source_files(
             target_configs.get(project_target_name),
