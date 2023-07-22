@@ -129,7 +129,6 @@ def compile_ulp_binary():
             os.path.join(ULP_BUILD_DIR, "ulp_main.h"),
             os.path.join(ULP_BUILD_DIR, "ulp_main.ld"),
             os.path.join(ULP_BUILD_DIR, "ulp_main.bin"),
-            os.path.join(ULP_BUILD_DIR, "esp32.ulp.ld"),
         ],
         None,
         ulp_env.VerboseAction(" ".join(cmd), "Generating ULP project files $TARGETS"),
