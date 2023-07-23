@@ -14,6 +14,7 @@
     "openocd_target": "esp32c2.cfg"
   },
   "frameworks": [
+    "arduino",
     "espidf"
   ],
   "name": "Espressif ESP32-C2-DevKitM-1",
