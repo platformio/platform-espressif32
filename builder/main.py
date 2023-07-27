@@ -162,12 +162,17 @@ def _parse_partitions(env):
 def _update_max_upload_size(env):
     if not env.get("PARTITIONS_TABLE_CSV"):
         return
-    sizes = [
-        _parse_size(p["size"]) for p in _parse_partitions(env)
+    sizes = {
+        p["subtype"]: _parse_size(p["size"]) for p in _parse_partitions(env)
         if p["type"] in ("0", "app")
-    ]
-    if sizes:
-        board.update("upload.maximum_size", max(sizes))
+    }
+
+    # One of the `factory` or `ota_0` partitions is used to determine available memory
+    # size. If both partitions are set, then the `factory` partition is used by default
+    # https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/partition-tables.html#subtype
+    max_upload_size = sizes.get("factory", sizes.get("ota_0", 0))
+    if max_upload_size:
+        board.update("upload.maximum_size", max_upload_size)
 
 
 def _to_unix_slashes(path):
