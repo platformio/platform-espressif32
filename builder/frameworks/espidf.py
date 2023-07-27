@@ -343,6 +343,17 @@ def extract_link_args(target_config):
 
     link_args = {"LINKFLAGS": [], "LIBS": [], "LIBPATH": [], "__LIB_DEPS": []}
 
+    _add_to_libpath(os.path.join(FRAMEWORK_DIR, "components", "bootloader", "subproject", "main", "ld", mcu), link_args)
+    _add_to_libpath(os.path.join(FRAMEWORK_DIR, "components", "esp_phy", "lib", mcu), link_args)
+    _add_to_libpath(os.path.join(FRAMEWORK_DIR, "components", "esp_rom", mcu, "ld"), link_args)
+    _add_to_libpath(os.path.join(FRAMEWORK_DIR, "components", "soc", mcu, "ld"), link_args)
+
+#def generate_project_ld_script(sdk_config, ignore_targets=None):
+#    ignore_targets = ignore_targets or []
+#    linker_script_fragments = extract_linker_script_fragments(
+#        os.path.join(FRAMEWORK_DIR, "components"), sdk_config
+#    )
+
     for f in target_config.get("link", {}).get("commandFragments", []):
         fragment = f.get("fragment", "").strip()
         fragment_role = f.get("role", "").strip()
