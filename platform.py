@@ -17,7 +17,6 @@ import urllib
 import sys
 import json
 import re
-import requests
 
 from platformio.public import PlatformBase, to_unix_path
 
@@ -349,16 +348,15 @@ class Espressif32Platform(PlatformBase):
             )
 
         index_file_url = _prepare_url_for_index_file(url_items)
-        r = requests.get(index_file_url, timeout=10)
-        if r.status_code != 200:
-            raise ValueError(
-                (
-                    "Failed to download package index file due to a bad response (%d) "
-                    "from the remote `%s`"
-                )
-                % (r.status_code, index_file_url)
-            )
-        return r.json()
+
+        try:
+            from platformio.public import fetch_http_content
+            content = fetch_http_content(index_file_url)
+        except ImportError:
+            import requests
+            content = requests.get(index_file_url, timeout=5).text
+
+        return json.loads(content)
 
     def configure_arduino_toolchains(self, package_index):
         if not package_index:
