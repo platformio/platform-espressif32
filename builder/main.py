@@ -460,6 +460,28 @@ elif upload_protocol == "mbctool":
         env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")
     ]
 
+elif upload_protocol == "dfu":
+    # C:\Users\ROOT\AppData\Local\Arduino15\packages\arduino\tools\dfu-util\0.11.0-arduino5/dfu-util --device 0x2341:0x0070 -D C:\Users\ROOT\AppData\Local\Temp\arduino_build_789426/sketch_jul31a.ino.bin -Q
+
+    hwids = board.get("build.hwids", [["0x2341", "0x0070"]])
+    vid = hwids[0][0]
+    pid = hwids[0][1]
+
+    upload_actions = [env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")]
+
+    env.Replace(
+        UPLOADER=join(
+            platform.get_package_dir("tool-dfuutil-arduino") or "", "dfu-util"
+        ),
+        UPLOADERFLAGS=[
+            "-d",
+            ",".join(["%s:%s" % (hwid[0], hwid[1]) for hwid in hwids]),
+            "-Q",
+            "-D"
+        ],
+        UPLOADCMD='"$UPLOADER" $UPLOADERFLAGS "$SOURCE"',
+    )
+
 
 elif upload_protocol in debug_tools:
     openocd_args = ["-d%d" % (2 if int(ARGUMENTS.get("PIOVERBOSE", 0)) else 1)]

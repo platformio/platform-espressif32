@@ -67,7 +67,7 @@
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~3.20009.0"
+      "version": "~3.20011.0"
     },
     "framework-arduino-mbcwb": {
       "type": "framework",
@@ -80,7 +80,7 @@
       "optional": true,
       "owner": "platformio",
       "version": "~3.50002.0",
-      "optionalVersions": ["~3.40404.0"]
+      "optionalVersions": ["~3.40405.0"]
     },
     "tool-esptoolpy": {
       "type": "uploader",
@@ -91,6 +91,12 @@
       "optional": true,
       "owner": "meteca",
       "version": ">=2.0.0"
+    },
+    "tool-dfuutil-arduino": {
+      "type": "uploader",
+      "optional": true,
+      "owner": "platformio",
+      "version": "~1.11.0"
     },
     "tool-openocd-esp32": {
       "type": "debugger",
