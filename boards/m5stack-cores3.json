@@ -1,6 +1,6 @@
 {
   "build": {
-    "arduino":{
+    "arduino": {
       "ldscript": "esp32s3_out.ld",
       "partitions": "default_16MB.csv"
     },
@@ -27,10 +27,6 @@
     "wifi"
   ],
   "debug": {
-    "default_tool": "esp-builtin",
-    "onboard_tools": [
-      "esp-builtin"
-    ],
     "openocd_target": "esp32s3.cfg"
   },
   "frameworks": [
@@ -41,7 +37,7 @@
   "upload": {
     "flash_size": "16MB",
     "maximum_ram_size": 327680,
-    "maximum_size": 8388608,
+    "maximum_size": 16777216,
     "require_upload_port": true,
     "speed": 921600
   },
