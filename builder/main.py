@@ -145,11 +145,14 @@ def _update_max_upload_size(env):
     }
 
     # One of the `factory` or `ota_0` partitions is used to determine available memory
-    # size. If both partitions are set, then the `factory` partition is used by default
+    # size. If both partitions are set, we should prefer the `factory`, but there are
+    # cases (e.g. Adafruit's `partitions-4MB-tinyuf2.csv`) that uses the `factory`
+    # partition for their UF2 bootloader. So let's use the first match
     # https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/partition-tables.html#subtype
-    max_upload_size = sizes.get("factory", sizes.get("ota_0", 0))
-    if max_upload_size:
-        board.update("upload.maximum_size", max_upload_size)
+    for p in  _parse_partitions(env):
+        if p["type"] in ("0", "app") and p["subtype"] in ("factory", "ota_0"):
+            board.update("upload.maximum_size", _parse_size(p["size"]))
+            break
 
 
 def _to_unix_slashes(path):
