@@ -88,6 +88,12 @@
       "owner": "tasmota",
       "version": "https://github.com/tasmota/esptool/releases/download/v4.6.2/esptool-4.6.2.zip"
     },
+    "tool-dfuutil-arduino": {
+      "type": "uploader",
+      "optional": true,
+      "owner": "platformio",
+      "version": "~1.11.0"
+    },
     "tool-openocd-esp32": {
       "type": "debugger",
       "optional": true,
