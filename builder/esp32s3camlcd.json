@@ -1,0 +1,49 @@
+{
+  "build": {
+    "arduino":{
+      "ldscript": "esp32_out.ld",
+      "memory_type": "opi_opi"
+    },
+    "boot": "opi",
+    "core": "esp32",
+    "extra_flags": [
+      "-DARDUINO_RUNNING_CORE=1",
+      "-DARDUINO_EVENT_RUNNING_CORE=1",
+      "-DBOARD_HAS_PSRAM",
+      "-DARDUINO_ESP32S3_CAM_LCD",
+      "-DARDUINO_USB_MODE=1"
+    ],
+    "f_cpu": "240000000L",
+    "f_flash": "80000000L",
+    "flash_mode": "dout",
+    "hwids": [
+      [
+        "0X303A",
+        "0x1001"
+      ]
+    ],
+    "mcu": "esp32s3",
+    "variant": "esp32s3camlcd"
+  },
+  "connectivity": [
+    "wifi",
+    "bluetooth"
+  ],
+  "debug": {
+    "openocd_target": "esp32s3.cfg"
+  },
+  "frameworks": [
+    "arduino",
+    "espidf"
+  ],
+  "name": "ESP32S3 CAM LCD",
+  "upload": {
+    "flash_size": "8MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 8388608,
+    "require_upload_port": true,
+    "speed": 921600
+  },
+  "url": "https://www.espressif.com/en/news/Maple_Eye_ESP32-S3",
+  "vendor": "Espressif"
+}
