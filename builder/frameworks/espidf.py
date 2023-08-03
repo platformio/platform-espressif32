@@ -624,6 +624,7 @@ def prepare_build_envs(config, default_env, debug_allowed=True):
         defines = extract_defines(cg)
         compile_commands = cg.get("compileCommandFragments", [])
         build_env = default_env.Clone()
+        build_env.SetOption("implicit_cache", 1)
         for cc in compile_commands:
             build_flags = cc.get("fragment")
             if not build_flags.startswith("-D"):
