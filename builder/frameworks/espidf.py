@@ -343,11 +343,6 @@ def extract_link_args(target_config):
 
     link_args = {"LINKFLAGS": [], "LIBS": [], "LIBPATH": [], "__LIB_DEPS": []}
 
-    _add_to_libpath(os.path.join(FRAMEWORK_DIR, "components", "bootloader", "subproject", "main", "ld", mcu), link_args)
-    _add_to_libpath(os.path.join(FRAMEWORK_DIR, "components", "esp_phy", "lib", mcu), link_args)
-    _add_to_libpath(os.path.join(FRAMEWORK_DIR, "components", "esp_rom", mcu, "ld"), link_args)
-    _add_to_libpath(os.path.join(FRAMEWORK_DIR, "components", "soc", mcu, "ld"), link_args)
-
     for f in target_config.get("link", {}).get("commandFragments", []):
         fragment = f.get("fragment", "").strip()
         fragment_role = f.get("role", "").strip()
@@ -356,7 +351,7 @@ def extract_link_args(target_config):
         args = click.parser.split_arg_string(fragment)
         if fragment_role == "flags":
             link_args["LINKFLAGS"].extend(args)
-        elif fragment_role == "libraries":
+        elif fragment_role in ("libraries", "libraryPath"):
             if fragment.startswith("-l"):
                 link_args["LIBS"].extend(args)
             elif fragment.startswith("-L"):
@@ -629,6 +624,7 @@ def prepare_build_envs(config, default_env, debug_allowed=True):
         defines = extract_defines(cg)
         compile_commands = cg.get("compileCommandFragments", [])
         build_env = default_env.Clone()
+        build_env.SetOption("implicit_cache", 1)
         for cc in compile_commands:
             build_flags = cc.get("fragment")
             if not build_flags.startswith("-D"):
@@ -1108,9 +1104,9 @@ def install_python_deps():
         "cryptography": "~=41.0.1" if IDF5 else ">=2.1.4,<35.0.0",
         "future": ">=0.18.3",
         "pyparsing": "~=3.0.9" if IDF5 else ">=2.0.3,<2.4.0",
-        "esp-idf-kconfig": "~=1.1.0",
         "kconfiglib": "~=14.1.0" if IDF5 else "~=13.7.1",
         "idf-component-manager": "~=1.2.3" if IDF5 else "~=1.0",
+        "esp-idf-kconfig": "~=1.2.0"
     }
 
     python_exe_path = get_python_exe()
@@ -1550,7 +1546,7 @@ if "__test" not in COMMAND_LINE_TARGETS or env.GetProjectOption(
     # Add include dirs from PlatformIO build system to project CPPPATH so
     # they're visible to PIOBUILDFILES
     project_env.AppendUnique(
-        CPPPATH=["$PROJECT_INCLUDE_DIR", "$PROJECT_SRC_DIR"]
+        CPPPATH=["$PROJECT_INCLUDE_DIR", "$PROJECT_SRC_DIR", "$PROJECT_DIR"]
         + get_project_lib_includes(env)
     )
 
