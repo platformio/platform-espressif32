@@ -351,7 +351,7 @@ def extract_link_args(target_config):
         args = click.parser.split_arg_string(fragment)
         if fragment_role == "flags":
             link_args["LINKFLAGS"].extend(args)
-        elif fragment_role == "libraries":
+        elif fragment_role in ("libraries", "libraryPath"):
             if fragment.startswith("-l"):
                 link_args["LIBS"].extend(args)
             elif fragment.startswith("-L"):
@@ -1104,6 +1104,7 @@ def install_python_deps():
         "pyparsing": "~=3.0.9" if IDF5 else ">=2.0.3,<2.4.0",
         "kconfiglib": "~=14.1.0" if IDF5 else "~=13.7.1",
         "idf-component-manager": "~=1.2.3" if IDF5 else "~=1.0",
+        "esp-idf-kconfig": "~=1.2.0"
     }
 
     python_exe_path = get_python_exe()
@@ -1543,7 +1544,7 @@ if "__test" not in COMMAND_LINE_TARGETS or env.GetProjectOption(
     # Add include dirs from PlatformIO build system to project CPPPATH so
     # they're visible to PIOBUILDFILES
     project_env.AppendUnique(
-        CPPPATH=["$PROJECT_INCLUDE_DIR", "$PROJECT_SRC_DIR"]
+        CPPPATH=["$PROJECT_INCLUDE_DIR", "$PROJECT_SRC_DIR", "$PROJECT_DIR"]
         + get_project_lib_includes(env)
     )
 

@@ -34,28 +34,28 @@
       "type": "toolchain",
       "owner": "espressif",
       "version": "8.4.0+2021r2-patch5",
-      "optionalVersions": ["11.2.0+2022r1"]
+      "optionalVersions": ["12.2.0+20230208"]
     },
     "toolchain-xtensa-esp32s2": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
       "version": "8.4.0+2021r2-patch5",
-      "optionalVersions": ["11.2.0+2022r1"]
+      "optionalVersions": ["12.2.0+20230208"]
     },
      "toolchain-xtensa-esp32s3": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
       "version": "8.4.0+2021r2-patch5",
-      "optionalVersions": ["11.2.0+2022r1"]
+      "optionalVersions": ["12.2.0+20230208"]
     },
     "toolchain-riscv32-esp": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
       "version": "8.4.0+2021r2-patch5",
-      "optionalVersions": ["11.2.0+2022r1"]
+      "optionalVersions": ["12.2.0+20230208"]
     },
     "toolchain-esp32ulp": {
       "type": "toolchain",
@@ -79,7 +79,7 @@
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~3.50002.0",
+      "version": "~3.50100.0",
       "optionalVersions": ["~3.40405.0"]
     },
     "tool-esptoolpy": {
