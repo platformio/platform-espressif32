@@ -1,0 +1,35 @@
+{
+  "build": {
+    "arduino":{
+      "ldscript": "esp32_out.ld",
+      "partitions": "minimal.csv"
+    },
+    "core": "esp32",
+    "extra_flags": "-DARDUINO_UBLOX_NINA_W10",
+    "f_cpu": "240000000L",
+    "f_flash": "40000000L",
+    "flash_mode": "dio",
+    "mcu": "esp32",
+    "variant": "nina_w10"
+  },
+  "connectivity": [
+    "wifi",
+    "bluetooth",
+    "ethernet",
+    "can"
+  ],
+  "frameworks": [
+    "arduino",
+    "espidf"
+  ],
+  "name": "u-blox NINA-W10 series",
+  "upload": {
+    "flash_size": "2MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 2097152,
+    "require_upload_port": true,
+    "speed": 460800
+  },
+  "url": "https://www.u-blox.com/en/product/nina-w10-series",
+  "vendor": "u-blox"
+}

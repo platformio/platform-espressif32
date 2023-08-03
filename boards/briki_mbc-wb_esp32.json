@@ -1,0 +1,41 @@
+{
+  "build": {
+    "arduino":{
+      "ldscript": "esp32_out.ld"
+    },
+    "core": "mbcwb",
+    "extra_flags":  "-DBRIKI_MBC_WB_ESP -DBRIKI_MBC_WB -w",
+    "f_cpu": "240000000L",
+    "f_flash": "80000000L",
+    "flash_mode": "dio",
+    "mcu": "esp32",
+    "variant": "briki_mbcwb_esp32",
+    "partitions": "8MB_ffat.csv"
+  },
+  "connectivity": [
+    "wifi",
+    "bluetooth",
+    "ethernet",
+    "can"
+  ],
+  "debug": {
+    "openocd_board": "esp-wroom-32.cfg"
+  },
+  "frameworks": [
+    "arduino"
+  ],
+  "name": "Briki MBC-WB - ESP32",
+  "upload": {
+    "flash_size": "8MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 3407872,
+    "protocol": "mbctool",
+    "protocols": [
+      "mbctool"
+    ],
+    "require_upload_port": true,
+    "speed": 1500000
+  },
+  "url": "https://briki.org",
+  "vendor": "meteca"
+}

@@ -1,0 +1,48 @@
+{
+  "build": {
+    "arduino":{
+      "ldscript": "esp32s2_out.ld",
+      "partitions": "ffat.csv"
+    },
+    "core": "esp32",
+    "extra_flags": [
+      "-DARDUINO_MICROS2",
+      "-DBOARD_HAS_PSRAM",
+      "-DARDUINO_USB_CDC_ON_BOOT=1",
+      "-DARDUINO_USB_MSC_ON_BOOT=1"
+    ],
+    "f_cpu": "240000000L",
+    "f_flash": "80000000L",
+    "flash_mode": "dio",
+    "hwids": [
+      [
+        "0x239A",
+        "0x80C5"
+      ]
+    ],
+    "mcu": "esp32s2",
+    "variant": "micro_s2"
+  },
+  "connectivity": [
+    "wifi"
+  ],
+  "debug": {
+    "openocd_target": "esp32s2.cfg"
+  },
+  "frameworks": [
+    "arduino",
+    "espidf"
+  ],
+  "name": "microS2",
+  "upload": {
+    "flash_size": "16MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 16777216,
+    "use_1200bps_touch": true,
+    "wait_for_upload_port": true,
+    "require_upload_port": true,
+    "speed": 460800
+  },
+  "url": "https://github.com/MicroDev1/microS2",
+  "vendor": "microS2"
+}
