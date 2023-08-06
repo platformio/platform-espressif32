@@ -162,20 +162,12 @@ def _parse_partitions(env):
 def _update_max_upload_size(env):
     if not env.get("PARTITIONS_TABLE_CSV"):
         return
-    sizes = {
-        p["subtype"]: _parse_size(p["size"]) for p in _parse_partitions(env)
+    sizes = [
+        _parse_size(p["size"]) for p in _parse_partitions(env)
         if p["type"] in ("0", "app")
-    }
-
-    # One of the `factory` or `ota_0` partitions is used to determine available memory
-    # size. If both partitions are set, we should prefer the `factory`, but there are
-    # cases (e.g. Adafruit's `partitions-4MB-tinyuf2.csv`) that uses the `factory`
-    # partition for their UF2 bootloader. So let's use the first match
-    # https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/partition-tables.html#subtype
-    for p in  _parse_partitions(env):
-        if p["type"] in ("0", "app") and p["subtype"] in ("factory", "ota_0"):
-            board.update("upload.maximum_size", _parse_size(p["size"]))
-            break
+    ]
+    if sizes:
+        board.update("upload.maximum_size", max(sizes))
 
 
 def _to_unix_slashes(path):
