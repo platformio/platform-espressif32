@@ -14,7 +14,6 @@ jobs:
       matrix:
         os: [ubuntu-22.04, windows-2022, macOS-12]
         example:
-          - "examples/arduino-ble5-advertising"
           - "examples/arduino-blink"
           - "examples/arduino-rmt-blink"
           - "examples/arduino-usb-keyboard"
