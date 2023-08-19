@@ -79,7 +79,7 @@ def install_python_deps():
     deps = {
         "wheel": ">=0.35.1",
         "zopfli": ">=0.2.2",
-        "tasmota-metrics": ">=0.3.3"
+        "tasmota-metrics": ">=0.4.2"
     }
 
     installed_packages = _get_installed_pip_packages()
