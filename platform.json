@@ -63,6 +63,18 @@
       "owner": "platformio",
       "version": "~1.23500.0"
     },
+    "tool-xtensa-esp-elf-gdb": {
+      "type": "debugger",
+      "optional": true,
+      "owner": "espressif",
+      "version": "~12.1.0+20221002"
+    },
+    "tool-riscv32-esp-elf-gdb": {
+      "type": "debugger",
+      "optional": true,
+      "owner": "espressif",
+      "version": "~12.1.0+20221002"
+    },
     "framework-arduinoespressif32": {
       "type": "framework",
       "optional": true,
@@ -79,7 +91,7 @@
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~3.50101.0",
+      "version": "~3.50100.0",
       "optionalVersions": ["~3.40405.0"]
     },
     "tool-esptoolpy": {

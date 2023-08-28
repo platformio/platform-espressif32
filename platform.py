@@ -56,7 +56,7 @@ class Espressif32Platform(PlatformBase):
             "board_build.core", board_config.get("build.core", "arduino")
         ).lower()
 
-        if len(frameworks) == 1 and "arduino" in frameworks and build_core == "esp32":
+        if frameworks == ["arduino"] and build_core == "esp32":
             # In case the upstream Arduino framework is specified in the configuration
             # file then we need to dynamically extract toolchain versions from the
             # Arduino index file. This feature can be disabled via a special option:
@@ -93,6 +93,17 @@ class Espressif32Platform(PlatformBase):
                         sys.exit(1)
 
         if "espidf" in frameworks:
+            if frameworks == ["espidf"]:
+                # Starting from v12, Espressif's toolchains are shipped without
+                # bundled GDB. Instead, it's distributed as separate packages for Xtensa
+                # and RISC-V targets. Currently only IDF depends on the latest toolchain
+                for gdb_package in ("tool-xtensa-esp-elf-gdb", "tool-riscv32-esp-elf-gdb"):
+                    self.packages[gdb_package]["optional"] = False
+                    if IS_WINDOWS:
+                        # Note: On Windows GDB v12 is not able to
+                        # launch a GDB server in pipe mode while v11 works fine
+                        self.packages[gdb_package]["version"] = "~11.2.0"
+
             # Common packages for IDF and mixed Arduino+IDF projects
             for p in self.packages:
                 if p in ("tool-cmake", "tool-ninja", "toolchain-esp32ulp"):
@@ -112,6 +123,11 @@ class Espressif32Platform(PlatformBase):
                     "riscv32-esp"
                 ):
                     self.packages["toolchain-%s" % target]["version"] = "12.2.0+20230208"
+
+        if "arduino" in frameworks:
+            # Disable standalone GDB packages for Arduino and Arduino/IDF projects
+            for gdb_package in ("tool-xtensa-esp-elf-gdb", "tool-riscv32-esp-elf-gdb"):
+                self.packages.pop(gdb_package, None)
 
         for available_mcu in ("esp32", "esp32s2", "esp32s3"):
             if available_mcu == mcu:

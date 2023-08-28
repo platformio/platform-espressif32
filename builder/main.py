@@ -230,7 +230,16 @@ env.Replace(
     AS="%s-elf-as" % toolchain_arch,
     CC="%s-elf-gcc" % toolchain_arch,
     CXX="%s-elf-g++" % toolchain_arch,
-    GDB="%s-elf-gdb" % toolchain_arch,
+    GDB=join(
+        platform.get_package_dir(
+            "tool-riscv32-esp-elf-gdb"
+            if mcu in ("esp32c3", "esp32c6")
+            else "tool-xtensa-esp-elf-gdb"
+        )
+        or "",
+        "bin",
+        "%s-elf-gdb" % toolchain_arch,
+    ) if env.get("PIOFRAMEWORK") == ["espidf"] else "%s-elf-gdb" % toolchain_arch,
     OBJCOPY=join(
         platform.get_package_dir("tool-esptoolpy") or "", "esptool.py"),
     RANLIB="%s-elf-ranlib" % toolchain_arch,
@@ -282,7 +291,7 @@ env.Append(
     BUILDERS=dict(
         ElfToBin=Builder(
             action=env.VerboseAction(" ".join([
-                '"$PYTHONEXE" "$OBJCOPY"',
+                        '"$PYTHONEXE" "$OBJCOPY"',
                 "--chip", mcu, "elf2image",
                 "--flash_mode", "${__get_board_flash_mode(__env__)}",
                 "--flash_freq", "${__get_board_f_flash(__env__)}",
