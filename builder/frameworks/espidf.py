@@ -27,6 +27,7 @@ import sys
 import shutil
 import os
 import pkg_resources
+import platform as sys_platform
 
 import click
 import semantic_version
@@ -1108,6 +1109,9 @@ def install_python_deps():
         "idf-component-manager": "~=1.2.3" if IDF5 else "~=1.0",
         "esp-idf-kconfig": "~=1.2.0"
     }
+
+    if sys_platform.system() == "Darwin" and "arm" in sys_platform.machine().lower():
+        deps["chardet"] = ">=3.0.2,<4"
 
     python_exe_path = get_python_exe()
     installed_packages = _get_installed_pip_packages(python_exe_path)
