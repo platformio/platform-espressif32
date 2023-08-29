@@ -458,7 +458,6 @@ elif upload_protocol == "esptool":
     ]
 
 elif upload_protocol == "dfu":
-    # C:\Users\ROOT\AppData\Local\Arduino15\packages\arduino\tools\dfu-util\0.11.0-arduino5/dfu-util --device 0x2341:0x0070 -D C:\Users\ROOT\AppData\Local\Temp\arduino_build_789426/sketch_jul31a.ino.bin -Q
 
     hwids = board.get("build.hwids", [["0x2341", "0x0070"]])
     vid = hwids[0][0]
