@@ -108,7 +108,9 @@ def _parse_partitions(env):
         return
 
     result = []
-    next_offset = 0
+    # The first offset is 0x9000 because partition table is flashed to 0x8000 and
+    # occupies an entire flash sector, which size is 0x1000
+    next_offset = 0x9000
     with open(partitions_csv) as fp:
         for line in fp.readlines():
             line = line.strip()
@@ -117,11 +119,14 @@ def _parse_partitions(env):
             tokens = [t.strip() for t in line.split(",")]
             if len(tokens) < 5:
                 continue
+
+            bound = 0x10000 if tokens[1] in ("0", "app") else 4
+            calculated_offset = (next_offset + bound - 1) & ~(bound - 1)
             partition = {
                 "name": tokens[0],
                 "type": tokens[1],
                 "subtype": tokens[2],
-                "offset": tokens[3] or next_offset,
+                "offset": tokens[3] or calculated_offset,
                 "size": tokens[4],
                 "flags": tokens[5] if len(tokens) > 5 else None
             }
@@ -129,9 +134,6 @@ def _parse_partitions(env):
             next_offset = _parse_size(partition["offset"]) + _parse_size(
                 partition["size"]
             )
-
-            bound = 0x10000 if partition["type"] in ("0", "app") else 4
-            next_offset = (next_offset + bound - 1) & ~(bound - 1)
 
     return result
 
