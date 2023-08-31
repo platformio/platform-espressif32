@@ -18,7 +18,7 @@
     "type": "git",
     "url": "https://github.com/platformio/platform-espressif32.git"
   },
-  "version": "6.3.2",
+  "version": "6.4.0",
   "frameworks": {
     "arduino": {
       "package": "framework-arduinoespressif32",
@@ -34,28 +34,28 @@
       "type": "toolchain",
       "owner": "espressif",
       "version": "8.4.0+2021r2-patch5",
-      "optionalVersions": ["11.2.0+2022r1"]
+      "optionalVersions": ["12.2.0+20230208"]
     },
     "toolchain-xtensa-esp32s2": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
       "version": "8.4.0+2021r2-patch5",
-      "optionalVersions": ["11.2.0+2022r1"]
+      "optionalVersions": ["12.2.0+20230208"]
     },
      "toolchain-xtensa-esp32s3": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
       "version": "8.4.0+2021r2-patch5",
-      "optionalVersions": ["11.2.0+2022r1"]
+      "optionalVersions": ["12.2.0+20230208"]
     },
     "toolchain-riscv32-esp": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
       "version": "8.4.0+2021r2-patch5",
-      "optionalVersions": ["11.2.0+2022r1"]
+      "optionalVersions": ["12.2.0+20230208"]
     },
     "toolchain-esp32ulp": {
       "type": "toolchain",
@@ -63,11 +63,23 @@
       "owner": "platformio",
       "version": "~1.23500.0"
     },
+    "tool-xtensa-esp-elf-gdb": {
+      "type": "debugger",
+      "optional": true,
+      "owner": "espressif",
+      "version": "~12.1.0"
+    },
+    "tool-riscv32-esp-elf-gdb": {
+      "type": "debugger",
+      "optional": true,
+      "owner": "espressif",
+      "version": "~12.1.0"
+    },
     "framework-arduinoespressif32": {
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~3.20009.0"
+      "version": "~3.20011.0"
     },
     "framework-arduino-mbcwb": {
       "type": "framework",
@@ -79,8 +91,8 @@
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~3.50002.0",
-      "optionalVersions": ["~3.40404.0"]
+      "version": "~3.50101.0",
+      "optionalVersions": ["~3.40405.0"]
     },
     "tool-esptoolpy": {
       "type": "uploader",
@@ -91,6 +103,12 @@
       "optional": true,
       "owner": "meteca",
       "version": ">=2.0.0"
+    },
+    "tool-dfuutil-arduino": {
+      "type": "uploader",
+      "optional": true,
+      "owner": "platformio",
+      "version": "~1.11.0"
     },
     "tool-openocd-esp32": {
       "type": "debugger",

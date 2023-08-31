@@ -108,7 +108,9 @@ def _parse_partitions(env):
         return
 
     result = []
-    next_offset = 0
+    # The first offset is 0x9000 because partition table is flashed to 0x8000 and
+    # occupies an entire flash sector, which size is 0x1000
+    next_offset = 0x9000
     with open(partitions_csv) as fp:
         for line in fp.readlines():
             line = line.strip()
@@ -117,11 +119,14 @@ def _parse_partitions(env):
             tokens = [t.strip() for t in line.split(",")]
             if len(tokens) < 5:
                 continue
+
+            bound = 0x10000 if tokens[1] in ("0", "app") else 4
+            calculated_offset = (next_offset + bound - 1) & ~(bound - 1)
             partition = {
                 "name": tokens[0],
                 "type": tokens[1],
                 "subtype": tokens[2],
-                "offset": tokens[3] or next_offset,
+                "offset": tokens[3] or calculated_offset,
                 "size": tokens[4],
                 "flags": tokens[5] if len(tokens) > 5 else None
             }
@@ -130,21 +135,41 @@ def _parse_partitions(env):
                 partition["size"]
             )
 
-            bound = 0x10000 if partition["type"] in ("0", "app") else 4
-            next_offset = (next_offset + bound - 1) & ~(bound - 1)
-
     return result
 
 
 def _update_max_upload_size(env):
     if not env.get("PARTITIONS_TABLE_CSV"):
         return
-    sizes = [
-        _parse_size(p["size"]) for p in _parse_partitions(env)
+    sizes = {
+        p["subtype"]: _parse_size(p["size"]) for p in _parse_partitions(env)
         if p["type"] in ("0", "app")
-    ]
-    if sizes:
-        board.update("upload.maximum_size", max(sizes))
+    }
+
+    partitions = {p["name"]: p for p in _parse_partitions(env)}
+
+    # User-specified partition name has the highest priority
+    custom_app_partition_name = board.get("build.app_partition_name", "")
+    if custom_app_partition_name:
+        selected_partition = partitions.get(custom_app_partition_name, {})
+        if selected_partition:
+            board.update("upload.maximum_size", _parse_size(selected_partition["size"]))
+            return
+        else:
+            print(
+                "Warning! Selected partition `%s` is not available in the partition " \
+                "table! Default partition will be used!" % custom_app_partition_name
+            )
+
+    # Otherwise, one of the `factory` or `ota_0` partitions is used to determine
+    # available memory size. If both partitions are set, we should prefer the `factory`,
+    # but there are cases (e.g. Adafruit's `partitions-4MB-tinyuf2.csv`) that uses the
+    # `factory` partition for their UF2 bootloader. So let's use the first match
+    # https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/partition-tables.html#subtype
+    for p in partitions.values():
+        if p["type"] in ("0", "app") and p["subtype"] in ("factory", "ota_0"):
+            board.update("upload.maximum_size", _parse_size(p["size"]))
+            break
 
 
 def _to_unix_slashes(path):
@@ -191,7 +216,7 @@ board = env.BoardConfig()
 mcu = board.get("build.mcu", "esp32")
 toolchain_arch = "xtensa-%s" % mcu
 filesystem = board.get("build.filesystem", "spiffs")
-if mcu == "esp32c3":
+if mcu in ("esp32c3", "esp32c6"):
     toolchain_arch = "riscv32-esp"
 
 if "INTEGRATION_EXTRA_DATA" not in env:
@@ -207,7 +232,16 @@ env.Replace(
     AS="%s-elf-as" % toolchain_arch,
     CC="%s-elf-gcc" % toolchain_arch,
     CXX="%s-elf-g++" % toolchain_arch,
-    GDB="%s-elf-gdb" % toolchain_arch,
+    GDB=join(
+        platform.get_package_dir(
+            "tool-riscv32-esp-elf-gdb"
+            if mcu in ("esp32c3", "esp32c6")
+            else "tool-xtensa-esp-elf-gdb"
+        )
+        or "",
+        "bin",
+        "%s-elf-gdb" % toolchain_arch,
+    ) if env.get("PIOFRAMEWORK") == ["espidf"] else "%s-elf-gdb" % toolchain_arch,
     OBJCOPY=join(
         platform.get_package_dir("tool-esptoolpy") or "", "esptool.py"),
     RANLIB="%s-elf-ranlib" % toolchain_arch,
@@ -259,7 +293,7 @@ env.Append(
     BUILDERS=dict(
         ElfToBin=Builder(
             action=env.VerboseAction(" ".join([
-                '"$PYTHONEXE" "$OBJCOPY"',
+                        '"$PYTHONEXE" "$OBJCOPY"',
                 "--chip", mcu, "elf2image",
                 "--flash_mode", "${__get_board_flash_mode(__env__)}",
                 "--flash_freq", "${__get_board_f_flash(__env__)}",
@@ -455,6 +489,27 @@ elif upload_protocol == "mbctool":
         env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")
     ]
 
+elif upload_protocol == "dfu":
+
+    hwids = board.get("build.hwids", [["0x2341", "0x0070"]])
+    vid = hwids[0][0]
+    pid = hwids[0][1]
+
+    upload_actions = [env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")]
+
+    env.Replace(
+        UPLOADER=join(
+            platform.get_package_dir("tool-dfuutil-arduino") or "", "dfu-util"
+        ),
+        UPLOADERFLAGS=[
+            "-d",
+            ",".join(["%s:%s" % (hwid[0], hwid[1]) for hwid in hwids]),
+            "-Q",
+            "-D"
+        ],
+        UPLOADCMD='"$UPLOADER" $UPLOADERFLAGS "$SOURCE"',
+    )
+
 
 elif upload_protocol in debug_tools:
     openocd_args = ["-d%d" % (2 if int(ARGUMENTS.get("PIOVERBOSE", 0)) else 1)]
@@ -532,6 +587,12 @@ env.AddPlatformTarget(
 if any("-Wl,-T" in f for f in env.get("LINKFLAGS", [])):
     print("Warning! '-Wl,-T' option for specifying linker scripts is deprecated. "
           "Please use 'board_build.ldscript' option in your 'platformio.ini' file.")
+
+#
+# Override memory inspection behavior
+#
+
+env.SConscript("sizedata.py", exports="env")
 
 #
 # Default targets

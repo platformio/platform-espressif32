@@ -1,14 +1,15 @@
 {
   "build": {
     "arduino": {
-      "ldscript": "esp32s3_out.ld"
+      "ldscript": "esp32s3_out.ld",
+      "partitions": "default_16MB.csv"
     },
     "core": "esp32",
     "extra_flags": [
-      "-DARDUINO_Bee_S3",
+      "-DARDUINO_M5STACK_CORES3",
+      "-DARDUINO_USB_MODE=1",
       "-DARDUINO_RUNNING_CORE=1",
-      "-DARDUINO_EVENT_RUNNING_CORE=1",
-      "-DARDUINO_USB_CDC_ON_BOOT=1"
+      "-DARDUINO_EVENT_RUNNING_CORE=1"
     ],
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
@@ -16,11 +17,11 @@
     "hwids": [
       [
         "0x303A",
-        "0x8110"
+        "0x8119"
       ]
     ],
     "mcu": "esp32s3",
-    "variant": "Bee_S3"
+    "variant": "m5stack_cores3"
   },
   "connectivity": [
     "wifi"
@@ -32,16 +33,14 @@
     "arduino",
     "espidf"
   ],
-  "name": "Smart Bee S3",
+  "name": "M5Stack CoreS3",
   "upload": {
-    "flash_size": "8MB",
+    "flash_size": "16MB",
     "maximum_ram_size": 327680,
-    "maximum_size": 8388608,
-    "use_1200bps_touch": true,
-    "wait_for_upload_port": true,
+    "maximum_size": 16777216,
     "require_upload_port": true,
-    "speed": 460800
+    "speed": 921600
   },
-  "url": "https://github.com/strid3r21/BeeS3",
-  "vendor": "Smart Bee"
+  "url": "https://docs.m5stack.com/en/core/CoreS3",
+  "vendor": "M5Stack"
 }

@@ -1,11 +1,13 @@
 {
   "build": {
     "arduino": {
-      "ldscript": "esp32s3_out.ld"
+      "ldscript": "esp32s3_out.ld",
+      "memory_type": "qio_opi"
     },
     "core": "esp32",
     "extra_flags": [
-      "-DARDUINO_Bee_S3",
+      "-DARDUINO_NEBULAS3",
+      "-DARDUINO_USB_MODE=1",
       "-DARDUINO_RUNNING_CORE=1",
       "-DARDUINO_EVENT_RUNNING_CORE=1",
       "-DARDUINO_USB_CDC_ON_BOOT=1"
@@ -16,11 +18,11 @@
     "hwids": [
       [
         "0x303A",
-        "0x8110"
+        "0x1001"
       ]
     ],
     "mcu": "esp32s3",
-    "variant": "Bee_S3"
+    "variant": "Nebula_S3"
   },
   "connectivity": [
     "wifi"
@@ -32,16 +34,14 @@
     "arduino",
     "espidf"
   ],
-  "name": "Smart Bee S3",
+  "name": "Kinetic Dynamics Nebula S3",
   "upload": {
-    "flash_size": "8MB",
+    "flash_size": "4MB",
     "maximum_ram_size": 327680,
-    "maximum_size": 8388608,
-    "use_1200bps_touch": true,
-    "wait_for_upload_port": true,
+    "maximum_size": 4194304,
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://github.com/strid3r21/BeeS3",
-  "vendor": "Smart Bee"
+  "url": "https://kineticdynamics.in/product/nebula-s3/",
+  "vendor": "Kinetic Dynamics"
 }

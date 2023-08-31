@@ -27,6 +27,7 @@ import sys
 import shutil
 import os
 import pkg_resources
+import platform as sys_platform
 
 import click
 import semantic_version
@@ -37,7 +38,7 @@ from SCons.Script import (
     DefaultEnvironment,
 )
 
-from platformio import fs
+from platformio import fs, __version__
 from platformio.compat import IS_WINDOWS
 from platformio.proc import exec_command
 from platformio.builder.tools.piolib import ProjectAsLibBuilder
@@ -62,12 +63,21 @@ IDF5 = platform.get_package_version("framework-espidf").split(".")[1].startswith
 IDF_ENV_VERSION = "1.0.0"
 FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
 TOOLCHAIN_DIR = platform.get_package_dir(
-    "toolchain-%s" % ("riscv32-esp" if mcu == "esp32c3" else ("xtensa-%s" % mcu))
+    "toolchain-%s" % ("riscv32-esp" if mcu in ("esp32c3","esp32c6") else ("xtensa-%s" % mcu))
 )
 
 
 assert os.path.isdir(FRAMEWORK_DIR)
 assert os.path.isdir(TOOLCHAIN_DIR)
+
+# The latest IDF uses a standalone GDB package which requires at least PlatformIO 6.1.11
+if (
+    ["espidf"] == env.get("PIOFRAMEWORK")
+    and semantic_version.Version.coerce(__version__)
+    <= semantic_version.Version("6.1.10")
+    and "__debug" in COMMAND_LINE_TARGETS
+):
+    print("Warning! Debugging an IDF project requires PlatformIO Core >= 6.1.11!")
 
 # Arduino framework as a component is not compatible with ESP-IDF >=4.1
 if "arduino" in env.subst("$PIOFRAMEWORK"):
@@ -234,7 +244,7 @@ def populate_idf_env_vars(idf_env):
         os.path.dirname(get_python_exe()),
     ]
 
-    if mcu != "esp32c3":
+    if mcu not in ("esp32c3", "esp32c6"):
         additional_packages.append(
             os.path.join(platform.get_package_dir("toolchain-esp32ulp"), "bin"),
         )
@@ -351,7 +361,7 @@ def extract_link_args(target_config):
         args = click.parser.split_arg_string(fragment)
         if fragment_role == "flags":
             link_args["LINKFLAGS"].extend(args)
-        elif fragment_role == "libraries":
+        elif fragment_role in ("libraries", "libraryPath"):
             if fragment.startswith("-l"):
                 link_args["LIBS"].extend(args)
             elif fragment.startswith("-L"):
@@ -489,7 +499,7 @@ def extract_linker_script_fragments(framework_components_dir, sdk_config):
         sys.stderr.write("Error: Failed to extract paths to linker script fragments\n")
         env.Exit(1)
 
-    if mcu == "esp32c3":
+    if mcu in ("esp32c3", "esp32c6"):
         result.append(os.path.join(framework_components_dir, "riscv", "linker.lf"))
 
     # Add extra linker fragments
@@ -624,6 +634,7 @@ def prepare_build_envs(config, default_env, debug_allowed=True):
         defines = extract_defines(cg)
         compile_commands = cg.get("compileCommandFragments", [])
         build_env = default_env.Clone()
+        build_env.SetOption("implicit_cache", 1)
         for cc in compile_commands:
             build_flags = cc.get("fragment")
             if not build_flags.startswith("-D"):
@@ -1104,7 +1115,11 @@ def install_python_deps():
         "pyparsing": "~=3.0.9" if IDF5 else ">=2.0.3,<2.4.0",
         "kconfiglib": "~=14.1.0" if IDF5 else "~=13.7.1",
         "idf-component-manager": "~=1.2.3" if IDF5 else "~=1.0",
+        "esp-idf-kconfig": "~=1.2.0"
     }
+
+    if sys_platform.system() == "Darwin" and "arm" in sys_platform.machine().lower():
+        deps["chardet"] = ">=3.0.2,<4"
 
     python_exe_path = get_python_exe()
     installed_packages = _get_installed_pip_packages(python_exe_path)
@@ -1498,7 +1513,7 @@ env.Prepend(
         (
             board.get(
                 "upload.bootloader_offset",
-                "0x0" if mcu in ("esp32c3", "esp32s3") else "0x1000",
+                "0x0" if mcu in ("esp32c3", "esp32c6", "esp32s3") else "0x1000",
             ),
             os.path.join("$BUILD_DIR", "bootloader.bin"),
         ),
@@ -1543,10 +1558,11 @@ if "__test" not in COMMAND_LINE_TARGETS or env.GetProjectOption(
     # Add include dirs from PlatformIO build system to project CPPPATH so
     # they're visible to PIOBUILDFILES
     project_env.AppendUnique(
-        CPPPATH=["$PROJECT_INCLUDE_DIR", "$PROJECT_SRC_DIR"]
+        CPPPATH=["$PROJECT_INCLUDE_DIR", "$PROJECT_SRC_DIR", "$PROJECT_DIR"]
         + get_project_lib_includes(env)
     )
 
+    project_env.ProcessFlags(env.get("SRC_BUILD_FLAGS"))
     env.Append(
         PIOBUILDFILES=compile_source_files(
             target_configs.get(project_target_name),
@@ -1577,7 +1593,7 @@ env["BUILDERS"]["ElfToBin"].action = action
 #
 
 ulp_dir = os.path.join(PROJECT_DIR, "ulp")
-if os.path.isdir(ulp_dir) and os.listdir(ulp_dir) and mcu != "esp32c3":
+if os.path.isdir(ulp_dir) and os.listdir(ulp_dir) and mcu not in ("esp32c3", "esp32c6"):
     env.SConscript("ulp.py", exports="env sdk_config project_config idf_variant")
 
 #
