@@ -20,6 +20,10 @@
         "0x239A",
         "0x8143"
       ],
+      [
+        "0x303A",
+        "0x1001"
+      ]
     ],
     "mcu": "esp32s3",
     "variant": "adafruit_qtpy_esp32s3_n4r2"
