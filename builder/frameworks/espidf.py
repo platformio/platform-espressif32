@@ -618,7 +618,11 @@ def _fix_component_relative_include(config, build_flags, source_index):
 
 def prepare_build_envs(config, default_env, debug_allowed=True):
     build_envs = []
-    target_compile_groups = config.get("compileGroups")
+    target_compile_groups = config.get("compileGroups", [])
+    if not target_compile_groups:
+        print("Warning! The `%s` component doesn't register any source files. "
+            "Check if sources are set in component's CMakeLists.txt!" % config["name"]
+        )
 
     is_build_type_debug = "debug" in env.GetBuildType() and debug_allowed
     for cg in target_compile_groups:
