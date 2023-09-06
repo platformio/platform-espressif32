@@ -18,7 +18,7 @@
     "onboard_tools": [
       "ftdi"
     ],
-    "openocd_target": "esp32s2.cfg"
+    "openocd_board": "esp32s2-kaluga-1.cfg"
   },
   "frameworks": [
     "arduino",
