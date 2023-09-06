@@ -29,6 +29,11 @@
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
     "maximum_size": 4194304,
+    "protocols": [
+      "esptool",
+      "espota",
+      "ftdi"
+    ],    
     "require_upload_port": true,
     "speed": 460800
   },
