@@ -625,7 +625,7 @@ def prepare_build_envs(config, default_env, debug_allowed=True):
         )
 
     is_build_type_debug = "debug" in env.GetBuildType() and debug_allowed
-    for cg in target_compile_groups:
+    for cg in target_compile_groups or []:
         includes = []
         sys_includes = []
         for inc in cg.get("includes", []):
