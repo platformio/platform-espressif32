@@ -24,6 +24,7 @@
     "variant": "m5stack_cores3"
   },
   "connectivity": [
+    "bluetooth",
     "wifi"
   ],
   "debug": {

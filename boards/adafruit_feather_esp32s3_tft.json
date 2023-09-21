@@ -32,6 +32,7 @@
     "variant": "adafruit_feather_esp32s3_tft"
   },
   "connectivity": [
+    "bluetooth",
     "wifi"
   ],
   "debug": {

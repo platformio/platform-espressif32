@@ -26,6 +26,7 @@
     "variant": "um_pros3"
   },
   "connectivity": [
+    "bluetooth",
     "wifi"
   ],
   "debug": {
