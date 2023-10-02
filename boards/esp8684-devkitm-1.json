@@ -14,7 +14,6 @@
     "openocd_target": "esp32c2.cfg"
   },
   "frameworks": [
-    "arduino",
     "espidf"
   ],
   "name": "Espressif ESP8684-DevKitM-1 4MB",
