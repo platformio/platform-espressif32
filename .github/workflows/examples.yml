@@ -19,6 +19,7 @@ jobs:
           - "examples/arduino-usb-keyboard"
           - "examples/arduino-wifiscan"
           - "examples/espidf-arduino-blink"
+          - "examples/espidf-arduino-littlefs"
           - "examples/espidf-blink"
           - "examples/espidf-coap-server"
           - "examples/espidf-exceptions"
