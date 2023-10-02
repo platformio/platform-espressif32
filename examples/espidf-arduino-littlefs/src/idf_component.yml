@@ -1,0 +1,51 @@
+dependencies:
+  # Required IDF version
+  idf: ">=4.4"
+
+  esp_littlefs:
+    git: https://github.com/joltwallet/esp_littlefs.git
+    version: lfs2.8
+
+  mdns: "^1.2.1"
+  # nghttp: "^1.50.0"
+  # esp_jpeg: "^1.0.4"
+  # esp-dsp: "^1.2.0"
+  # esp-sr: "^1.0.3"
+  # esp32-camera: "^2.0.3"
+  # esp-dl:
+  #   git: https://github.com/espressif/esp-dl.git
+  # arduino:
+  #   path: components/arduino
+
+  # # Defining a dependency from the registry:
+  # # https://components.espressif.com/component/example/cmp
+  # example/cmp: "^3.3.3" # Automatically update minor releases
+  #
+  # # Other ways to define dependencies
+  #
+  # # For components maintained by Espressif only name can be used.
+  # # Same as `espressif/cmp`
+  # component: "~1.0.0" # Automatically update bugfix releases
+  #
+  # # Or in a longer form with extra parameters
+  # component2:
+  #   version: ">=2.0.0"
+  #
+  #   # For transient dependencies `public` flag can be set.
+  #   # `public` flag doesn't have an effect for the `main` component.
+  #   # All dependencies of `main` are public by default.
+  #   public: true
+  #
+  #   # For components hosted on non-default registry:
+  #   service_url: "https://componentregistry.company.com"
+  #
+  # # For components in git repository:
+  # test_component:
+  #   path: test_component
+  #   git: ssh://git@gitlab.com/user/components.git
+  #
+  # # For test projects during component development
+  # # components can be used from a local directory
+  # # with relative or absolute path
+  # some_local_component:
+  #   path: ../../projects/component
