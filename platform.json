@@ -119,8 +119,8 @@
     },
     "tool-mklittlefs": {
       "type": "uploader",
-      "owner": "platformio",
-      "version": "~1.203.0"
+      "owner": "tasmota",
+      "version": "^3.2.0"
     },
     "tool-mkfatfs": {
       "type": "uploader",
