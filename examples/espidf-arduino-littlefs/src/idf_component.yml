@@ -1,6 +1,6 @@
 dependencies:
   # Required IDF version
-  idf: ">=4.4"
+  idf: ">=5.1"
 
   esp_littlefs:
     git: https://github.com/joltwallet/esp_littlefs.git
