@@ -33,25 +33,25 @@
       "type": "framework",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/1650/framework-arduinoespressif32-release_v5.1-f45a4361b2.zip"
+      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/1661/framework-arduinoespressif32-release_v5.1-600e70fe7a.zip"
     },
      "framework-arduino-solo1": {
       "type": "framework",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/1652/framework-arduinoespressif32-solo1-release_v5.1-f45a4361b2.zip"
+      "version": "https://github.com/tasmota/arduino-esp32/releases/download/3.0.0-alpha1/framework-arduinoespressif32-solo1.zip"
     },
      "framework-arduino-ITEAD": {
       "type": "framework",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/1651/framework-arduinoespressif32-ITEAD-release_v5.1-f45a4361b2.zip"
+      "version": "https://github.com/tasmota/arduino-esp32/releases/download/3.0.0-alpha1/framework-arduinoespressif32-ITEAD.zip"
     },
     "framework-espidf": {
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "https://github.com/tasmota/esp-idf/releases/download/v5.1.1.230920/esp-idf-v5.1.1.zip"
+      "version": "https://github.com/tasmota/esp-idf/releases/download/v5.1.1.231006/esp-idf-v5.1.1.zip"
     },
     "toolchain-xtensa-esp32": {
       "type": "toolchain",
