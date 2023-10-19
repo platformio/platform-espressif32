@@ -238,7 +238,7 @@ env.Replace(
         or "",
         "bin",
         "%s-elf-gdb" % toolchain_arch,
-    ) if env.get("PIOFRAMEWORK") == ["espidf"] else "%s-elf-gdb" % toolchain_arch,
+    ),
     OBJCOPY=join(platform.get_package_dir("tool-esptoolpy") or "", "esptool.py"),
     RANLIB="%s-elf-gcc-ranlib" % toolchain_arch,
     SIZETOOL="%s-elf-size" % toolchain_arch,
