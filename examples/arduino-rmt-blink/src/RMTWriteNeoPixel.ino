@@ -30,7 +30,7 @@
 //#define BUILTIN_RGBLED_PIN   21   // ESP32 has no builtin RGB LED
 //#endif
 
-#define NR_OF_LEDS   8*4
+//#define NR_OF_LEDS   8*4
 #define NR_OF_ALL_BITS 24*NR_OF_LEDS
 
 //
