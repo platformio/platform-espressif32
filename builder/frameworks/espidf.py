@@ -364,8 +364,8 @@ def extract_link_args(target_config):
             elif fragment.endswith(".a"):
                 archive_path = fragment
                 # process static archives
-                if archive_path.startswith(FRAMEWORK_DIR):
-                    # In case of precompiled archives from framework package
+                if os.path.isabs(archive_path):
+                    # In case of precompiled archives
                     _add_archive(archive_path, link_args)
                 else:
                     # In case of archives within project
