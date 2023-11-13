@@ -38,7 +38,7 @@ from SCons.Script import (
     DefaultEnvironment,
 )
 
-from platformio import fs
+from platformio import fs, __version__
 from platformio.compat import IS_WINDOWS
 from platformio.proc import exec_command
 from platformio.builder.tools.piolib import ProjectAsLibBuilder
@@ -63,7 +63,7 @@ IDF5 = platform.get_package_version("framework-espidf").split(".")[1].startswith
 IDF_ENV_VERSION = "1.0.0"
 FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
 TOOLCHAIN_DIR = platform.get_package_dir(
-    "toolchain-%s" % ("riscv32-esp" if mcu in ("esp32c2","esp32c3","esp32c6","esp32h2") else ("xtensa-%s" % mcu))
+    "toolchain-%s" % ("riscv32-esp" if mcu in ("esp32c2", "esp32c3", "esp32c6", "esp32h2") else ("xtensa-%s" % mcu))
 )
 
 
