@@ -63,7 +63,7 @@ IDF5 = platform.get_package_version("framework-espidf").split(".")[1].startswith
 IDF_ENV_VERSION = "1.0.0"
 FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
 TOOLCHAIN_DIR = platform.get_package_dir(
-    "toolchain-%s" % ("riscv32-esp" if mcu in ("esp32c3","esp32c6") else ("xtensa-%s" % mcu))
+    "toolchain-%s" % ("riscv32-esp" if mcu in ("esp32c3", "esp32c6") else ("xtensa-%s" % mcu))
 )
 
 
@@ -373,8 +373,8 @@ def extract_link_args(target_config):
             elif fragment.endswith(".a"):
                 archive_path = fragment
                 # process static archives
-                if archive_path.startswith(FRAMEWORK_DIR):
-                    # In case of precompiled archives from framework package
+                if os.path.isabs(archive_path):
+                    # In case of precompiled archives
                     _add_archive(archive_path, link_args)
                 else:
                     # In case of archives within project
