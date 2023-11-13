@@ -26,6 +26,7 @@
     "variant": "um_feathers3"
   },
   "connectivity": [
+    "bluetooth",
     "wifi"
   ],
   "debug": {

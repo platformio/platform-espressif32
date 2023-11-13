@@ -26,6 +26,7 @@
     "variant": "tamc_termod_s3"
   },
   "connectivity": [
+    "bluetooth",
     "wifi"
   ],
   "debug": {

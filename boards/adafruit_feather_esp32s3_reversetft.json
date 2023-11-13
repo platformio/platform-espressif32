@@ -33,6 +33,7 @@
     "variant": "adafruit_feather_esp32s3_reversetft"
   },
   "connectivity": [
+    "bluetooth",
     "wifi"
   ],
   "debug": {
