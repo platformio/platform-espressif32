@@ -1111,9 +1111,7 @@ def install_python_deps():
         "pyparsing": "~=3.0.9" if IDF5 else ">=2.0.3,<2.4.0",
         "kconfiglib": "~=14.1.0" if IDF5 else "~=13.7.1",
         "idf-component-manager": "~=1.2.3" if IDF5 else "~=1.0",
-        "esp-idf-kconfig": "~=1.2.0",
-        # newest esptool.py needs this
-        "intelhex": ">=2.3.0"
+        "esp-idf-kconfig": "~=1.2.0"
     }
 
     if sys_platform.system() == "Darwin" and "arm" in sys_platform.machine().lower():
