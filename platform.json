@@ -92,7 +92,7 @@
       "optional": true,
       "owner": "platformio",
       "version": "~3.50101.0",
-      "optionalVersions": ["~3.40405.0"]
+      "optionalVersions": ["~3.40406.0"]
     },
     "tool-esptoolpy": {
       "type": "uploader",

@@ -113,7 +113,7 @@ class Espressif32Platform(PlatformBase):
 
             if "arduino" in frameworks:
                 # Downgrade the IDF version for mixed Arduino+IDF projects
-                self.packages["framework-espidf"]["version"] = "~3.40405.0"
+                self.packages["framework-espidf"]["version"] = "~3.40406.0"
             else:
                 # Use the latest toolchains available for IDF v5.0
                 for target in (
