@@ -2,14 +2,13 @@
   "build": {
     "arduino": {
       "ldscript": "esp32s3_out.ld",
-      "partitions": "default_16MB.csv"
+      "memory_type": "qio_opi",
+      "partitions": "default_8MB.csv"
     },
     "core": "esp32",
     "extra_flags": [
-      "-DARDUINO_M5STACK_CORES3",
-      "-DBOARD_HAS_PSRAM",
+      "-DARDUINO_ATD143_S3",
       "-DARDUINO_USB_MODE=1",
-      "-DARDUINO_USB_CDC_ON_BOOT=1",
       "-DARDUINO_RUNNING_CORE=1",
       "-DARDUINO_EVENT_RUNNING_CORE=1"
     ],
@@ -19,11 +18,11 @@
     "hwids": [
       [
         "0x303A",
-        "0x8119"
+        "0x1001"
       ]
     ],
     "mcu": "esp32s3",
-    "variant": "m5stack_cores3"
+    "variant": "atd147_s3"
   },
   "connectivity": [
     "bluetooth",
@@ -36,14 +35,14 @@
     "arduino",
     "espidf"
   ],
-  "name": "M5Stack CoreS3",
+  "name": "ArtronShop ATD1.47-S3",
   "upload": {
-    "flash_size": "16MB",
+    "flash_size": "8MB",
     "maximum_ram_size": 327680,
-    "maximum_size": 16777216,
+    "maximum_size": 8388608,
     "require_upload_port": true,
-    "speed": 921600
+    "speed": 460800
   },
-  "url": "https://docs.m5stack.com/en/core/CoreS3",
-  "vendor": "M5Stack"
+  "url": "https://github.com/ArtronShop",
+  "vendor": "ArtronShop"
 }
