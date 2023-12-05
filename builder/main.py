@@ -427,9 +427,8 @@ elif upload_protocol == "esptool":
             "--after", board.get("upload.after_reset", "hard_reset"),
             "write_flash", "-z",
             "--flash_mode", "${__get_board_flash_mode(__env__)}",
-            "--flash_freq", "${__get_board_f_flash(__env__)}",
+            "--flash_freq", "${__get_board_img_freq(__env__)}",
             "--flash_size", "detect"
-            #"--flash_size", board.get("upload.flash_size", "detect")
         ],
         UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS $ESP32_APP_OFFSET $SOURCE'
     )
@@ -446,9 +445,8 @@ elif upload_protocol == "esptool":
                 "--after", board.get("upload.after_reset", "hard_reset"),
                 "write_flash", "-z",
                 "--flash_mode", "${__get_board_flash_mode(__env__)}",
-                "--flash_freq", "${__get_board_f_flash(__env__)}",
+                "--flash_freq", "${__get_board_img_freq(__env__)}",
                 "--flash_size", "detect",
-                #"--flash_size", board.get("upload.flash_size", "detect")
                 "$FS_START"
             ],
             UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS $SOURCE',
