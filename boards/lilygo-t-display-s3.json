@@ -26,6 +26,7 @@
     "variant": "lilygo_t_display_s3"
   },
   "connectivity": [
+    "bluetooth",
     "wifi"
   ],
   "debug": {

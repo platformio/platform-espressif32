@@ -199,6 +199,10 @@ class Espressif32Platform(PlatformBase):
             "tumpa",
         ]
 
+        # A special case for the Kaluga board that has a separate interface config
+        if board.id == "esp32-s2-kaluga-1":
+            supported_debug_tools.append("ftdi")
+
         if board.get("build.mcu", "") in ("esp32c3", "esp32c6", "esp32s3"):
             supported_debug_tools.append("esp-builtin")
 

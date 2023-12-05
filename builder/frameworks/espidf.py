@@ -38,7 +38,7 @@ from SCons.Script import (
     DefaultEnvironment,
 )
 
-from platformio import fs
+from platformio import fs, __version__
 from platformio.compat import IS_WINDOWS
 from platformio.proc import exec_command
 from platformio.builder.tools.piolib import ProjectAsLibBuilder
@@ -63,12 +63,21 @@ IDF5 = platform.get_package_version("framework-espidf").split(".")[1].startswith
 IDF_ENV_VERSION = "1.0.0"
 FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
 TOOLCHAIN_DIR = platform.get_package_dir(
-    "toolchain-%s" % ("riscv32-esp" if mcu in ("esp32c3","esp32c6") else ("xtensa-%s" % mcu))
+    "toolchain-%s" % ("riscv32-esp" if mcu in ("esp32c3", "esp32c6") else ("xtensa-%s" % mcu))
 )
 
 
 assert os.path.isdir(FRAMEWORK_DIR)
 assert os.path.isdir(TOOLCHAIN_DIR)
+
+# The latest IDF uses a standalone GDB package which requires at least PlatformIO 6.1.11
+if (
+    ["espidf"] == env.get("PIOFRAMEWORK")
+    and semantic_version.Version.coerce(__version__)
+    <= semantic_version.Version("6.1.10")
+    and "__debug" in COMMAND_LINE_TARGETS
+):
+    print("Warning! Debugging an IDF project requires PlatformIO Core >= 6.1.11!")
 
 # Arduino framework as a component is not compatible with ESP-IDF >=4.1
 if "arduino" in env.subst("$PIOFRAMEWORK"):
@@ -364,8 +373,8 @@ def extract_link_args(target_config):
             elif fragment.endswith(".a"):
                 archive_path = fragment
                 # process static archives
-                if archive_path.startswith(FRAMEWORK_DIR):
-                    # In case of precompiled archives from framework package
+                if os.path.isabs(archive_path):
+                    # In case of precompiled archives
                     _add_archive(archive_path, link_args)
                 else:
                     # In case of archives within project
@@ -609,7 +618,11 @@ def _fix_component_relative_include(config, build_flags, source_index):
 
 def prepare_build_envs(config, default_env, debug_allowed=True):
     build_envs = []
-    target_compile_groups = config.get("compileGroups")
+    target_compile_groups = config.get("compileGroups", [])
+    if not target_compile_groups:
+        print("Warning! The `%s` component doesn't register any source files. "
+            "Check if sources are set in component's CMakeLists.txt!" % config["name"]
+        )
 
     is_build_type_debug = "debug" in env.GetBuildType() and debug_allowed
     for cg in target_compile_groups:

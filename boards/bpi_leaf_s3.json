@@ -24,6 +24,7 @@
     "variant": "bpi_leaf_s3"
   },
   "connectivity": [
+    "bluetooth",
     "wifi"
   ],
   "debug": {

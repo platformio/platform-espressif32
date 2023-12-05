@@ -23,6 +23,7 @@
       "variant": "lolin_s3_mini"
     },
     "connectivity": [
+      "bluetooth",
       "wifi"
     ],
     "debug": {
