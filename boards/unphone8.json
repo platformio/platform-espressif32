@@ -20,6 +20,7 @@
     "variant": "unphone8"
   },
   "connectivity": [
+    "bluetooth",
     "wifi"
   ],
   "debug": {

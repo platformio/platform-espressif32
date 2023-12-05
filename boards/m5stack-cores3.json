@@ -7,7 +7,9 @@
     "core": "esp32",
     "extra_flags": [
       "-DARDUINO_M5STACK_CORES3",
+      "-DBOARD_HAS_PSRAM",
       "-DARDUINO_USB_MODE=1",
+      "-DARDUINO_USB_CDC_ON_BOOT=1",
       "-DARDUINO_RUNNING_CORE=1",
       "-DARDUINO_EVENT_RUNNING_CORE=1"
     ],
@@ -24,6 +26,7 @@
     "variant": "m5stack_cores3"
   },
   "connectivity": [
+    "bluetooth",
     "wifi"
   ],
   "debug": {
