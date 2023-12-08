@@ -125,7 +125,7 @@ class Espressif32Platform(PlatformBase):
             "tumpa",
         ]
 
-        if board.get("build.mcu", "") in ("esp32c2", "esp32c3", "esp32c6", "esp32s3", "esp32h2"):
+        if board.get("build.mcu", "") in ("esp32c3", "esp32c6", "esp32s3", "esp32h2"):
             supported_debug_tools.append("esp-builtin")
 
         upload_protocol = board.manifest.get("upload", {}).get("protocol")
