@@ -1583,6 +1583,22 @@ if sdk_config.get("MBEDTLS_CERTIFICATE_BUNDLE", False):
     generate_mbedtls_bundle(sdk_config)
 
 #
+# Check if flash size is set correctly in the IDF configuration file
+#
+
+board_flash_size = board.get("upload.flash_size", "4MB")
+idf_flash_size = sdk_config.get("ESPTOOLPY_FLASHSIZE", "4MB")
+if board_flash_size != idf_flash_size:
+    print(
+        "Warning! Flash memory size mismatch detected. Expected %s, found %s!"
+        % (board_flash_size, idf_flash_size)
+    )
+    print(
+        "Please select a proper value in your `sdkconfig.defaults` "
+        "or via the `menuconfig` target!"
+    )
+
+#
 # To embed firmware checksum a special argument for esptool.py is required
 #
 
