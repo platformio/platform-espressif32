@@ -97,8 +97,8 @@ PROJECT_DIR = env.subst("$PROJECT_DIR")
 PROJECT_SRC_DIR = env.subst("$PROJECT_SRC_DIR")
 CMAKE_API_REPLY_PATH = os.path.join(".cmake", "api", "v1", "reply")
 SDKCONFIG_PATH = os.path.expandvars(board.get(
-    "build.esp-idf.sdkconfig_path",
-    os.path.join(PROJECT_DIR, "sdkconfig.%s" % env.subst("$PIOENV")),
+        "build.esp-idf.sdkconfig_path",
+        os.path.join(PROJECT_DIR, "sdkconfig.%s" % env.subst("$PIOENV")),
 ))
 
 
@@ -1212,7 +1212,7 @@ def ensure_python_venv_available():
         env.Execute(
             env.VerboseAction(
                 '"$PYTHONEXE" -m venv --clear "%s"' % venv_dir,
-            "Creating a new virtual environment for IDF Python dependencies",
+                "Creating a new virtual environment for IDF Python dependencies",
             )
         )
 
@@ -1586,9 +1586,24 @@ if sdk_config.get("MBEDTLS_CERTIFICATE_BUNDLE", False):
 # To embed firmware checksum a special argument for esptool.py is required
 #
 
+extra_elf2bin_flags = "--elf-sha256-offset 0xb0"
+# https://github.com/espressif/esp-idf/blob/master/components/esptool_py/project_include.cmake#L58
+# For chips that support configurable MMU page size feature
+# If page size is configured to values other than the default "64KB" in menuconfig,
+mmu_page_size = "64KB"
+if sdk_config.get("SOC_MMU_PAGE_SIZE_CONFIGURABLE", False):
+    if board_flash_size == "2MB":
+        mmu_page_size = "32KB"
+    elif board_flash_size == "1MB":
+        mmu_page_size = "16KB"
+
+if mmu_page_size != "64KB":
+    extra_elf2bin_flags += " --flash-mmu-page-size %s" % mmu_page_size
+
 action = copy.deepcopy(env["BUILDERS"]["ElfToBin"].action)
+
 action.cmd_list = env["BUILDERS"]["ElfToBin"].action.cmd_list.replace(
-    "-o", "--elf-sha256-offset 0xb0 -o"
+    "-o", extra_elf2bin_flags + " -o"
 )
 env["BUILDERS"]["ElfToBin"].action = action
 
