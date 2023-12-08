@@ -203,7 +203,7 @@ class Espressif32Platform(PlatformBase):
         if board.id == "esp32-s2-kaluga-1":
             supported_debug_tools.append("ftdi")
 
-        if board.get("build.mcu", "") in ("esp32c2", "esp32c3", "esp32c6", "esp32s3"):
+        if board.get("build.mcu", "") in ("esp32c3", "esp32c6", "esp32s3"):
             supported_debug_tools.append("esp-builtin")
 
         upload_protocol = board.manifest.get("upload", {}).get("protocol")
