@@ -51,7 +51,7 @@
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "https://github.com/tasmota/esp-idf/releases/download/v5.1.2.231118/esp-idf-v5.1.2.zip"
+      "version": "https://github.com/tasmota/esp-idf/releases/download/v5.1.2.231209/esp-idf-v5.1.2.zip"
     },
     "toolchain-xtensa-esp32": {
       "type": "toolchain",
@@ -98,7 +98,7 @@
     "tool-esptoolpy": {
       "type": "uploader",
       "owner": "tasmota",
-      "version": "https://github.com/Jason2866/esptool/releases/download/v4.7.0-dev4/esptool-4.7.0.zip"
+      "version": "https://github.com/Jason2866/esptool.git#release/v4.7.0-dev"
     },
     "tool-dfuutil-arduino": {
       "type": "uploader",
