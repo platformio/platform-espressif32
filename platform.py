@@ -46,7 +46,7 @@ class Espressif32Platform(PlatformBase):
                 self.packages["framework-arduinoespressif32"]["optional"] = False
 
         if "buildfs" in targets:
-            filesystem = variables.get("board_build.filesystem", "spiffs")
+            filesystem = variables.get("board_build.filesystem", "littlefs")
             if filesystem == "littlefs":
                 self.packages["tool-mklittlefs"]["optional"] = False
             elif filesystem == "fatfs":
@@ -69,12 +69,13 @@ class Espressif32Platform(PlatformBase):
                 self.packages[gdb_package]["version"] = "~11.2.0"
 
             # Common packages for IDF and mixed Arduino+IDF projects
-            self.packages["toolchain-esp32ulp"]["optional"] = False
-            for p in self.packages:
-                if p in ("tool-cmake", "tool-ninja"):
-                    self.packages[p]["optional"] = False
-                elif p in ("tool-mconf", "tool-idf") and IS_WINDOWS:
-                    self.packages[p]["optional"] = False
+            if "espidf" in frameworks:
+                self.packages["toolchain-esp32ulp"]["optional"] = False
+                for p in self.packages:
+                    if p in ("tool-cmake", "tool-ninja"):
+                        self.packages[p]["optional"] = False
+                    elif p in ("tool-mconf", "tool-idf") and IS_WINDOWS:
+                        self.packages[p]["optional"] = False
 
         for available_mcu in ("esp32", "esp32s2", "esp32s3"):
             if available_mcu == mcu:
