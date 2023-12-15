@@ -114,6 +114,7 @@
     },
     "tool-mkspiffs": {
       "type": "uploader",
+      "optional": true,
       "owner": "platformio",
       "version": "~2.230.0"
     },
