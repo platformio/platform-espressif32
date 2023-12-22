@@ -64,6 +64,12 @@ class Espressif32Platform(PlatformBase):
                 # Use Tasmota mklittlefs v4.0.0 to unpack, older version is incompatible
                 self.packages["tool-mklittlefs"]["version"] = "~4.0.0"
 
+        # Currently only Arduino Nano ESP32 uses the dfuutil tool as uploader
+        if variables.get("board") == "arduino_nano_esp32":
+            self.packages["tool-dfuutil-arduino"]["optional"] = False
+        else:
+            del self.packages["tool-dfuutil-arduino"]
+
         # Starting from v12, Espressif's toolchains are shipped without
         # bundled GDB. Instead, it's distributed as separate packages for Xtensa
         # and RISC-V targets.
