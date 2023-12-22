@@ -58,6 +58,12 @@ class Espressif32Platform(PlatformBase):
         if os.path.isdir("ulp"):
             self.packages["toolchain-esp32ulp"]["optional"] = False
 
+        if "downloadfs" in targets:
+            filesystem = variables.get("board_build.filesystem", "littlefs")
+            if filesystem == "littlefs":
+                # Use Tasmota mklittlefs v4.0.0 to unpack, older version is incompatible
+                self.packages["tool-mklittlefs"]["version"] = "~4.0.0"
+
         # Starting from v12, Espressif's toolchains are shipped without
         # bundled GDB. Instead, it's distributed as separate packages for Xtensa
         # and RISC-V targets.
