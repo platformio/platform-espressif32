@@ -6,7 +6,6 @@
       },
       "core": "esp32",
       "extra_flags": [
-        "-DBOARD_HAS_PSRAM",
         "-DARDUINO_NAMINO_ARANCIO",
         "-DARDUINO_USB_MODE=1"
       ],
