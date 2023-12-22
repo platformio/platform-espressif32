@@ -2,16 +2,15 @@
   "build": {
     "arduino": {
       "ldscript": "esp32s3_out.ld",
-      "memory_type": "qio_qspi"
+      "memory_type": "qio_opi",
+      "partitions": "default_8MB.csv"
     },
     "core": "esp32",
     "extra_flags": [
-      "-DARDUINO_TAMC_TERMOD_S3",
+      "-DARDUINO_ATD143_S3",
       "-DARDUINO_USB_MODE=1",
-      "-DARDUINO_USB_CDC_ON_BOOT=1",
       "-DARDUINO_RUNNING_CORE=1",
-      "-DARDUINO_EVENT_RUNNING_CORE=1",
-      "-DBOARD_HAS_PSRAM"
+      "-DARDUINO_EVENT_RUNNING_CORE=1"
     ],
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
@@ -23,7 +22,7 @@
       ]
     ],
     "mcu": "esp32s3",
-    "variant": "tamc_termod_s3"
+    "variant": "atd147_s3"
   },
   "connectivity": [
     "bluetooth",
@@ -36,7 +35,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "TAMC Termod S3",
+  "name": "ArtronShop ATD1.47-S3",
   "upload": {
     "flash_size": "8MB",
     "maximum_ram_size": 327680,
@@ -44,6 +43,6 @@
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://termod-s3.readthedocs.io/en/latest/",
-  "vendor": "TAMC"
+  "url": "https://github.com/ArtronShop",
+  "vendor": "ArtronShop"
 }

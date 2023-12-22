@@ -2,12 +2,13 @@
   "build": {
     "arduino": {
       "ldscript": "esp32s3_out.ld",
-      "partitions": "partitions-4MB-tinyuf2.csv"
+      "memory_type": "qio_qspi"
     },
     "core": "esp32",
     "extra_flags": [
-      "-DARDUINO_ADAFRUIT_FEATHER_ESP32S3_TFT",
-      "-DARDUINO_USB_CDC_ON_BOOT=1",
+      "-DBOARD_HAS_PSRAM",
+      "-DARDUINO_AVENTEN_S3_SYNC",
+      "-DARDUINO_USB_MODE=1",
       "-DARDUINO_RUNNING_CORE=1",
       "-DARDUINO_EVENT_RUNNING_CORE=1"
     ],
@@ -16,20 +17,12 @@
     "flash_mode": "qio",
     "hwids": [
       [
-        "0x239A",
-        "0x811D"
-      ],
-      [
-        "0x239A",
-        "0x011D"
-      ],
-      [
-        "0x239A",
-        "0x811E"
+        "0x303A",
+        "0x1001"
       ]
     ],
     "mcu": "esp32s3",
-    "variant": "adafruit_feather_esp32s3_tft"
+    "variant": "Aventen_S3_Sync"
   },
   "connectivity": [
     "bluetooth",
@@ -42,24 +35,16 @@
     "arduino",
     "espidf"
   ],
-  "name": "Adafruit Feather ESP32-S3 TFT",
+  "name": "Aventen S3 Sync",
   "upload": {
-    "arduino": {
-      "flash_extra_images": [
-        [
-          "0x2d0000",
-          "variants/adafruit_feather_esp32s3_tft/tinyuf2.bin"
-        ]
-      ]
-    },
-    "flash_size": "4MB",
+    "flash_size": "16MB",
     "maximum_ram_size": 327680,
-    "maximum_size": 4194304,
+    "maximum_size": 16777216,
     "use_1200bps_touch": true,
     "wait_for_upload_port": true,
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://www.adafruit.com/product/5483",
-  "vendor": "Adafruit"
+  "url": "https://www.linkedin.com/company/aventen/",
+  "vendor": "Aventen"
 }

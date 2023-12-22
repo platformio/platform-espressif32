@@ -23,6 +23,7 @@
     "variant": "wifiduino32s3"
   },
   "connectivity": [
+    "bluetooth",
     "wifi"
   ],
   "debug": {

@@ -33,6 +33,7 @@
     "variant": "adafruit_feather_esp32s3"
   },
   "connectivity": [
+    "bluetooth",
     "wifi"
   ],
   "debug": {

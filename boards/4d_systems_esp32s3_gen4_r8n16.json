@@ -2,16 +2,17 @@
   "build": {
     "arduino": {
       "ldscript": "esp32s3_out.ld",
-      "memory_type": "qio_qspi"
+      "memory_type": "qio_opi",
+      "partitions": "default_16MB.csv"
     },
     "core": "esp32",
     "extra_flags": [
-      "-DARDUINO_TAMC_TERMOD_S3",
+      "-DARDUINO_ESP32_S3R8N16",
+      "-DBOARD_HAS_PSRAM",
       "-DARDUINO_USB_MODE=1",
       "-DARDUINO_USB_CDC_ON_BOOT=1",
       "-DARDUINO_RUNNING_CORE=1",
-      "-DARDUINO_EVENT_RUNNING_CORE=1",
-      "-DBOARD_HAS_PSRAM"
+      "-DARDUINO_EVENT_RUNNING_CORE=1"
     ],
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
@@ -23,7 +24,7 @@
       ]
     ],
     "mcu": "esp32s3",
-    "variant": "tamc_termod_s3"
+    "variant": "esp32_s3r8n16"
   },
   "connectivity": [
     "bluetooth",
@@ -36,14 +37,14 @@
     "arduino",
     "espidf"
   ],
-  "name": "TAMC Termod S3",
+  "name": "4D Systems GEN4-ESP32 16MB (ESP32S3-R8N16)",
   "upload": {
-    "flash_size": "8MB",
+    "flash_size": "16MB",
     "maximum_ram_size": 327680,
-    "maximum_size": 8388608,
+    "maximum_size": 16777216,
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://termod-s3.readthedocs.io/en/latest/",
-  "vendor": "TAMC"
+  "url": "https://4dsystems.com.au/products",
+  "vendor": "4D Systems"
 }

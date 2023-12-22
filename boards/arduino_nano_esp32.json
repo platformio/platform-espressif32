@@ -30,6 +30,7 @@
     "variant": "arduino_nano_nora"
   },
   "connectivity": [
+    "bluetooth",
     "wifi"
   ],
   "debug": {

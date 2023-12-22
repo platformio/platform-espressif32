@@ -25,6 +25,7 @@
     "variant": "redpill_esp32s3"
   },
   "connectivity": [
+    "bluetooth",
     "wifi"
   ],
   "debug": {

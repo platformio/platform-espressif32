@@ -63,7 +63,7 @@ IDF5 = platform.get_package_version("framework-espidf").split(".")[1].startswith
 IDF_ENV_VERSION = "1.0.0"
 FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
 TOOLCHAIN_DIR = platform.get_package_dir(
-    "toolchain-%s" % ("riscv32-esp" if mcu in ("esp32c3","esp32c6") else ("xtensa-%s" % mcu))
+    "toolchain-%s" % ("riscv32-esp" if mcu in ("esp32c3", "esp32c6") else ("xtensa-%s" % mcu))
 )
 
 
@@ -97,8 +97,8 @@ PROJECT_DIR = env.subst("$PROJECT_DIR")
 PROJECT_SRC_DIR = env.subst("$PROJECT_SRC_DIR")
 CMAKE_API_REPLY_PATH = os.path.join(".cmake", "api", "v1", "reply")
 SDKCONFIG_PATH = os.path.expandvars(board.get(
-    "build.esp-idf.sdkconfig_path",
-    os.path.join(PROJECT_DIR, "sdkconfig.%s" % env.subst("$PIOENV")),
+        "build.esp-idf.sdkconfig_path",
+        os.path.join(PROJECT_DIR, "sdkconfig.%s" % env.subst("$PIOENV")),
 ))
 
 
@@ -373,8 +373,8 @@ def extract_link_args(target_config):
             elif fragment.endswith(".a"):
                 archive_path = fragment
                 # process static archives
-                if archive_path.startswith(FRAMEWORK_DIR):
-                    # In case of precompiled archives from framework package
+                if os.path.isabs(archive_path):
+                    # In case of precompiled archives
                     _add_archive(archive_path, link_args)
                 else:
                     # In case of archives within project
@@ -1212,7 +1212,7 @@ def ensure_python_venv_available():
         env.Execute(
             env.VerboseAction(
                 '"$PYTHONEXE" -m venv --clear "%s"' % venv_dir,
-            "Creating a new virtual environment for IDF Python dependencies",
+                "Creating a new virtual environment for IDF Python dependencies",
             )
         )
 
@@ -1583,12 +1583,43 @@ if sdk_config.get("MBEDTLS_CERTIFICATE_BUNDLE", False):
     generate_mbedtls_bundle(sdk_config)
 
 #
+# Check if flash size is set correctly in the IDF configuration file
+#
+
+board_flash_size = board.get("upload.flash_size", "4MB")
+idf_flash_size = sdk_config.get("ESPTOOLPY_FLASHSIZE", "4MB")
+if board_flash_size != idf_flash_size:
+    print(
+        "Warning! Flash memory size mismatch detected. Expected %s, found %s!"
+        % (board_flash_size, idf_flash_size)
+    )
+    print(
+        "Please select a proper value in your `sdkconfig.defaults` "
+        "or via the `menuconfig` target!"
+    )
+
+#
 # To embed firmware checksum a special argument for esptool.py is required
 #
 
+extra_elf2bin_flags = "--elf-sha256-offset 0xb0"
+# https://github.com/espressif/esp-idf/blob/master/components/esptool_py/project_include.cmake#L58
+# For chips that support configurable MMU page size feature
+# If page size is configured to values other than the default "64KB" in menuconfig,
+mmu_page_size = "64KB"
+if sdk_config.get("SOC_MMU_PAGE_SIZE_CONFIGURABLE", False):
+    if board_flash_size == "2MB":
+        mmu_page_size = "32KB"
+    elif board_flash_size == "1MB":
+        mmu_page_size = "16KB"
+
+if mmu_page_size != "64KB":
+    extra_elf2bin_flags += " --flash-mmu-page-size %s" % mmu_page_size
+
 action = copy.deepcopy(env["BUILDERS"]["ElfToBin"].action)
+
 action.cmd_list = env["BUILDERS"]["ElfToBin"].action.cmd_list.replace(
-    "-o", "--elf-sha256-offset 0xb0 -o"
+    "-o", extra_elf2bin_flags + " -o"
 )
 env["BUILDERS"]["ElfToBin"].action = action
 

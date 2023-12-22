@@ -79,7 +79,7 @@
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~3.20011.0"
+      "version": "~3.20014.0"
     },
     "framework-arduino-mbcwb": {
       "type": "framework",
@@ -91,8 +91,8 @@
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~3.50101.0",
-      "optionalVersions": ["~3.40405.0"]
+      "version": "~3.50102.0",
+      "optionalVersions": ["~3.40406.0"]
     },
     "tool-esptoolpy": {
       "type": "uploader",
