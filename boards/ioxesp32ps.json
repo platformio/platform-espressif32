@@ -29,7 +29,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "ArtronShop IOXESP32",
+  "name": "ArtronShop IOXESP32PS",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
