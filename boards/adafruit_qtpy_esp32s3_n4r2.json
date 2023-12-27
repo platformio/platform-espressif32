@@ -6,10 +6,11 @@
     },
     "core": "esp32",
     "extra_flags": [
-      "-DARDUINO_ADAFRUIT_FEATHER_ESP32S3_TFT",
+      "-DARDUINO_ADAFRUIT_QTPY_ESP32S3_N4R2",
       "-DARDUINO_USB_CDC_ON_BOOT=1",
       "-DARDUINO_RUNNING_CORE=1",
-      "-DARDUINO_EVENT_RUNNING_CORE=1"
+      "-DARDUINO_EVENT_RUNNING_CORE=1",
+      "-DBOARD_HAS_PSRAM"
     ],
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
@@ -17,19 +18,19 @@
     "hwids": [
       [
         "0x239A",
-        "0x811D"
+        "0x8143"
       ],
       [
         "0x239A",
-        "0x011D"
+        "0x0143"
       ],
       [
         "0x239A",
-        "0x811E"
+        "0x8144"
       ]
     ],
     "mcu": "esp32s3",
-    "variant": "adafruit_feather_esp32s3_tft"
+    "variant": "adafruit_qtpy_esp32s3_n4r2"
   },
   "connectivity": [
     "bluetooth",
@@ -42,13 +43,13 @@
     "arduino",
     "espidf"
   ],
-  "name": "Adafruit Feather ESP32-S3 TFT",
+  "name": "Adafruit QT Py ESP32-S3 (4M Flash 2M PSRAM)",
   "upload": {
     "arduino": {
       "flash_extra_images": [
         [
           "0x2d0000",
-          "variants/adafruit_feather_esp32s3_tft/tinyuf2.bin"
+          "variants/adafruit_qtpy_esp32s3_n4r2/tinyuf2.bin"
         ]
       ]
     },
@@ -60,6 +61,6 @@
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://www.adafruit.com/product/5483",
+  "url": "https://www.adafruit.com/product/5700",
   "vendor": "Adafruit"
 }

@@ -26,6 +26,7 @@
     "variant": "um_tinys3"
   },
   "connectivity": [
+    "bluetooth",
     "wifi"
   ],
   "debug": {

@@ -23,6 +23,7 @@
     "variant": "Bee_S3"
   },
   "connectivity": [
+    "bluetooth",
     "wifi"
   ],
   "debug": {

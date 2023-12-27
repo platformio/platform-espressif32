@@ -113,7 +113,7 @@ class Espressif32Platform(PlatformBase):
 
             if "arduino" in frameworks:
                 # Downgrade the IDF version for mixed Arduino+IDF projects
-                self.packages["framework-espidf"]["version"] = "~3.40405.0"
+                self.packages["framework-espidf"]["version"] = "~3.40406.0"
             else:
                 # Use the latest toolchains available for IDF v5.0
                 for target in (
@@ -198,6 +198,10 @@ class Espressif32Platform(PlatformBase):
             "olimex-jtag-tiny",
             "tumpa",
         ]
+
+        # A special case for the Kaluga board that has a separate interface config
+        if board.id == "esp32-s2-kaluga-1":
+            supported_debug_tools.append("ftdi")
 
         if board.get("build.mcu", "") in ("esp32c3", "esp32c6", "esp32s3"):
             supported_debug_tools.append("esp-builtin")
