@@ -50,7 +50,7 @@
     "framework-espidf": {
       "type": "framework",
       "optional": true,
-      "owner": "platformio",
+      "owner": "tasmota",
       "version": "https://github.com/tasmota/esp-idf/releases/download/v5.1.2.240106/esp-idf-v5.1.2.zip"
     },
     "toolchain-xtensa-esp32": {
