@@ -26,7 +26,6 @@ import subprocess
 import sys
 import shutil
 import os
-import pkg_resources
 import platform as sys_platform
 
 import click
@@ -1149,9 +1148,7 @@ def install_python_deps():
 
         # A special "esp-windows-curses" python package is required on Windows
         # for Menuconfig on IDF <5
-        if not IDF5 and "esp-windows-curses" not in {
-            pkg.key for pkg in pkg_resources.working_set
-        }:
+        if not IDF5 and "esp-windows-curses" not in installed_packages:
             env.Execute(
                 env.VerboseAction(
                     '"%s" -m pip install "file://%s/tools/kconfig_new/esp-windows-curses"'
