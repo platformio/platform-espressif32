@@ -78,14 +78,14 @@ class Espressif32Platform(PlatformBase):
                 # launch a GDB server in pipe mode while v11 works fine
                 self.packages[gdb_package]["version"] = "~11.2.0"
 
-            # Common packages for IDF and mixed Arduino+IDF projects
-            if "espidf" in frameworks:
-                self.packages["toolchain-esp32ulp"]["optional"] = False
-                for p in self.packages:
-                    if p in ("tool-cmake", "tool-ninja"):
-                        self.packages[p]["optional"] = False
-                    elif p in ("tool-mconf", "tool-idf") and IS_WINDOWS:
-                        self.packages[p]["optional"] = False
+        # Common packages for IDF and mixed Arduino+IDF projects
+        if "espidf" in frameworks:
+            self.packages["toolchain-esp32ulp"]["optional"] = False
+            for p in self.packages:
+                if p in ("tool-cmake", "tool-ninja"):
+                    self.packages[p]["optional"] = False
+                elif p in ("tool-mconf", "tool-idf") and IS_WINDOWS:
+                    self.packages[p]["optional"] = False
 
         for available_mcu in ("esp32", "esp32s2", "esp32s3"):
             if available_mcu == mcu:
