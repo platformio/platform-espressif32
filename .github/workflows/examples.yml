@@ -52,6 +52,6 @@ jobs:
           git clone https://github.com/arendst/Tasmota.git examples/tasmota
           cp examples/tasmota_platformio_override.ini examples/tasmota/platformio_override.ini
       - name: Build examples
-        if: "matrix.example != 'examples/tasmota' && matrix.os != 'windows-2022'"
+        if: "matrix.example != 'examples/tasmota' || matrix.os != 'windows-2022'"
         run: |
           pio run -d ${{ matrix.example }}
