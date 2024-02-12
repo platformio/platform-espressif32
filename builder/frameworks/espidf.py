@@ -962,7 +962,7 @@ def generate_empty_partition_image(binary_path, image_size):
 def get_partition_info(pt_path, pt_offset, pt_params):
     if not os.path.isfile(pt_path):
         sys.stderr.write(
-            "Missing partition table file `%s`\n" % os.path.basename(pt_path)
+            "Missing partition table file `%s`\n" % pt_path
         )
         env.Exit(1)
 
