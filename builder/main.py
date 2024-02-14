@@ -69,10 +69,10 @@ def _get_board_f_flash(env):
     return _normalize_frequency(frequency)
 
 
-def _get_board_img_freq(env):
+def _get_board_f_image(env):
     board_config = env.BoardConfig()
-    if "build.img_freq" in board_config:
-        return _normalize_frequency(board_config.get("build.img_freq"))
+    if "build.f_image" in board_config:
+        return _normalize_frequency(board_config.get("build.f_image"))
 
     return _get_board_f_flash(env)
 
