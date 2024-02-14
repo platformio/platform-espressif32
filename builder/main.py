@@ -59,14 +59,22 @@ def _get_board_memory_type(env):
     )
 
 
-def _get_board_f_flash(env):
-    frequency = env.subst("$BOARD_F_FLASH")
+def _normalize_frequency(frequency):
     frequency = str(frequency).replace("L", "")
     return str(int(int(frequency) / 1000000)) + "m"
 
 
+def _get_board_f_flash(env):
+    frequency = env.subst("$BOARD_F_FLASH")
+    return _normalize_frequency(frequency)
+
+
 def _get_board_img_freq(env):
-    return env.BoardConfig().get("build.img_freq", _get_board_f_flash(env))
+    board_config = env.BoardConfig()
+    if "build.img_freq" in board_config:
+        return _normalize_frequency(board_config.get("build.img_freq"))
+
+    return _get_board_f_flash(env)
 
 
 def _get_board_flash_mode(env):
