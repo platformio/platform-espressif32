@@ -131,7 +131,7 @@
     "tool-ninja": {
       "optional": true,
       "owner": "platformio",
-      "version": "^1.10.0"
+      "version": "~1.10.2"
     },
     "tool-mconf": {
       "optional": true,
