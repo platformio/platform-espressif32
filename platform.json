@@ -81,12 +81,6 @@
       "owner": "platformio",
       "version": "~3.20014.0"
     },
-    "framework-arduino-mbcwb": {
-      "type": "framework",
-      "optional": true,
-      "owner": "meteca",
-      "version": ">=2.1.1"
-    },
     "framework-espidf": {
       "type": "framework",
       "optional": true,
@@ -98,11 +92,6 @@
       "type": "uploader",
       "owner": "platformio",
       "version": "~1.40501.0"
-    },
-    "tool-mbctool": {
-      "optional": true,
-      "owner": "meteca",
-      "version": ">=2.0.0"
     },
     "tool-dfuutil-arduino": {
       "type": "uploader",

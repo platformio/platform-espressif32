@@ -139,29 +139,6 @@ class Espressif32Platform(PlatformBase):
             # RISC-V based toolchain for ESP32C3, ESP32C6 ESP32S2, ESP32S3 ULP
             self.packages["toolchain-riscv32-esp"]["optional"] = False
 
-        if build_core == "mbcwb":
-            # Remove the main toolchains from PATH
-            for toolchain in (
-                "toolchain-xtensa-esp32",
-                "toolchain-xtensa-esp32s2",
-                "toolchain-xtensa-esp32s3",
-                "toolchain-riscv32-esp",
-            ):
-                self.packages.pop(toolchain, None)
-
-            # Add legacy toolchain with specific version
-            self.packages["toolchain-xtensa32"] = {
-                "type": "toolchain",
-                "owner": "platformio",
-                "version": "~2.50200.0"
-            }
-
-            if build_core == "mbcwb":
-                self.packages["framework-arduinoespressif32"]["optional"] = True
-                self.packages["framework-arduino-mbcwb"]["optional"] = False
-                self.packages["tool-mbctool"]["type"] = "uploader"
-                self.packages["tool-mbctool"]["optional"] = False
-
         return super().configure_default_packages(variables, targets)
 
     def get_boards(self, id_=None):
@@ -184,7 +161,7 @@ class Espressif32Platform(PlatformBase):
 
         # debug tools
         debug = board.manifest.get("debug", {})
-        non_debug_protocols = ["esptool", "espota", "mbctool"]
+        non_debug_protocols = ["esptool", "espota"]
         supported_debug_tools = [
             "cmsis-dap",
             "esp-prog",
