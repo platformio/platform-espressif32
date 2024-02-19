@@ -21,8 +21,7 @@
     "openocd_target": "esp32-solo-1.cfg"
   },
   "frameworks": [
-    "arduino",
-    "espidf"
+    "arduino"
   ],
   "name": "Espressif Generic ESP32-solo1 4M Flash",
   "upload": {
