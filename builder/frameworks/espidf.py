@@ -421,7 +421,7 @@ def get_app_flags(app_config, default_config):
 
     # Flags are sorted because CMake randomly populates build flags in code model
     return {
-        "ASFLAGS": sorted(app_flags.get("ASM", default_flags.get("ASM"))),
+        "ASPPFLAGS": sorted(app_flags.get("ASM", default_flags.get("ASM"))),
         "CFLAGS": sorted(app_flags.get("C", default_flags.get("C"))),
         "CXXFLAGS": sorted(app_flags.get("CXX", default_flags.get("CXX"))),
     }
@@ -639,7 +639,7 @@ def prepare_build_envs(config, default_env, debug_allowed=True):
                 parsed_flags = build_env.ParseFlags(build_flags)
                 build_env.AppendUnique(**parsed_flags)
                 if cg.get("language", "") == "ASM":
-                    build_env.AppendUnique(ASFLAGS=parsed_flags.get("CCFLAGS", []))
+                    build_env.AppendUnique(ASPPFLAGS=parsed_flags.get("CCFLAGS", []))
         build_env.AppendUnique(CPPDEFINES=defines, CPPPATH=includes)
         if sys_includes:
             build_env.Append(CCFLAGS=[("-isystem", inc) for inc in sys_includes])
