@@ -34,6 +34,7 @@ class Esp32ExceptionDecoder(DeviceMonitorFilterBase):
 
     BACKTRACE_PATTERN = re.compile(r"^Backtrace:(((\s?0x[0-9a-fA-F]{8}:0x[0-9a-fA-F]{8}))+)")
     BACKTRACE_ADDRESS_PATTERN = re.compile(r'0x[0-9a-fA-F]{8}:0x[0-9a-fA-F]{8}')
+    ANSI_ESCAPE_PATTERN = re.compile(r'(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~]')
 
     def __call__(self):
         self.buffer = ""
@@ -49,6 +50,11 @@ Please build project in debug configuration to get more details about an excepti
 See https://docs.platformio.org/page/projectconf/build_configurations.html
 
 """
+            )
+
+        if self.config.get("env:" + self.environment, "monitor_raw") == "yes":
+            sys.stderr.write(
+                "%s: The filter is disabled and will not be called, due to 'monitor_raw' = 'yes'.\n" % self.__class__.__name__
             )
 
         return self
@@ -100,7 +106,9 @@ See https://docs.platformio.org/page/projectconf/build_configurations.html
                 self.buffer = ""
             last = idx + 1
 
-            m = self.BACKTRACE_PATTERN.match(line)
+            strip_line = self.strip_ansi(line)
+
+            m = self.BACKTRACE_PATTERN.match(strip_line)
             if m is None:
                 continue
 
@@ -140,3 +148,6 @@ See https://docs.platformio.org/page/projectconf/build_configurations.html
                 break
             trace = trace[:idx] + trace[idx + len(self.project_dir) + 1 :]
         return trace
+
+    def strip_ansi(self, line):
+        return self.ANSI_ESCAPE_PATTERN.sub('', line)
