@@ -19,7 +19,7 @@ Espressif Systems is a privately held fabless semiconductor company. They provid
 Support for the ESP32/ESP32solo1, ESP32C2, ESP32C3, ESP32C6, ESP32S2, ESP32S3 and ESP32-H2
 ```                  
 [platformio]
-platform = [https](https://github.com/Jason2866/platform-espressif32.git#Arduino/IDF5)
+platform = https://github.com/Jason2866/platform-espressif32.git#Arduino/IDF5
 framework = arduino
 ```
 to use the ESP32 Solo1 Arduino framework add in your env
