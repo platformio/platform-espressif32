@@ -124,14 +124,19 @@ def compile_ulp_binary():
         "build",
     )
 
-    return ulp_env.Command(
+    # The `build.ninja` dependency is always generated with the same content
+    # so a cloned environment with a decider that depends on a timestamp is used
+    ulp_binary_env = ulp_env.Clone()
+    ulp_binary_env.Decider("timestamp-newer")
+
+    return ulp_binary_env.Command(
         [
             os.path.join(ULP_BUILD_DIR, "ulp_main.h"),
             os.path.join(ULP_BUILD_DIR, "ulp_main.ld"),
             os.path.join(ULP_BUILD_DIR, "ulp_main.bin"),
         ],
         None,
-        ulp_env.VerboseAction(" ".join(cmd), "Generating ULP project files $TARGETS"),
+        ulp_binary_env.VerboseAction(" ".join(cmd), "Generating ULP project files $TARGETS"),
     )
 
 
