@@ -5,6 +5,7 @@
       "memory_type": "qio_opi",
       "partitions": "default_16MB.csv"
     },
+    "boot": "qio",
     "core": "esp32",
     "extra_flags": [
       "-DBOARD_HAS_PSRAM",
@@ -16,7 +17,7 @@
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
     "f_boot": "120000000L",
-    "flash_mode": "qio",
+    "flash_mode": "dout",
     "hwids": [
       [
         "0x303A",
