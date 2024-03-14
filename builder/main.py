@@ -87,6 +87,12 @@ def _get_board_f_image(env):
 
     return _get_board_f_flash(env)
 
+def _get_board_f_boot(env):
+    board_config = env.BoardConfig()
+    if "build.f_boot" in board_config:
+        return _normalize_frequency(board_config.get("build.f_boot"))
+
+    return _get_board_f_flash(env)
 
 
 def _get_board_flash_mode(env):
@@ -225,6 +231,7 @@ env.Replace(
     __get_board_boot_mode=_get_board_boot_mode,
     __get_board_f_flash=_get_board_f_flash,
     __get_board_f_image=_get_board_f_image,
+    __get_board_f_boot=_get_board_f_boot,
     __get_board_flash_mode=_get_board_flash_mode,
     __get_board_memory_type=_get_board_memory_type,
 
