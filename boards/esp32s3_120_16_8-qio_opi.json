@@ -2,16 +2,15 @@
   "build": {
     "arduino": {
       "ldscript": "esp32s3_out.ld",
+      "memory_type": "qio_opi",
       "partitions": "default_16MB.csv"
     },
     "core": "esp32",
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
     "f_boot": "120000000L",
-    "memory_type": "qio_opi",
-    "psram_type": "opi",
-    "flash_mode": "dout",
     "boot": "qio",
+    "flash_mode": "qio",
     "extra_flags": [
       "-DBOARD_HAS_PSRAM",
       "-DARDUINO_USB_MODE=1",
