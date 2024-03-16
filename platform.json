@@ -81,6 +81,12 @@
       "owner": "platformio",
       "version": "~3.20014.0"
     },
+    "framework-arduinoespressif32-libs": {
+      "type": "sdk",
+      "optional": true,
+      "owner": "espressif",
+      "version": "~5.1.0"
+    },
     "framework-espidf": {
       "type": "framework",
       "optional": true,
