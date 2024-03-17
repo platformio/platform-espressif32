@@ -535,7 +535,7 @@ env.AddPlatformTarget(
     "erase_upload",
     target_firm,
     [
-        env.VerboseAction(env.AutodetectUploadPort, "Looking for serial port..."),
+        env.VerboseAction(BeforeUpload, "Looking for upload port..."),
         env.VerboseAction("$ERASECMD", "Erasing..."),
         env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")
     ],
@@ -550,7 +550,7 @@ env.AddPlatformTarget(
     "erase",
     None,
     [
-        env.VerboseAction(env.AutodetectUploadPort, "Looking for serial port..."),
+        env.VerboseAction(BeforeUpload, "Looking for upload port..."),
         env.VerboseAction("$ERASECMD", "Erasing...")
     ],
     "Erase Flash",
