@@ -443,6 +443,17 @@ if upload_protocol == "espota":
     upload_actions = [env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")]
 
 elif upload_protocol == "esptool":
+    # Assume compressed upload unless encrypted upload is requested
+    compress_flags = [
+        '--compress'
+    ]
+    if 'UPLOAD_FLAGS' in env and '--encrypt' in env['UPLOAD_FLAGS']:
+        env['UPLOAD_FLAGS'].remove('--encrypt')
+        compress_flags = [
+            '--no-compress',
+            '--encrypt'
+        ]
+
     env.Replace(
         UPLOADER=join(
             platform.get_package_dir("tool-esptoolpy") or "", "esptool.py"),
@@ -452,7 +463,8 @@ elif upload_protocol == "esptool":
             "--baud", "$UPLOAD_SPEED",
             "--before", board.get("upload.before_reset", "default_reset"),
             "--after", board.get("upload.after_reset", "hard_reset"),
-            "write_flash", "-z",
+            "write_flash"
+        ] + compress_flags + [
             "--flash_mode", "${__get_board_flash_mode(__env__)}",
             "--flash_freq", "${__get_board_f_image(__env__)}",
             "--flash_size", board.get("upload.flash_size", "detect")
