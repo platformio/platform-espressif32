@@ -250,7 +250,7 @@ env.Replace(
     __get_board_flash_mode=_get_board_flash_mode,
     __get_board_memory_type=_get_board_memory_type,
 
-    AR="%s-elf-ar" % toolchain_arch,
+    AR="%s-elf-gcc-ar" % toolchain_arch,
     AS="%s-elf-as" % toolchain_arch,
     CC="%s-elf-gcc" % toolchain_arch,
     CXX="%s-elf-g++" % toolchain_arch,
@@ -266,7 +266,7 @@ env.Replace(
     ) if env.get("PIOFRAMEWORK") == ["espidf"] else "%s-elf-gdb" % toolchain_arch,
     OBJCOPY=join(
         platform.get_package_dir("tool-esptoolpy") or "", "esptool.py"),
-    RANLIB="%s-elf-ranlib" % toolchain_arch,
+    RANLIB="%s-elf-gcc-ranlib" % toolchain_arch,
     SIZETOOL="%s-elf-size" % toolchain_arch,
 
     ARFLAGS=["rc"],
