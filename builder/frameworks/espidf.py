@@ -1109,6 +1109,10 @@ def install_python_deps():
 
         return result
 
+    skip_python_packages = os.path.join(FRAMEWORK_DIR, ".pio_skip_pypackages")
+    if os.path.isfile(skip_python_packages):
+        return
+
     deps = {
         # https://github.com/platformio/platformio-core/issues/4614
         "urllib3": "<2",
