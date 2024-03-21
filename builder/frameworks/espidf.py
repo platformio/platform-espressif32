@@ -1115,10 +1115,10 @@ def install_python_deps():
         # https://github.com/platformio/platform-espressif32/issues/635
         "cryptography": "~=41.0.1" if IDF5 else ">=2.1.4,<35.0.0",
         "future": ">=0.18.3",
-        "pyparsing": "~=3.0.9" if IDF5 else ">=2.0.3,<2.4.0",
+        "pyparsing": ">=3.1.0,<4" if IDF5 else ">=2.0.3,<2.4.0",
         "kconfiglib": "~=14.1.0" if IDF5 else "~=13.7.1",
         "idf-component-manager": "~=1.5.2" if IDF5 else "~=1.0",
-        "esp-idf-kconfig": "~=1.2.0"
+        "esp-idf-kconfig": ">=1.4.2,<2.0.0"
     }
 
     if sys_platform.system() == "Darwin" and "arm" in sys_platform.machine().lower():
@@ -1165,6 +1165,7 @@ def install_python_deps():
                 )
             )
 
+
 def get_idf_venv_dir():
     # The name of the IDF venv contains the IDF version to avoid possible conflicts and
     # unnecessary reinstallation of Python dependencies in cases when Arduino
@@ -1174,6 +1175,7 @@ def get_idf_venv_dir():
     return os.path.join(
         env.subst("$PROJECT_CORE_DIR"), "penv", ".espidf-" + idf_version
     )
+
 
 def ensure_python_venv_available():
 
@@ -1216,7 +1218,6 @@ def ensure_python_venv_available():
         assert os.path.isfile(
             pip_path
         ), "Error: Failed to create a proper virtual environment. Missing the `pip` binary!"
-
 
     venv_dir = get_idf_venv_dir()
     venv_data_file = os.path.join(venv_dir, "pio-idf-venv.json")
