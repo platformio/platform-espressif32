@@ -120,9 +120,16 @@ class Espressif32Platform(PlatformBase):
                     "xtensa-esp32",
                     "xtensa-esp32s2",
                     "xtensa-esp32s3",
-                    "riscv32-esp"
+                    "riscv32-esp",
                 ):
-                    self.packages["toolchain-%s" % target]["version"] = "12.2.0+20230208"
+                    self.packages["toolchain-%s" % target]["version"] = (
+                        "13.2.0+20230928"
+                        if target == "riscv32-esp"
+                        else "12.2.0+20230208"
+                    )
+                    if target == "riscv32-esp":
+                        # Pull the latest RISC-V toolchain from PlatformIO organization
+                        self.packages["toolchain-%s" % target]["owner"] = "platformio"
 
         if "arduino" in frameworks:
             # Disable standalone GDB packages for Arduino and Arduino/IDF projects

@@ -55,7 +55,7 @@
       "optional": true,
       "owner": "espressif",
       "version": "8.4.0+2021r2-patch5",
-      "optionalVersions": ["12.2.0+20230208"]
+      "optionalVersions": ["13.2.0+20230928"]
     },
     "toolchain-esp32ulp": {
       "type": "toolchain",
