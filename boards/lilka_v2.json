@@ -13,7 +13,10 @@
       "-DARDUINO_USB_CDC_ON_BOOT=1",
       "-DARDUINO_RUNNING_CORE=1",
       "-DARDUINO_EVENT_RUNNING_CORE=1",
-      "-DBOARD_HAS_PSRAM"
+      "-DBOARD_HAS_PSRAM",
+      "-DPIN_I2S_SD=2",
+      "-DPIN_I2S_FS=1",
+      "-DPIN_I2S_SCK=42"
     ],
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
