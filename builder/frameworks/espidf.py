@@ -76,7 +76,7 @@ if (
     <= semantic_version.Version("6.1.10")
     and "__debug" in COMMAND_LINE_TARGETS
 ):
-    print("Warning! Debugging an IDF project requires PlatformIO Core >= 6.1.11!") 
+    print("Warning! Debugging an IDF project requires PlatformIO Core >= 6.1.11!")
 
 # Arduino framework as a component is not compatible with ESP-IDF >=4.1
 if "arduino" in env.subst("$PIOFRAMEWORK"):
