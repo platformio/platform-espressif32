@@ -69,6 +69,15 @@ TOOLCHAIN_DIR = platform.get_package_dir(
 assert os.path.isdir(FRAMEWORK_DIR)
 assert os.path.isdir(TOOLCHAIN_DIR)
 
+# The latest IDF uses a standalone GDB package which requires at least PlatformIO 6.1.11
+if (
+    ["espidf"] == env.get("PIOFRAMEWORK")
+    and semantic_version.Version.coerce(__version__)
+    <= semantic_version.Version("6.1.10")
+    and "__debug" in COMMAND_LINE_TARGETS
+):
+    print("Warning! Debugging an IDF project requires PlatformIO Core >= 6.1.11!") 
+
 # Arduino framework as a component is not compatible with ESP-IDF >=4.1
 if "arduino" in env.subst("$PIOFRAMEWORK"):
     ARDUINO_FRAMEWORK_DIR = platform.get_package_dir("framework-arduinoespressif32")
