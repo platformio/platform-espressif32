@@ -665,7 +665,7 @@ def compile_source_files(
 ):
     build_envs = prepare_build_envs(config, default_env, debug_allowed)
     objects = []
-    components_dir = fs.to_unix_path(os.path.join(FRAMEWORK_DIR, "components"))
+    components_dir = fs.to_unix_path(os.path.join(FRAMEWORK_DIR, "components")).lower()
     for source in config.get("sources", []):
         if source["path"].endswith(".rule"):
             continue
@@ -674,7 +674,10 @@ def compile_source_files(
             src_dir = config["paths"]["source"]
             if not os.path.isabs(src_dir):
                 src_dir = os.path.join(project_src_dir, config["paths"]["source"])
-            src_path = source.get("path")
+            src_path = os.path.join(
+                os.path.dirname(source.get("path")).lower(),
+                os.path.basename(source.get("path"))
+            )
             if not os.path.isabs(src_path):
                 # For cases when sources are located near CMakeLists.txt
                 src_path = os.path.join(project_src_dir, src_path)
