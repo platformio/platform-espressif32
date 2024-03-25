@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 /* ULP Example
 
    This example code is in the Public Domain (or CC0 licensed, at your option.)
@@ -17,13 +22,7 @@
 #include "soc/rtc_periph.h"
 #include "driver/gpio.h"
 #include "driver/rtc_io.h"
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/ulp.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/ulp.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/ulp.h"
-#endif
+#include "ulp.h"
 #include "ulp_main.h"
 
 extern const uint8_t ulp_main_bin_start[] asm("_binary_ulp_main_bin_start");
