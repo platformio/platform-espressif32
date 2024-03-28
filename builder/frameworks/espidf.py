@@ -680,7 +680,7 @@ def compile_source_files(
                 src_path = os.path.join(project_src_dir, src_path)
 
             obj_path = os.path.join("$BUILD_DIR", prepend_dir or "")
-            if src_path.startswith(components_dir):
+            if src_path.lower().startswith(components_dir.lower()):
                 obj_path = os.path.join(
                     obj_path, os.path.relpath(src_path, components_dir)
                 )
@@ -1170,6 +1170,7 @@ def install_python_deps():
                 )
             )
 
+
 def get_idf_venv_dir():
     # The name of the IDF venv contains the IDF version to avoid possible conflicts and
     # unnecessary reinstallation of Python dependencies in cases when Arduino
@@ -1179,6 +1180,7 @@ def get_idf_venv_dir():
     return os.path.join(
         env.subst("$PROJECT_CORE_DIR"), "penv", ".espidf-" + idf_version
     )
+
 
 def ensure_python_venv_available():
 
@@ -1221,7 +1223,6 @@ def ensure_python_venv_available():
         assert os.path.isfile(
             pip_path
         ), "Error: Failed to create a proper virtual environment. Missing the `pip` binary!"
-
 
     venv_dir = get_idf_venv_dir()
     venv_data_file = os.path.join(venv_dir, "pio-idf-venv.json")
