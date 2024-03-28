@@ -1,8 +1,5 @@
 {
   "build": {
-    "arduino":{
-      "ldscript": "esp32s2_out.ld"
-    },
     "core": "esp32",
     "extra_flags": "-DARDUINO_ESP32S2_DEV",
     "f_cpu": "240000000L",
