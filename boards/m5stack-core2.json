@@ -1,7 +1,6 @@
 {
   "build": {
     "arduino":{
-      "ldscript": "esp32_out.ld",
       "partitions": "default_16MB.csv"
     },
     "core": "esp32",
