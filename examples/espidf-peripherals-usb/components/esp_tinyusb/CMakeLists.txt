@@ -1,73 +1,53 @@
-idf_build_get_property(target IDF_TARGET)
-
-if(target STREQUAL "esp32s3")
-    set(tusb_mcu "OPT_MCU_ESP32S3")
-    set(tusb_family "esp32sx")
-elseif(target STREQUAL "esp32s2")
-    set(tusb_mcu "OPT_MCU_ESP32S2")
-    set(tusb_family "esp32sx")
-else()
-    message(FATAL_ERROR "TinyUSB is not support on ${target}.")
-    return()
-endif()
-
-set(compile_options
-    "-DCFG_TUSB_MCU=${tusb_mcu}"
-    "-DCFG_TUSB_DEBUG=${CONFIG_TINYUSB_DEBUG_LEVEL}"
-    )
-
-idf_component_get_property(freertos_component_dir freertos COMPONENT_DIR)
-
-set(includes_private
-    "hw/bsp/"
-    "src/"
-    "src/device"
-    "additions/include_private"
-    )
-
-set(includes_public
-    "src/"
-    "additions/include"
-    # The FreeRTOS API include convention in tinyusb is different from esp-idf
-    "${freertos_component_dir}/FreeRTOS-Kernel/include/freertos"
-    )
-
 set(srcs
-    "src/portable/espressif/${tusb_family}/dcd_${tusb_family}.c"
-    "src/class/cdc/cdc_device.c"
-    "src/class/hid/hid_device.c"
-    "src/class/midi/midi_device.c"
-    "src/class/msc/msc_device.c"
-    "src/class/vendor/vendor_device.c"
-    "src/common/tusb_fifo.c"
-    "src/device/usbd_control.c"
-    "src/device/usbd.c"
-    "src/tusb.c"
-    "additions/src/descriptors_control.c"
-    "additions/src/tinyusb.c"
-    "additions/src/usb_descriptors.c"
+    "descriptors_control.c"
+    "tinyusb.c"
+    "usb_descriptors.c"
     )
 
 if(NOT CONFIG_TINYUSB_NO_DEFAULT_TASK)
-    list(APPEND srcs "additions/src/tusb_tasks.c")
-endif()
+    list(APPEND srcs "tusb_tasks.c")
+endif() # CONFIG_TINYUSB_NO_DEFAULT_TASK
 
 if(CONFIG_TINYUSB_CDC_ENABLED)
     list(APPEND srcs
-        "additions/src/cdc.c"
-        "additions/src/tusb_cdc_acm.c"
-        "additions/src/tusb_console.c"
-        "additions/src/vfs_tinyusb.c"
+        "cdc.c"
+        "tusb_cdc_acm.c"
         )
+    if(CONFIG_VFS_SUPPORT_IO)
+        list(APPEND srcs
+            "tusb_console.c"
+            "vfs_tinyusb.c"
+            )
+    endif() # CONFIG_VFS_SUPPORT_IO
 endif() # CONFIG_TINYUSB_CDC_ENABLED
 
+if(CONFIG_TINYUSB_MSC_ENABLED)
+    list(APPEND srcs
+        tusb_msc_storage.c
+        )
+endif() # CONFIG_TINYUSB_MSC_ENABLED
+
+if(CONFIG_TINYUSB_NET_MODE_NCM)
+    list(APPEND srcs
+         tinyusb_net.c
+         )
+endif() # CONFIG_TINYUSB_NET_MODE_NCM
+
 idf_component_register(SRCS ${srcs}
-                       INCLUDE_DIRS ${includes_public}
-                       PRIV_INCLUDE_DIRS ${includes_private}
-                       PRIV_REQUIRES "vfs" "usb" "driver"
+                       INCLUDE_DIRS "include"
+                       PRIV_INCLUDE_DIRS "include_private"
+                       PRIV_REQUIRES usb
+                       REQUIRES fatfs vfs                 
                        )
 
-target_compile_options(${COMPONENT_LIB} PRIVATE ${compile_options})
+# Determine whether tinyusb is fetched from component registry or from local path
+idf_build_get_property(build_components BUILD_COMPONENTS)
+if(tinyusb IN_LIST build_components)
+    set(tinyusb_name tinyusb) # Local component
+else()
+    set(tinyusb_name espressif__tinyusb) # Managed component
+endif()
 
-# when no builtin class driver is enabled, an uint8_t data compared with `BUILTIN_DRIVER_COUNT` will always be false
-set_source_files_properties("src/device/usbd.c" PROPERTIES COMPILE_FLAGS "-Wno-type-limits")
+# Pass tusb_config.h from this component to TinyUSB
+idf_component_get_property(tusb_lib ${tinyusb_name} COMPONENT_LIB)
+target_include_directories(${tusb_lib} PRIVATE "include")

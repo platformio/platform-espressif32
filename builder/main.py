@@ -59,10 +59,30 @@ def _get_board_memory_type(env):
     )
 
 
-def _get_board_f_flash(env):
-    frequency = env.subst("$BOARD_F_FLASH")
+def _normalize_frequency(frequency):
     frequency = str(frequency).replace("L", "")
     return str(int(int(frequency) / 1000000)) + "m"
+
+
+def _get_board_f_flash(env):
+    frequency = env.subst("$BOARD_F_FLASH")
+    return _normalize_frequency(frequency)
+
+
+def _get_board_f_image(env):
+    board_config = env.BoardConfig()
+    if "build.f_image" in board_config:
+        return _normalize_frequency(board_config.get("build.f_image"))
+
+    return _get_board_f_flash(env)
+
+
+def _get_board_f_boot(env):
+    board_config = env.BoardConfig()
+    if "build.f_boot" in board_config:
+        return _normalize_frequency(board_config.get("build.f_boot"))
+
+    return _get_board_f_flash(env)
 
 
 def _get_board_flash_mode(env):
@@ -225,10 +245,12 @@ if "INTEGRATION_EXTRA_DATA" not in env:
 env.Replace(
     __get_board_boot_mode=_get_board_boot_mode,
     __get_board_f_flash=_get_board_f_flash,
+    __get_board_f_image=_get_board_f_image,
+    __get_board_f_boot=_get_board_f_boot,
     __get_board_flash_mode=_get_board_flash_mode,
     __get_board_memory_type=_get_board_memory_type,
 
-    AR="%s-elf-ar" % toolchain_arch,
+    AR="%s-elf-gcc-ar" % toolchain_arch,
     AS="%s-elf-as" % toolchain_arch,
     CC="%s-elf-gcc" % toolchain_arch,
     CXX="%s-elf-g++" % toolchain_arch,
@@ -244,7 +266,7 @@ env.Replace(
     ) if env.get("PIOFRAMEWORK") == ["espidf"] else "%s-elf-gdb" % toolchain_arch,
     OBJCOPY=join(
         platform.get_package_dir("tool-esptoolpy") or "", "esptool.py"),
-    RANLIB="%s-elf-ranlib" % toolchain_arch,
+    RANLIB="%s-elf-gcc-ranlib" % toolchain_arch,
     SIZETOOL="%s-elf-size" % toolchain_arch,
 
     ARFLAGS=["rc"],
@@ -296,7 +318,7 @@ env.Append(
                         '"$PYTHONEXE" "$OBJCOPY"',
                 "--chip", mcu, "elf2image",
                 "--flash_mode", "${__get_board_flash_mode(__env__)}",
-                "--flash_freq", "${__get_board_f_flash(__env__)}",
+                "--flash_freq", "${__get_board_f_image(__env__)}",
                 "--flash_size", board.get("upload.flash_size", "4MB"),
                 "-o", "$TARGET", "$SOURCES"
             ]), "Building $TARGET"),
@@ -432,7 +454,7 @@ elif upload_protocol == "esptool":
             "--after", board.get("upload.after_reset", "hard_reset"),
             "write_flash", "-z",
             "--flash_mode", "${__get_board_flash_mode(__env__)}",
-            "--flash_freq", "${__get_board_f_flash(__env__)}",
+            "--flash_freq", "${__get_board_f_image(__env__)}",
             "--flash_size", board.get("upload.flash_size", "detect")
         ],
         UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS $ESP32_APP_OFFSET $SOURCE'
@@ -450,7 +472,7 @@ elif upload_protocol == "esptool":
                 "--after", board.get("upload.after_reset", "hard_reset"),
                 "write_flash", "-z",
                 "--flash_mode", "${__get_board_flash_mode(__env__)}",
-                "--flash_freq", "${__get_board_f_flash(__env__)}",
+                "--flash_freq", "${__get_board_f_image(__env__)}",
                 "--flash_size", board.get("upload.flash_size", "detect"),
                 "$FS_START"
             ],
@@ -462,32 +484,6 @@ elif upload_protocol == "esptool":
         env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")
     ]
 
-
-elif upload_protocol == "mbctool":
-    env.Replace(
-        UPLOADER=join(
-            platform.get_package_dir("tool-mbctool") or "", "bin", "mbctool"),
-        UPLOADERFLAGS=[
-            "--device", "esp",
-            "--speed", "$UPLOAD_SPEED",
-            "--port", '"$UPLOAD_PORT"',
-            "--upload",
-            "0x1000", join(
-                platform.get_package_dir("framework-arduino-mbcwb"),
-                "tools", "sdk", "bin", "bootloader_qio_80m.bin"),
-            "0x8000", join("$BUILD_DIR", "partitions.bin"),
-            "0xe000", join(
-                platform.get_package_dir("framework-arduino-mbcwb"),
-                "tools", "partitions", "boot_app0.bin"),
-            "0x10000", join("$BUILD_DIR", "${PROGNAME}.bin"),
-        ],
-        UPLOADCMD='"$UPLOADER" $UPLOADERFLAGS'
-    )
-    upload_actions = [
-        env.VerboseAction(env.AutodetectUploadPort,
-                          "Looking for upload port..."),
-        env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")
-    ]
 
 elif upload_protocol == "dfu":
 

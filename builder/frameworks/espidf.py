@@ -26,7 +26,6 @@ import subprocess
 import sys
 import shutil
 import os
-import pkg_resources
 import platform as sys_platform
 
 import click
@@ -431,7 +430,7 @@ def get_app_flags(app_config, default_config):
 
     # Flags are sorted because CMake randomly populates build flags in code model
     return {
-        "ASFLAGS": sorted(app_flags.get("ASM", default_flags.get("ASM"))),
+        "ASPPFLAGS": sorted(app_flags.get("ASM", default_flags.get("ASM"))),
         "CFLAGS": sorted(app_flags.get("C", default_flags.get("C"))),
         "CXXFLAGS": sorted(app_flags.get("CXX", default_flags.get("CXX"))),
     }
@@ -649,7 +648,7 @@ def prepare_build_envs(config, default_env, debug_allowed=True):
                 parsed_flags = build_env.ParseFlags(build_flags)
                 build_env.AppendUnique(**parsed_flags)
                 if cg.get("language", "") == "ASM":
-                    build_env.AppendUnique(ASFLAGS=parsed_flags.get("CCFLAGS", []))
+                    build_env.AppendUnique(ASPPFLAGS=parsed_flags.get("CCFLAGS", []))
         build_env.AppendUnique(CPPDEFINES=defines, CPPPATH=includes)
         if sys_includes:
             build_env.Append(CCFLAGS=[("-isystem", inc) for inc in sys_includes])
@@ -681,7 +680,7 @@ def compile_source_files(
                 src_path = os.path.join(project_src_dir, src_path)
 
             obj_path = os.path.join("$BUILD_DIR", prepend_dir or "")
-            if src_path.startswith(components_dir):
+            if src_path.lower().startswith(components_dir.lower()):
                 obj_path = os.path.join(
                     obj_path, os.path.relpath(src_path, components_dir)
                 )
@@ -972,7 +971,7 @@ def generate_empty_partition_image(binary_path, image_size):
 def get_partition_info(pt_path, pt_offset, pt_params):
     if not os.path.isfile(pt_path):
         sys.stderr.write(
-            "Missing partition table file `%s`\n" % os.path.basename(pt_path)
+            "Missing partition table file `%s`\n" % pt_path
         )
         env.Exit(1)
 
@@ -1110,16 +1109,20 @@ def install_python_deps():
 
         return result
 
+    skip_python_packages = os.path.join(FRAMEWORK_DIR, ".pio_skip_pypackages")
+    if os.path.isfile(skip_python_packages):
+        return
+
     deps = {
         # https://github.com/platformio/platformio-core/issues/4614
         "urllib3": "<2",
         # https://github.com/platformio/platform-espressif32/issues/635
         "cryptography": "~=41.0.1" if IDF5 else ">=2.1.4,<35.0.0",
         "future": ">=0.18.3",
-        "pyparsing": "~=3.0.9" if IDF5 else ">=2.0.3,<2.4.0",
+        "pyparsing": ">=3.1.0,<4" if IDF5 else ">=2.0.3,<2.4.0",
         "kconfiglib": "~=14.1.0" if IDF5 else "~=13.7.1",
-        "idf-component-manager": "~=1.2.3" if IDF5 else "~=1.0",
-        "esp-idf-kconfig": "~=1.2.0"
+        "idf-component-manager": "~=1.5.2" if IDF5 else "~=1.0",
+        "esp-idf-kconfig": ">=1.4.2,<2.0.0"
     }
 
     if sys_platform.system() == "Darwin" and "arm" in sys_platform.machine().lower():
@@ -1157,9 +1160,7 @@ def install_python_deps():
 
         # A special "esp-windows-curses" python package is required on Windows
         # for Menuconfig on IDF <5
-        if not IDF5 and "esp-windows-curses" not in {
-            pkg.key for pkg in pkg_resources.working_set
-        }:
+        if not IDF5 and "esp-windows-curses" not in installed_packages:
             env.Execute(
                 env.VerboseAction(
                     '"%s" -m pip install "file://%s/tools/kconfig_new/esp-windows-curses"'
@@ -1167,6 +1168,7 @@ def install_python_deps():
                     "Installing windows-curses package",
                 )
             )
+
 
 def get_idf_venv_dir():
     # The name of the IDF venv contains the IDF version to avoid possible conflicts and
@@ -1177,6 +1179,7 @@ def get_idf_venv_dir():
     return os.path.join(
         env.subst("$PROJECT_CORE_DIR"), "penv", ".espidf-" + idf_version
     )
+
 
 def ensure_python_venv_available():
 
@@ -1219,7 +1222,6 @@ def ensure_python_venv_available():
         assert os.path.isfile(
             pip_path
         ), "Error: Failed to create a proper virtual environment. Missing the `pip` binary!"
-
 
     venv_dir = get_idf_venv_dir()
     venv_data_file = os.path.join(venv_dir, "pio-idf-venv.json")

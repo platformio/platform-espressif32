@@ -120,9 +120,16 @@ class Espressif32Platform(PlatformBase):
                     "xtensa-esp32",
                     "xtensa-esp32s2",
                     "xtensa-esp32s3",
-                    "riscv32-esp"
+                    "riscv32-esp",
                 ):
-                    self.packages["toolchain-%s" % target]["version"] = "12.2.0+20230208"
+                    self.packages["toolchain-%s" % target]["version"] = (
+                        "13.2.0+20230928"
+                        if target == "riscv32-esp"
+                        else "12.2.0+20230208"
+                    )
+                    if target == "riscv32-esp":
+                        # Pull the latest RISC-V toolchain from PlatformIO organization
+                        self.packages["toolchain-%s" % target]["owner"] = "platformio"
 
         if "arduino" in frameworks:
             # Disable standalone GDB packages for Arduino and Arduino/IDF projects
@@ -138,29 +145,6 @@ class Espressif32Platform(PlatformBase):
         if mcu in ("esp32s2", "esp32s3", "esp32c3", "esp32c6"):
             # RISC-V based toolchain for ESP32C3, ESP32C6 ESP32S2, ESP32S3 ULP
             self.packages["toolchain-riscv32-esp"]["optional"] = False
-
-        if build_core == "mbcwb":
-            # Remove the main toolchains from PATH
-            for toolchain in (
-                "toolchain-xtensa-esp32",
-                "toolchain-xtensa-esp32s2",
-                "toolchain-xtensa-esp32s3",
-                "toolchain-riscv32-esp",
-            ):
-                self.packages.pop(toolchain, None)
-
-            # Add legacy toolchain with specific version
-            self.packages["toolchain-xtensa32"] = {
-                "type": "toolchain",
-                "owner": "platformio",
-                "version": "~2.50200.0"
-            }
-
-            if build_core == "mbcwb":
-                self.packages["framework-arduinoespressif32"]["optional"] = True
-                self.packages["framework-arduino-mbcwb"]["optional"] = False
-                self.packages["tool-mbctool"]["type"] = "uploader"
-                self.packages["tool-mbctool"]["optional"] = False
 
         return super().configure_default_packages(variables, targets)
 
@@ -184,7 +168,7 @@ class Espressif32Platform(PlatformBase):
 
         # debug tools
         debug = board.manifest.get("debug", {})
-        non_debug_protocols = ["esptool", "espota", "mbctool"]
+        non_debug_protocols = ["esptool", "espota"]
         supported_debug_tools = [
             "cmsis-dap",
             "esp-prog",
