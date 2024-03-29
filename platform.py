@@ -305,6 +305,7 @@ class Espressif32Platform(PlatformBase):
                 r"^gcc(?P<MAJOR>\d+)_(?P<MINOR>\d+)_(?P<PATCH>\d+)-esp-(?P<EXTRA>.+)$",
                 r"^esp-(?P<EXTRA>.+)-(?P<MAJOR>\d+)\.(?P<MINOR>\d+)\.?(?P<PATCH>\d+)$",
                 r"^esp-(?P<MAJOR>\d+)\.(?P<MINOR>\d+)\.(?P<PATCH>\d+)(_(?P<EXTRA>.+))?$",
+                r"^idf-release_v(?P<MAJOR>\d+)\.(?P<MINOR>\d+)(.(?P<PATCH>\d+))?(-(?P<EXTRA>.+))?$",
             )
             for pattern in version_patterns:
                 match = re.search(pattern, original_version)
@@ -312,7 +313,7 @@ class Espressif32Platform(PlatformBase):
                     result = "%s.%s.%s" % (
                         match.group("MAJOR"),
                         match.group("MINOR"),
-                        match.group("PATCH"),
+                        match.group("PATCH") if match.group("PATCH") is not None else "0",
                     )
                     if match.group("EXTRA"):
                         result = result + "+%s" % match.group("EXTRA")
