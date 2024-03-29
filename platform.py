@@ -326,6 +326,7 @@ class Espressif32Platform(PlatformBase):
             )
 
         toolchain_remap = {
+            "esp32-arduino-libs": "framework-arduinoespressif32-libs",
             "xtensa-esp32-elf-gcc": "toolchain-xtensa-esp32",
             "xtensa-esp32s2-elf-gcc": "toolchain-xtensa-esp32s2",
             "xtensa-esp32s3-elf-gcc": "toolchain-xtensa-esp32s3",
@@ -385,6 +386,8 @@ class Espressif32Platform(PlatformBase):
             self.packages[toolchain_package]["version"] = version
             self.packages[toolchain_package]["owner"] = "espressif"
             self.packages[toolchain_package]["type"] = "toolchain"
+            if (toolchain_package == "framework-arduinoespressif32-libs"):
+                self.packages[toolchain_package]["optional"] = False
 
     def configure_upstream_arduino_packages(self, url_items):
         framework_index_file = os.path.join(
