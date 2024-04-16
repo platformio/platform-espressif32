@@ -18,7 +18,7 @@
     "type": "git",
     "url": "https://github.com/tasmota/platform-espressif32.git"
   },
-  "version": "2024.04.11",
+  "version": "2024.04.12",
   "frameworks": {
     "arduino": {
       "script": "builder/frameworks/arduino.py"
@@ -33,19 +33,19 @@
       "type": "framework",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/tasmota/arduino-esp32/releases/download/3.0.0.240411/framework-arduinoespressif32.zip"
+      "version": "https://github.com/tasmota/arduino-esp32/releases/download/3.0.0.240412/framework-arduinoespressif32.zip"
     },
      "framework-arduino-solo1": {
       "type": "framework",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/tasmota/arduino-esp32/releases/download/3.0.0.240411/framework-arduinoespressif32-solo1.zip"
+      "version": "https://github.com/tasmota/arduino-esp32/releases/download/3.0.0.240412/framework-arduinoespressif32-solo1.zip"
     },
      "framework-arduino-ITEAD": {
       "type": "framework",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/tasmota/arduino-esp32/releases/download/3.0.0.240411/framework-arduinoespressif32-ITEAD.zip"
+      "version": "https://github.com/tasmota/arduino-esp32/releases/download/3.0.0.240412/framework-arduinoespressif32-ITEAD.zip"
     },
     "framework-espidf": {
       "type": "framework",
