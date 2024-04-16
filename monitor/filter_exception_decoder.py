@@ -56,7 +56,7 @@ See https://docs.platformio.org/page/projectconf/build_configurations.html
     def setup_paths(self):
         self.project_dir = os.path.abspath(self.project_dir)
         try:
-            data = load_build_metadata(self.project_dir, self.environment)
+            data = load_build_metadata(self.project_dir, self.environment, cache=True)
             self.firmware_path = data["prog_path"]
             if not os.path.isfile(self.firmware_path):
                 sys.stderr.write(
