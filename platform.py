@@ -114,22 +114,30 @@ class Espressif32Platform(PlatformBase):
             if "arduino" in frameworks:
                 # Downgrade the IDF version for mixed Arduino+IDF projects
                 self.packages["framework-espidf"]["version"] = "~3.40406.0"
+                # Delete the latest toolchain packages from config
+                self.packages.pop("toolchain-xtensa-esp-elf", None)
             else:
-                # Use the latest toolchains available for IDF v5.0
+                # Disable old toolchain packages and use the latest
+                # available for IDF v5.0
                 for target in (
                     "xtensa-esp32",
                     "xtensa-esp32s2",
                     "xtensa-esp32s3",
-                    "riscv32-esp",
                 ):
-                    self.packages["toolchain-%s" % target]["version"] = (
-                        "13.2.0+20230928"
-                        if target == "riscv32-esp"
-                        else "12.2.0+20230208"
-                    )
-                    if target == "riscv32-esp":
-                        # Pull the latest RISC-V toolchain from PlatformIO organization
-                        self.packages["toolchain-%s" % target]["owner"] = "platformio"
+                    self.packages.pop("toolchain-%s" % target, None)
+
+                if mcu in ("esp32c3", "esp32c6"):
+                    self.packages.pop("toolchain-xtensa-esp-elf", None)
+                else:
+                    self.packages["toolchain-xtensa-esp-elf"][
+                        "optional"
+                    ] = False
+
+                # Pull the latest RISC-V toolchain from PlatformIO organization
+                self.packages["toolchain-riscv32-esp"]["owner"] = "platformio"
+                self.packages["toolchain-riscv32-esp"][
+                    "version"
+                ] = "13.2.0+20230928"
 
         if "arduino" in frameworks:
             # Disable standalone GDB packages for Arduino and Arduino/IDF projects

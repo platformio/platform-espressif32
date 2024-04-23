@@ -58,11 +58,23 @@ mcu = board.get("build.mcu", "esp32")
 idf_variant = mcu.lower()
 
 # Required until Arduino switches to v5
-IDF5 = platform.get_package_version("framework-espidf").split(".")[1].startswith("5")
+IDF5 = (
+    platform.get_package_version("framework-espidf")
+    .split(".")[1]
+    .startswith("5")
+)
 IDF_ENV_VERSION = "1.0.0"
 FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
 TOOLCHAIN_DIR = platform.get_package_dir(
-    "toolchain-%s" % ("riscv32-esp" if mcu in ("esp32c3", "esp32c6") else ("xtensa-%s" % mcu))
+    "toolchain-riscv32-esp"
+    if mcu in ("esp32c3", "esp32c6")
+    else (
+        (
+            "toolchain-xtensa-esp-elf"
+            if "arduino" not in env.subst("$PIOFRAMEWORK")
+            else "toolchain-xtensa-%s" % mcu
+        )
+    )
 )
 
 
