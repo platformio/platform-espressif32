@@ -144,11 +144,11 @@ class Espressif32Platform(PlatformBase):
             for gdb_package in ("tool-xtensa-esp-elf-gdb", "tool-riscv32-esp-elf-gdb"):
                 self.packages.pop(gdb_package, None)
 
-        for available_mcu in ("esp32", "esp32s2", "esp32s3"):
-            if available_mcu == mcu:
-                self.packages["toolchain-xtensa-%s" % mcu]["optional"] = False
-            else:
-                self.packages.pop("toolchain-xtensa-%s" % available_mcu, None)
+            for available_mcu in ("esp32", "esp32s2", "esp32s3"):
+                if available_mcu == mcu:
+                    self.packages["toolchain-xtensa-%s" % mcu]["optional"] = False
+                else:
+                    self.packages.pop("toolchain-xtensa-%s" % available_mcu, None)
 
         if mcu in ("esp32s2", "esp32s3", "esp32c3", "esp32c6"):
             # RISC-V based toolchain for ESP32C3, ESP32C6 ESP32S2, ESP32S3 ULP
