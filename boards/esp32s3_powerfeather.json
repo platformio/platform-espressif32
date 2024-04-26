@@ -8,8 +8,7 @@
       "-DARDUINO_ESP32S3_POWERFEATHER",
       "-DARDUINO_USB_CDC_ON_BOOT=1",
       "-DARDUINO_RUNNING_CORE=1",
-      "-DARDUINO_EVENT_RUNNING_CORE=1",
-      "-DBOARD_HAS_PSRAM"
+      "-DARDUINO_EVENT_RUNNING_CORE=1"
     ],
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
@@ -39,7 +38,6 @@
     "flash_size": "8MB",
     "maximum_ram_size": 327680,
     "maximum_size": 8388608,
-    "use_1200bps_touch": true,
     "wait_for_upload_port": true,
     "require_upload_port": true,
     "speed": 460800
