@@ -82,14 +82,14 @@
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~3.20014.0"
+      "version": "~3.20015.0"
     },
     "framework-espidf": {
       "type": "framework",
       "optional": true,
       "owner": "platformio",
       "version": "~3.50201.0",
-      "optionalVersions": ["~3.40406.0"]
+      "optionalVersions": ["~3.40407.0"]
     },
     "tool-esptoolpy": {
       "type": "uploader",
