@@ -49,7 +49,8 @@ jobs:
       - name: git clone Tasmota and add to examples
         if: "matrix.example == 'examples/tasmota' && matrix.os != 'windows-2022'"
         run: |
-          git clone https://github.com/arendst/Tasmota.git examples/tasmota
+          #git clone https://github.com/arendst/Tasmota.git examples/tasmota
+          git clone -b ethernet_final --single-branch https://github.com/Jason2866/Tasmota.git examples/tasmota
           cp examples/tasmota_platformio_override.ini examples/tasmota/platformio_override.ini
       - name: Build examples
         if: "matrix.example != 'examples/tasmota' || matrix.os != 'windows-2022'"
