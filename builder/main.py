@@ -192,7 +192,7 @@ def _update_max_upload_size(env):
             )
 
     for p in partitions.values():
-        if p["type"] in ("0", "app"):
+        if p["type"] in ("0", "app") and p["subtype"] in ("ota_0"):
             board.update("upload.maximum_size", _parse_size(p["size"]))
             break
 
