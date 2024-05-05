@@ -171,12 +171,31 @@ def _parse_partitions(env):
 def _update_max_upload_size(env):
     if not env.get("PARTITIONS_TABLE_CSV"):
         return
-    sizes = [
-        _parse_size(p["size"]) for p in _parse_partitions(env)
+    sizes = {
+        p["subtype"]: _parse_size(p["size"]) for p in _parse_partitions(env)
         if p["type"] in ("0", "app")
-    ]
-    if sizes:
-        board.update("upload.maximum_size", max(sizes))
+    }
+
+    partitions = {p["name"]: p for p in _parse_partitions(env)}
+
+    # User-specified partition name has the highest priority
+    custom_app_partition_name = board.get("build.app_partition_name", "")
+    if custom_app_partition_name:
+        selected_partition = partitions.get(custom_app_partition_name, {})
+        if selected_partition:
+            board.update("upload.maximum_size", _parse_size(selected_partition["size"]))
+            return
+        else:
+            print(
+                "Warning! Selected partition `%s` is not available in the partition " \
+                "table! Default partition will be used!" % custom_app_partition_name
+            )
+
+    for p in partitions.values():
+        if p["type"] in ("0", "app"):
+            board.update("upload.maximum_size", _parse_size(p["size"]))
+            break
+
 
 
 def _to_unix_slashes(path):
