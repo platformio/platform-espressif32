@@ -82,7 +82,7 @@
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~3.20015.0"
+      "version": "~3.20016.0"
     },
     "framework-espidf": {
       "type": "framework",
