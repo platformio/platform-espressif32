@@ -703,7 +703,7 @@ def compile_source_files(
                     obj_path = os.path.join(obj_path, os.path.basename(src_path))
 
             preserve_source_file_extension = board.get(
-                "build.esp-idf.preserve_source_file_extension", False
+                "build.esp-idf.preserve_source_file_extension", True
             )
 
             objects.append(
