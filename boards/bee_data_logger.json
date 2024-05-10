@@ -1,14 +1,11 @@
 {
   "build": {
-    "arduino":{
-      "partitions": "default_8MB.csv"
-    },
     "core": "esp32",
     "extra_flags": [
-      "-DARDUINO_ESP32S3_DEV",
-      "-DARDUINO_USB_MODE=1",
+      "-DARDUINO_BeeDataLogger",
       "-DARDUINO_RUNNING_CORE=1",
-      "-DARDUINO_EVENT_RUNNING_CORE=1"
+      "-DARDUINO_EVENT_RUNNING_CORE=1",
+      "-DARDUINO_USB_CDC_ON_BOOT=1"
     ],
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
@@ -16,35 +13,33 @@
     "hwids": [
       [
         "0x303A",
-        "0x1001"
+        "0x815C"
       ]
     ],
     "mcu": "esp32s3",
-    "variant": "esp32s3"
+    "variant": "Bee_Data_Logger"
   },
   "connectivity": [
     "bluetooth",
     "wifi"
   ],
   "debug": {
-    "default_tool": "esp-builtin",
-    "onboard_tools": [
-      "esp-builtin"
-    ],
     "openocd_target": "esp32s3.cfg"
   },
   "frameworks": [
     "arduino",
     "espidf"
   ],
-  "name": "Espressif ESP32-S3-DevKitM-1",
+  "name": "Smart Bee Data Logger",
   "upload": {
     "flash_size": "8MB",
     "maximum_ram_size": 327680,
     "maximum_size": 8388608,
+    "use_1200bps_touch": true,
+    "wait_for_upload_port": true,
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/hw-reference/esp32s3/user-guide-devkitm-1.html",
-  "vendor": "Espressif"
+  "url": "https://github.com/strid3r21/Bee-Data-Logger",
+  "vendor": "Smart Bee"
 }

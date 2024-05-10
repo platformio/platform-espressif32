@@ -1,8 +1,5 @@
 {
   "build": {
-    "arduino":{
-      "ldscript": "esp32_out.ld"
-    },
     "core": "esp32",
     "extra_flags": "-DARDUINO_LOLIN32_LITE",
     "f_cpu": "240000000L",
@@ -17,6 +14,9 @@
     "ethernet",
     "can"
   ],
+  "debug": {
+    "openocd_board": "esp-wroom-32.cfg"
+  },
   "frameworks": [
     "arduino",
     "espidf"

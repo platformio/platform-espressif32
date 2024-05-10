@@ -1,8 +1,5 @@
 {
   "build": {
-    "arduino": {
-      "ldscript": "esp32_out.ld"
-    },
     "core": "esp32",
     "extra_flags": [
       "-mfix-esp32-psram-cache-issue",
@@ -29,7 +26,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "ArtronShop IOXESP32",
+  "name": "ArtronShop IOXESP32PS",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
