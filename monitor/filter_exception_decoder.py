@@ -32,8 +32,9 @@ IS_WINDOWS = sys.platform.startswith("win")
 class Esp32ExceptionDecoder(DeviceMonitorFilterBase):
     NAME = "esp32_exception_decoder"
 
-    BACKTRACE_PATTERN = re.compile(r"^Backtrace:(((\s?0x[0-9a-fA-F]{8}:0x[0-9a-fA-F]{8}))+)")
-    BACKTRACE_ADDRESS_PATTERN = re.compile(r'0x[0-9a-fA-F]{8}:0x[0-9a-fA-F]{8}')
+    ADDR_PATTERN = re.compile(r"((?:0x[0-9a-fA-F]{8}[: ]?)+)\s?$")
+    ADDR_SPLIT = re.compile(r"[ :]")
+    PREFIX_RE = re.compile(r"^ *")
 
     def __call__(self):
         self.buffer = ""
@@ -56,7 +57,8 @@ See https://docs.platformio.org/page/projectconf/build_configurations.html
     def setup_paths(self):
         self.project_dir = os.path.abspath(self.project_dir)
         try:
-            data = load_build_metadata(self.project_dir, self.environment)
+            data = load_build_metadata(self.project_dir, self.environment, cache=True)
+
             self.firmware_path = data["prog_path"]
             if not os.path.isfile(self.firmware_path):
                 sys.stderr.write(
@@ -100,38 +102,65 @@ See https://docs.platformio.org/page/projectconf/build_configurations.html
                 self.buffer = ""
             last = idx + 1
 
-            m = self.BACKTRACE_PATTERN.match(line)
+            m = self.ADDR_PATTERN.search(line)
             if m is None:
                 continue
 
-            trace = self.get_backtrace(m)
-            if len(trace) != "":
+            trace = self.build_backtrace(line, m.group(1))
+            if trace:
                 text = text[: idx + 1] + trace + text[idx + 1 :]
                 last += len(trace)
         return text
 
-    def get_backtrace(self, match):
-        trace = "\n"
+    def is_address_ignored(self, address):
+        return address in ("", "0x00000000")
+
+    def filter_addresses(self, adresses_str):
+        addresses = self.ADDR_SPLIT.split(adresses_str)
+        size = len(addresses)
+        while size > 1 and self.is_address_ignored(addresses[size-1]):
+            size -= 1
+        return addresses[:size]
+
+    def build_backtrace(self, line, address_match):
+        addresses = self.filter_addresses(address_match)
+        if not addresses:
+            return ""
+
+        prefix_match = self.PREFIX_RE.match(line)
+        prefix = prefix_match.group(0) if prefix_match is not None else ""
+
+        trace = ""
         enc = "mbcs" if IS_WINDOWS else "utf-8"
         args = [self.addr2line_path, u"-fipC", u"-e", self.firmware_path]
         try:
-            for i, addr in enumerate(self.BACKTRACE_ADDRESS_PATTERN.findall(match.group(1))):
+            i = 0
+            for addr in addresses:
                 output = (
                     subprocess.check_output(args + [addr])
                     .decode(enc)
                     .strip()
                 )
+
+                # newlines happen with inlined methods
                 output = output.replace(
                     "\n", "\n     "
-                )  # newlines happen with inlined methods
+                )
+
+                # throw out addresses not from ELF
+                if output == "?? ??:0":
+                    continue
+
                 output = self.strip_project_dir(output)
-                trace += "  #%-2d %s in %s\n" % (i, addr, output)
+                trace += "%s  #%-2d %s in %s\n" % (prefix, i, addr, output)
+                i += 1
         except subprocess.CalledProcessError as e:
             sys.stderr.write(
                 "%s: failed to call %s: %s\n"
                 % (self.__class__.__name__, self.addr2line_path, e)
             )
-        return trace
+
+        return trace + "\n" if trace else ""
 
     def strip_project_dir(self, trace):
         while True:

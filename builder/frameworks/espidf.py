@@ -26,6 +26,7 @@ import subprocess
 import sys
 import shutil
 import os
+import re
 import platform as sys_platform
 
 import click
@@ -58,11 +59,23 @@ mcu = board.get("build.mcu", "esp32")
 idf_variant = mcu.lower()
 
 # Required until Arduino switches to v5
-IDF5 = platform.get_package_version("framework-espidf").split(".")[1].startswith("5")
+IDF5 = (
+    platform.get_package_version("framework-espidf")
+    .split(".")[1]
+    .startswith("5")
+)
 IDF_ENV_VERSION = "1.0.0"
 FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
 TOOLCHAIN_DIR = platform.get_package_dir(
-    "toolchain-%s" % ("riscv32-esp" if mcu in ("esp32c3", "esp32c6") else ("xtensa-%s" % mcu))
+    "toolchain-riscv32-esp"
+    if mcu in ("esp32c3", "esp32c6")
+    else (
+        (
+            "toolchain-xtensa-esp-elf"
+            if "arduino" not in env.subst("$PIOFRAMEWORK")
+            else "toolchain-xtensa-%s" % mcu
+        )
+    )
 )
 
 
@@ -482,7 +495,7 @@ def load_component_paths(framework_components_dir, ignored_component_prefixes=No
     return components or _scan_components_from_framework()
 
 
-def extract_linker_script_fragments(framework_components_dir, sdk_config):
+def extract_linker_script_fragments_backup(framework_components_dir, sdk_config):
     # Hardware-specific components are excluded from search and added manually below
     project_components = load_component_paths(
         framework_components_dir, ignored_component_prefixes=("esp32", "riscv")
@@ -530,6 +543,52 @@ def extract_linker_script_fragments(framework_components_dir, sdk_config):
     return result
 
 
+def extract_linker_script_fragments(
+    ninja_buildfile, framework_components_dir, sdk_config
+):
+    def _normalize_fragment_path(base_dir, fragment_path):
+        if not os.path.isabs(fragment_path):
+            fragment_path = os.path.abspath(
+                os.path.join(base_dir, fragment_path)
+            )
+        if not os.path.isfile(fragment_path):
+            print("Warning! The `%s` fragment is not found!" % fragment_path)
+
+        return fragment_path
+
+    assert os.path.isfile(
+        ninja_buildfile
+    ), "Cannot extract linker fragments! Ninja build file is missing!"
+
+    result = []
+    with open(ninja_buildfile, encoding="utf8") as fp:
+        for line in fp.readlines():
+            if "sections.ld: CUSTOM_COMMAND" not in line:
+                continue
+            for fragment_match in re.finditer(r"(\S+\.lf\b)+", line):
+                result.append(_normalize_fragment_path(
+                    BUILD_DIR, fragment_match.group(0).replace("$:", ":")
+                ))
+
+            break
+
+    # Fall back option if the new algorithm didn't work
+    if not result:
+        result = extract_linker_script_fragments_backup(
+            framework_components_dir, sdk_config
+        )
+
+    if board.get("build.esp-idf.extra_lf_files", ""):
+        for fragment_path in board.get(
+            "build.esp-idf.extra_lf_files"
+        ).splitlines():
+            if not fragment_path.strip():
+                continue
+            result.append(_normalize_fragment_path(PROJECT_DIR, fragment_path))
+
+    return result
+
+
 def create_custom_libraries_list(ldgen_libraries_file, ignore_targets):
     if not os.path.isfile(ldgen_libraries_file):
         sys.stderr.write("Error: Couldn't find the list of framework libraries\n")
@@ -558,11 +617,13 @@ def create_custom_libraries_list(ldgen_libraries_file, ignore_targets):
 def generate_project_ld_script(sdk_config, ignore_targets=None):
     ignore_targets = ignore_targets or []
     linker_script_fragments = extract_linker_script_fragments(
-        os.path.join(FRAMEWORK_DIR, "components"), sdk_config
+        os.path.join(BUILD_DIR, "build.ninja"),
+        os.path.join(FRAMEWORK_DIR, "components"),
+        sdk_config
     )
 
-    # Create a new file to avoid automatically generated library entry as files from
-    # this library are built internally by PlatformIO
+    # Create a new file to avoid automatically generated library entry as files
+    # from this library are built internally by PlatformIO
     libraries_list = create_custom_libraries_list(
         os.path.join(BUILD_DIR, "ldgen_libraries"), ignore_targets
     )
@@ -691,7 +752,7 @@ def compile_source_files(
                     obj_path = os.path.join(obj_path, os.path.basename(src_path))
 
             preserve_source_file_extension = board.get(
-                "build.esp-idf.preserve_source_file_extension", False
+                "build.esp-idf.preserve_source_file_extension", True
             )
 
             objects.append(
