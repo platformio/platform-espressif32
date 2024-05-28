@@ -8,6 +8,7 @@
     "variant": "esp32c6"
   },
   "connectivity": [
+    "bluetooth",
     "wifi"
   ],
   "debug": {
