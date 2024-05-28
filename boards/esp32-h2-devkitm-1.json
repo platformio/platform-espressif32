@@ -15,7 +15,7 @@
     ]
   },
   "connectivity": [
-    "wifi"
+    "bluetooth"
   ],
   "debug": {
     "openocd_target": "esp32h2.cfg"
