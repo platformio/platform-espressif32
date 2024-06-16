@@ -31,6 +31,7 @@ from SCons.Script import COMMAND_LINE_TARGETS, DefaultEnvironment, SConscript
 from platformio.package.version import pepver_to_semver
 
 env = DefaultEnvironment()
+platform = env.PioPlatform()
 
 extra_flags = ''.join([element.replace("-D", " ") for element in env.BoardConfig().get("build.extra_flags", "")])
 build_flags = ''.join([element.replace("-D", " ") for element in env.GetProjectOption("build_flags")])
@@ -38,19 +39,14 @@ build_flags = ''.join([element.replace("-D", " ") for element in env.GetProjectO
 SConscript("_embed_files.py", exports="env")
 
 if ("CORE32SOLO1" in extra_flags or "FRAMEWORK_ARDUINO_SOLO1" in build_flags) and ("arduino" in env.subst("$PIOFRAMEWORK") and "espidf" not in env.subst("$PIOFRAMEWORK")):
-    SConscript(
-        join(DefaultEnvironment().PioPlatform().get_package_dir(
-            "framework-arduino-solo1"), "tools", "platformio-build.py"))
-
+    FRAMEWORK_DIR = platform.get_package_dir("framework-arduino-solo1")
 elif ("CORE32ITEAD" in extra_flags or "FRAMEWORK_ARDUINO_ITEAD" in build_flags) and ("arduino" in env.subst("$PIOFRAMEWORK") and "espidf" not in env.subst("$PIOFRAMEWORK")):
-    SConscript(
-        join(DefaultEnvironment().PioPlatform().get_package_dir(
-            "framework-arduino-ITEAD"), "tools", "platformio-build.py"))
-
+    FRAMEWORK_DIR = platform.get_package_dir("framework-arduino-ITEAD")
 elif "arduino" in env.subst("$PIOFRAMEWORK") and "CORE32SOLO1" not in extra_flags and "FRAMEWORK_ARDUINO_SOLO1" not in build_flags and "CORE32ITEAD" not in extra_flags and "FRAMEWORK_ARDUINO_ITEAD" not in build_flags and "espidf" not in env.subst("$PIOFRAMEWORK"):
-    SConscript(
-        join(DefaultEnvironment().PioPlatform().get_package_dir(
-            "framework-arduinoespressif32"), "tools", "platformio-build.py"))
+    FRAMEWORK_DIR = platform.get_package_dir("framework-arduinoespressif32")
+
+if "espidf" not in env.subst("$PIOFRAMEWORK"):
+    SConscript(join(FRAMEWORK_DIR, "tools", "platformio-build.py"))
 
 def install_python_deps():
     def _get_installed_pip_packages():
