@@ -23,42 +23,44 @@
     "arduino": {
       "package": "framework-arduinoespressif32",
       "script": "builder/frameworks/arduino.py"
-    },
-    "espidf": {
-      "package": "framework-espidf",
-      "script": "builder/frameworks/espidf.py"
     }
   },
   "packages": {
+    "framework-arduinoespressif32": {
+      "type": "framework",
+      "optional": true,
+      "owner": "cziter15",
+      "version": "https://github.com/espressif/arduino-esp32.git#3.0.1"
+    },
+    "framework-arduinoespressif32-libs": {
+      "type": "framework",
+      "optional": false,
+      "owner": "cziter15",
+      "version": "https://github.com/espressif/arduino-esp32/releases/download/3.0.1/esp32-arduino-libs-3.0.1.zip"
+    },
     "toolchain-xtensa-esp32": {
       "type": "toolchain",
+      "optional": true,
       "owner": "espressif",
-      "version": "8.4.0+2021r2-patch5"
+      "version": "12.2.0+20230208"
     },
     "toolchain-xtensa-esp32s2": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "8.4.0+2021r2-patch5"
+      "version": "12.2.0+20230208"
     },
-     "toolchain-xtensa-esp32s3": {
+    "toolchain-xtensa-esp32s3": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "8.4.0+2021r2-patch5"
+      "version": "12.2.0+20230208"
     },
     "toolchain-riscv32-esp": {
       "type": "toolchain",
       "optional": true,
       "owner": "espressif",
-      "version": "8.4.0+2021r2-patch5",
-      "optionalVersions": ["13.2.0+20230928"]
-    },
-    "toolchain-xtensa-esp-elf": {
-      "type": "toolchain",
-      "optional": true,
-      "owner": "platformio",
-      "version": "13.2.0+20230928"
+      "version": "12.2.0+20230208"
     },
     "toolchain-esp32ulp": {
       "type": "toolchain",
@@ -78,23 +80,10 @@
       "owner": "espressif",
       "version": "~12.1.0"
     },
-    "framework-arduinoespressif32": {
-      "type": "framework",
-      "optional": true,
-      "owner": "platformio",
-      "version": "~3.20017.0"
-    },
-    "framework-espidf": {
-      "type": "framework",
-      "optional": true,
-      "owner": "platformio",
-      "version": "~3.50201.0",
-      "optionalVersions": ["~3.40407.0"]
-    },
     "tool-esptoolpy": {
       "type": "uploader",
-      "owner": "platformio",
-      "version": "~1.40501.0"
+      "owner": "tasmota",
+      "version": "https://github.com/tasmota/esptool/releases/download/v4.7.3/esptool.zip"
     },
     "tool-dfuutil-arduino": {
       "type": "uploader",
@@ -108,17 +97,10 @@
       "owner": "platformio",
       "version": "~2.1100.0"
     },
-    "tool-mkspiffs": {
-      "type": "uploader",
-      "optional": true,
-      "owner": "platformio",
-      "version": "~2.230.0"
-    },
     "tool-mklittlefs": {
       "type": "uploader",
-      "optional": true,
-      "owner": "platformio",
-      "version": "~1.203.0"
+      "owner": "tasmota",
+      "version": "^3.2.0"
     },
     "tool-mkfatfs": {
       "type": "uploader",
@@ -129,7 +111,7 @@
     "tool-cmake": {
       "optional": true,
       "owner": "platformio",
-      "version": "~3.16.0"
+      "version": "~3.21.0"
     },
     "tool-ninja": {
       "optional": true,
@@ -145,6 +127,12 @@
       "optional": true,
       "owner": "platformio",
       "version": "~1.0.1"
+    },
+    "framework-espidf": {
+      "type": "framework",
+      "optional": true,
+      "owner": "cziter15",
+      "version": "https://github.com/tasmota/esp-idf/releases/download/v5.1.4.240602/esp-idf-v5.1.4.zip"
     }
   }
 }
