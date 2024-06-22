@@ -98,7 +98,7 @@
     "tool-esptoolpy": {
       "type": "uploader",
       "owner": "tasmota",
-      "version": "https://github.com/tasmota/esptool/releases/download/v4.7.3/esptool.zip"
+      "version": "https://github.com/Jason2866/esptool/releases/download/v4.7.4/esptool.zip"
     },
     "tool-dfuutil-arduino": {
       "type": "uploader",
