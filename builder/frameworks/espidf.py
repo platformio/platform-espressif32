@@ -67,7 +67,9 @@ IDF5 = (
 IDF_ENV_VERSION = "1.0.0"
 FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
 TOOLCHAIN_DIR = platform.get_package_dir(
-    "toolchain-%s" % ("riscv32-esp" if mcu in ("esp32c2", "esp32c3", "esp32c6", "esp32h2") else ("xtensa-%s" % mcu))
+    "toolchain-riscv32-esp"
+    if mcu in ("esp32c2", "esp32c3", "esp32c6", "esp32h2")
+    else "toolchain-xtensa-esp-elf"
 )
 
 
@@ -745,7 +747,7 @@ def compile_source_files(
 
             preserve_source_file_extension = board.get(
                 "build.esp-idf.preserve_source_file_extension", "yes"
-             ) == "yes"
+            ) == "yes"
 
             objects.append(
                 build_envs[compile_group_idx].StaticObject(
