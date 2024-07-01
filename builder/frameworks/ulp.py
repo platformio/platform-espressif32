@@ -34,11 +34,10 @@ ULP_BUILD_DIR = os.path.join(
 def prepare_ulp_env_vars(env):
     ulp_env.PrependENVPath("IDF_PATH", FRAMEWORK_DIR)
 
+    toolchain_path = platform.get_package_dir("toolchain-xtensa-esp-elf")
+
     additional_packages = [
-        os.path.join(
-            platform.get_package_dir("toolchain-xtensa-%s" % idf_variant),
-            "bin",
-        ),
+        toolchain_path,
         os.path.join(
             platform.get_package_dir("toolchain-esp32ulp"),
             "bin",
