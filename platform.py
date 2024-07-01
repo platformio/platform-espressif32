@@ -87,11 +87,10 @@ class Espressif32Platform(PlatformBase):
                 elif p in ("tool-mconf", "tool-idf") and IS_WINDOWS:
                     self.packages[p]["optional"] = False
 
-        for available_mcu in ("esp32", "esp32s2", "esp32s3"):
-            if available_mcu == mcu:
-                self.packages["toolchain-xtensa-esp-elf"]["optional"] = False
-            else:
-                self.packages.pop("toolchain-xtensa-esp-elf", None)
+        if mcu in ("esp32", "esp32s2", "esp32s3"):
+            self.packages["toolchain-xtensa-esp-elf"]["optional"] = False
+        else:
+            self.packages.pop("toolchain-xtensa-esp-elf", None)
 
         if mcu in ("esp32s2", "esp32s3", "esp32c2", "esp32c3", "esp32c6", "esp32h2"):
             if mcu in ("esp32c2", "esp32c3", "esp32c6", "esp32h2"):
