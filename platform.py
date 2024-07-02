@@ -313,6 +313,7 @@ class Espressif32Platform(PlatformBase):
                 r"^gcc(?P<MAJOR>\d+)_(?P<MINOR>\d+)_(?P<PATCH>\d+)-esp-(?P<EXTRA>.+)$",
                 r"^esp-(?P<EXTRA>.+)-(?P<MAJOR>\d+)\.(?P<MINOR>\d+)\.?(?P<PATCH>\d+)$",
                 r"^esp-(?P<MAJOR>\d+)\.(?P<MINOR>\d+)\.(?P<PATCH>\d+)(_(?P<EXTRA>.+))?$",
+                r"^idf-release_v(?P<MAJOR>\d+)\.(?P<MINOR>\d+)(.(?P<PATCH>\d+))?(-(?P<EXTRA>.+))?$",
             )
             for pattern in version_patterns:
                 match = re.search(pattern, original_version)
@@ -320,7 +321,7 @@ class Espressif32Platform(PlatformBase):
                     result = "%s.%s.%s" % (
                         match.group("MAJOR"),
                         match.group("MINOR"),
-                        match.group("PATCH"),
+                        match.group("PATCH") if match.group("PATCH") is not None else "0",
                     )
                     if match.group("EXTRA"):
                         result = result + "+%s" % match.group("EXTRA")
@@ -334,6 +335,7 @@ class Espressif32Platform(PlatformBase):
             )
 
         toolchain_remap = {
+            "esp32-arduino-libs": "framework-arduinoespressif32-libs",
             "xtensa-esp32-elf-gcc": "toolchain-xtensa-esp32",
             "xtensa-esp32s2-elf-gcc": "toolchain-xtensa-esp32s2",
             "xtensa-esp32s3-elf-gcc": "toolchain-xtensa-esp32s3",
@@ -393,6 +395,8 @@ class Espressif32Platform(PlatformBase):
             self.packages[toolchain_package]["version"] = version
             self.packages[toolchain_package]["owner"] = "espressif"
             self.packages[toolchain_package]["type"] = "toolchain"
+            if (toolchain_package == "framework-arduinoespressif32-libs"):
+                self.packages[toolchain_package]["optional"] = False
 
     def configure_upstream_arduino_packages(self, url_items):
         framework_index_file = os.path.join(
