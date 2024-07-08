@@ -999,12 +999,38 @@ def find_default_component(target_configs):
     env.Exit(1)
 
 
+def get_framework_version():
+    def _extract_from_cmake_version_file():
+        version_cmake_file = os.path.join(
+            FRAMEWORK_DIR, "tools", "cmake", "version.cmake"
+        )
+        if not os.path.isfile(version_cmake_file):
+            return
+
+        with open(version_cmake_file, encoding="utf8") as fp:
+            pattern = r"set\(IDF_VERSION_(MAJOR|MINOR|PATCH) (\d+)\)"
+            matches = re.findall(pattern, fp.read())
+            if len(matches) != 3:
+                return
+            # If found all three parts of the version
+            return ".".join([match[1] for match in matches])
+
+    pkg = platform.get_package("framework-espidf")
+    version = get_original_version(str(pkg.metadata.version.truncate()))
+    if not version:
+        # Fallback value extracted directly from the cmake version file
+        version = _extract_from_cmake_version_file()
+        if not version:
+            version = "0.0.0"
+
+    return version
+
+
 def create_version_file():
     version_file = os.path.join(FRAMEWORK_DIR, "version.txt")
     if not os.path.isfile(version_file):
         with open(version_file, "w") as fp:
-            package_version = platform.get_package_version("framework-espidf")
-            fp.write(get_original_version(package_version) or package_version)
+            fp.write(get_framework_version())
 
 
 def generate_empty_partition_image(binary_path, image_size):
@@ -1236,7 +1262,7 @@ def get_idf_venv_dir():
     # unnecessary reinstallation of Python dependencies in cases when Arduino
     # as an IDF component requires a different version of the IDF package and
     # hence a different set of Python deps or their versions
-    idf_version = get_original_version(platform.get_package_version("framework-espidf"))
+    idf_version = get_framework_version()
     return os.path.join(
         env.subst("$PROJECT_CORE_DIR"), "penv", ".espidf-" + idf_version
     )
