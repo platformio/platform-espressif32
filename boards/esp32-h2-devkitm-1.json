@@ -2,7 +2,8 @@
   "build": {
     "core": "esp32",
     "f_cpu": "96000000L",
-    "f_flash": "48000000L",
+    "f_flash": "64000000L",
+    "f_image": "48000000L",
     "flash_mode": "qio",
     "mcu": "esp32h2",
     "variant": "esp32h2"
