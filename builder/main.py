@@ -204,7 +204,7 @@ def _to_unix_slashes(path):
 def fetch_fs_size(env):
     fs = None
     for p in _parse_partitions(env):
-        if p["type"] == "data" and p["subtype"] in ("spiffs", "fat"):
+        if p["type"] == "data" and p["subtype"] in ("spiffs", "fat", "littlefs"):
             fs = p
     if not fs:
         sys.stderr.write(
