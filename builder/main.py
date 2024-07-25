@@ -210,7 +210,7 @@ def _to_unix_slashes(path):
 def fetch_fs_size(env):
     fs = None
     for p in _parse_partitions(env):
-        if p["type"] == "data" and p["subtype"] in ("spiffs", "fat"):
+        if p["type"] == "data" and p["subtype"] in ("spiffs", "fat", "littlefs"):
             fs = p
     if not fs:
         sys.stderr.write(
@@ -240,7 +240,7 @@ board = env.BoardConfig()
 mcu = board.get("build.mcu", "esp32")
 toolchain_arch = "xtensa-%s" % mcu
 filesystem = board.get("build.filesystem", "littlefs")
-if mcu in ("esp32c2", "esp32c3", "esp32c6", "esp32h2"):
+if mcu in ("esp32c2", "esp32c3", "esp32c6", "esp32h2", "esp32p4"):
     toolchain_arch = "riscv32-esp"
 
 if "INTEGRATION_EXTRA_DATA" not in env:
@@ -261,7 +261,7 @@ env.Replace(
     GDB=join(
         platform.get_package_dir(
             "tool-riscv32-esp-elf-gdb"
-            if mcu in ("esp32c2", "esp32c3", "esp32c6")
+            if mcu in ("esp32c2", "esp32c3", "esp32c6", "esp32p4")
             else "tool-xtensa-esp-elf-gdb"
         )
         or "",
