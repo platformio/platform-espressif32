@@ -12,13 +12,13 @@
     "RISC-V"
   ],
   "engines": {
-    "platformio": ">=6.1.14"
+    "platformio": ">=6.1.15"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/tasmota/platform-espressif32.git"
   },
-  "version": "2024.07.30",
+  "version": "2024.07.99",
   "frameworks": {
     "arduino": {
       "script": "builder/frameworks/arduino.py"
@@ -33,37 +33,37 @@
       "type": "framework",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/2573/framework-arduinoespressif32-all-release_v5.2-67a2c60.zip"
+      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/2691/framework-arduinoespressif32-all-release_v5.2-b32891a.zip"
     },
      "framework-arduino-solo1": {
       "type": "framework",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/2574/framework-arduinoespressif32-solo1-release_v5.2-67a2c60.zip"
+      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/2692/framework-arduinoespressif32-solo1-release_v5.2-b32891a.zip"
     },
      "framework-arduino-ITEAD": {
       "type": "framework",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/2575/framework-arduinoespressif32-ITEAD-esp32-release_v5.2-67a2c60.zip"
+      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/2693/framework-arduinoespressif32-ITEAD-esp32-release_v5.2-b32891a.zip"
     },
     "framework-espidf": {
       "type": "framework",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/Jason2866/esp-idf/releases/download/v5.3.0.240603/esp-idf-v5.3.0.zip"
+      "version": "https://github.com/Jason2866/esp-idf/releases/download/v5.3.0/esp-idf-v5.3.0.zip"
     },
     "toolchain-xtensa-esp-elf": {
       "type": "toolchain",
       "optional": true,
-      "owner": "platformio",
-      "version": "13.2.0+20230928"
+      "owner": "",
+      "version": ""
     },
     "toolchain-riscv32-esp": {
       "type": "toolchain",
       "optional": true,
-      "owner": "platformio",
-      "version": "13.2.0+20230928"
+      "owner": "",
+      "version": ""
     },
     "toolchain-esp32ulp": {
       "type": "toolchain",
