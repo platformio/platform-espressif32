@@ -1550,7 +1550,7 @@ except:
 
 try:
     link_args_index = link_args["LINKFLAGS"].index("-Wl,--end-group")
-     link_args["LINKFLAGS"].pop(link_args_index)
+    link_args["LINKFLAGS"].pop(link_args_index)
 except:
     pass
 
