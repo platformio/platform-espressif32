@@ -1542,17 +1542,17 @@ except:
     print("Warning! Couldn't find the main linker script in the CMake code model.")
 
 # remove circle linker commands
- try:
-     link_args_index = link_args["LINKFLAGS"].index("-Wl,--start-group")
-     link_args["LINKFLAGS"].pop(link_args_index)
- except:
-     pass
+try:
+    link_args_index = link_args["LINKFLAGS"].index("-Wl,--start-group")
+    link_args["LINKFLAGS"].pop(link_args_index)
+except:
+    pass
 
- try:
-     link_args_index = link_args["LINKFLAGS"].index("-Wl,--end-group")
+try:
+    link_args_index = link_args["LINKFLAGS"].index("-Wl,--end-group")
      link_args["LINKFLAGS"].pop(link_args_index)
- except:
-     pass
+except:
+    pass
 
 #
 # Process project sources
