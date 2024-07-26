@@ -20,12 +20,47 @@ import re
 import requests
 
 from platformio.public import PlatformBase, to_unix_path
-
+from platformio import util
 
 IS_WINDOWS = sys.platform.startswith("win")
 
-
 class Espressif32Platform(PlatformBase):
+
+    def is_embedded(self):
+        return True
+
+    xtensa_toolchain = {
+        # Windows
+        "windows_amd64": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20240530/xtensa-esp-elf-13.2.0_20240530-x86_64-w64-mingw32_hotfix.zip",
+        "windows_x86": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20240530/xtensa-esp-elf-13.2.0_20240530-i686-w64-mingw32_hotfix.zip",
+        # No Windows ARM64 or ARM32 builds.
+        # Linux
+        "linux_x86_64": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20240530/xtensa-esp-elf-13.2.0_20240530-x86_64-linux-gnu.tar.gz",
+        "linux_i686": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20240530/xtensa-esp-elf-13.2.0_20240530-i586-linux-gnu.tar.gz",
+        "linux_aarch64": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20240530/xtensa-esp-elf-13.2.0_20240530-aarch64-linux-gnu.tar.gz",
+        "linux_armv7l": "",
+        "linux_armv6l": "",
+        # Mac (Intel and ARM are separate)
+        "darwin_x86_64": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20240530/xtensa-esp-elf-13.2.0_20240530-x86_64-apple-darwin.tar.gz",
+        "darwin_arm64": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20240530/xtensa-esp-elf-13.2.0_20240530-aarch64-apple-darwin.tar.gz"
+    }
+
+    riscv32_toolchain = {
+        # Windows
+        "windows_amd64": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20240530/riscv32-esp-elf-13.2.0_20240530-x86_64-w64-mingw32.zip",
+        "windows_x86": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20240530/riscv32-esp-elf-13.2.0_20240530-i686-w64-mingw32.zip",
+        # No Windows ARM64 or ARM32 builds.
+        # Linux
+        "linux_x86_64": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20240530/riscv32-esp-elf-13.2.0_20240530-x86_64-linux-gnu.tar.gz",
+        "linux_i686": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20240530/riscv32-esp-elf-13.2.0_20240530-i586-linux-gnu.tar.gz",
+        "linux_aarch64": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20240530/riscv32-esp-elf-13.2.0_20240530-aarch64-linux-gnu.tar.gz",
+        "linux_armv7l": "",
+        "linux_armv6l": "",
+        # Mac (Intel and ARM are separate)
+        "darwin_x86_64": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20240530/riscv32-esp-elf-13.2.0_20240530-x86_64-apple-darwin.tar.gz",
+        "darwin_arm64": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20240530/riscv32-esp-elf-13.2.0_20240530-aarch64-apple-darwin.tar.gz"
+    }
+
     def configure_default_packages(self, variables, targets):
         if not variables.get("board"):
             return super().configure_default_packages(variables, targets)
@@ -36,6 +71,26 @@ class Espressif32Platform(PlatformBase):
         core_variant_board = core_variant_board.replace("-D", " ")
         core_variant_build = (''.join(variables.get("build_flags", []))).replace("-D", " ")
         frameworks = variables.get("pioframework", [])
+        # Use the same string identifier as seen in "pio system info" and registry
+        sys_type = util.get_systype()
+
+        if "espidf" in frameworks:
+            # Configure toolchain download link dynamically
+            self.packages["toolchain-xtensa-esp-elf"]["optional"] = False
+            #self.packages["toolchain-xtensa-esp-elf"]["owner"] = "platformio"
+            #self.packages["toolchain-xtensa-esp-elf"]["version"] = "13.2.0+20230928"
+            self.packages["toolchain-xtensa-esp-elf"]["version"] = Espressif32Platform.xtensa_toolchain[sys_type]
+            self.packages["toolchain-riscv32-esp"]["optional"] = False
+            #self.packages["toolchain-riscv32-esp"]["owner"] = "platformio"
+            #self.packages["toolchain-riscv32-esp"]["version"] = "13.2.0+20230928"
+            self.packages["toolchain-riscv32-esp"]["version"] = Espressif32Platform.riscv32_toolchain[sys_type]
+            # Common packages for IDF and mixed Arduino+IDF projects
+            self.packages["toolchain-esp32ulp"]["optional"] = False
+            for p in self.packages:
+                if p in ("tool-cmake", "tool-ninja"):
+                    self.packages[p]["optional"] = False
+                elif p in ("tool-mconf", "tool-idf") and IS_WINDOWS:
+                    self.packages[p]["optional"] = False
 
         if "arduino" in frameworks:
             if "CORE32SOLO1" in core_variant_board or "FRAMEWORK_ARDUINO_SOLO1" in core_variant_build:
@@ -44,6 +99,17 @@ class Espressif32Platform(PlatformBase):
                 self.packages["framework-arduino-ITEAD"]["optional"] = False
             else:
                 self.packages["framework-arduinoespressif32"]["optional"] = False
+            for available_mcu in ("esp32", "esp32s2", "esp32s3"):
+                if available_mcu == mcu:
+                    self.packages["toolchain-xtensa-esp-elf"]["optional"] = False
+                    self.packages["toolchain-xtensa-esp-elf"]["version"] = Espressif32Platform.xtensa_toolchain[sys_type]
+
+            if mcu in ("esp32s2", "esp32s3", "esp32c2", "esp32c3", "esp32c6", "esp32h2"):
+                if mcu in ("esp32c2", "esp32c3", "esp32c6", "esp32h2"):
+                    self.packages.pop("toolchain-esp32ulp", None)
+                # RISC-V based toolchain for ESP32C3, ESP32C6 ESP32S2, ESP32S3 ULP
+                self.packages["toolchain-riscv32-esp"]["optional"] = False
+                self.packages["toolchain-riscv32-esp"]["version"] = Espressif32Platform.riscv32_toolchain[sys_type]
 
         if "buildfs" in targets:
             filesystem = variables.get("board_build.filesystem", "littlefs")
@@ -77,26 +143,6 @@ class Espressif32Platform(PlatformBase):
                 # Note: On Windows GDB v12 is not able to
                 # launch a GDB server in pipe mode while v11 works fine
                 self.packages[gdb_package]["version"] = "~11.2.0"
-
-        # Common packages for IDF and mixed Arduino+IDF projects
-        if "espidf" in frameworks:
-            self.packages["toolchain-esp32ulp"]["optional"] = False
-            for p in self.packages:
-                if p in ("tool-cmake", "tool-ninja"):
-                    self.packages[p]["optional"] = False
-                elif p in ("tool-mconf", "tool-idf") and IS_WINDOWS:
-                    self.packages[p]["optional"] = False
-
-        if mcu in ("esp32", "esp32s2", "esp32s3"):
-            self.packages["toolchain-xtensa-esp-elf"]["optional"] = False
-        else:
-            self.packages.pop("toolchain-xtensa-esp-elf", None)
-
-        if mcu in ("esp32s2", "esp32s3", "esp32c2", "esp32c3", "esp32c6", "esp32h2", "esp32p4"):
-            if mcu in ("esp32c2", "esp32c3", "esp32c6", "esp32h2", "esp32p4"):
-                self.packages.pop("toolchain-esp32ulp", None)
-            # RISC-V based toolchain for ESP32C3, ESP32C6 ESP32S2, ESP32S3 ULP
-            self.packages["toolchain-riscv32-esp"]["optional"] = False
 
         return super().configure_default_packages(variables, targets)
 
@@ -135,10 +181,7 @@ class Espressif32Platform(PlatformBase):
             "tumpa",
         ]
 
-        # A special case for the Kaluga board that has a separate interface config
-        if board.id == "esp32-s2-kaluga-1":
-            supported_debug_tools.append("ftdi")
-        if board.get("build.mcu", "") in ("esp32c3", "esp32c6", "esp32s3", "esp32h2", "esp32p4"):
+        if board.get("build.mcu", "") in ("esp32c3", "esp32c6", "esp32s3", "esp32h2"):
             supported_debug_tools.append("esp-builtin")
 
         upload_protocol = board.manifest.get("upload", {}).get("protocol")
@@ -208,20 +251,12 @@ class Espressif32Platform(PlatformBase):
                 "default": link == debug.get("default_tool"),
             }
 
-            # Avoid erasing Arduino Nano bootloader by preloading app binary
-            if board.id == "arduino_nano_esp32":
-                debug["tools"][link]["load_cmds"] = "preload"
         board.manifest["debug"] = debug
         return board
 
     def configure_debug_session(self, debug_config):
         build_extra_data = debug_config.build_data.get("extra", {})
         flash_images = build_extra_data.get("flash_images", [])
-
-        if "openocd" in (debug_config.server or {}).get("executable", ""):
-            debug_config.server["arguments"].extend(
-                ["-c", "adapter speed %s" % (debug_config.speed or "5000")]
-            )
 
         ignore_conds = [
             debug_config.load_cmds != ["load"],
