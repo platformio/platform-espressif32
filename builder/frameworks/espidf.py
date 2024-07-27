@@ -1549,6 +1549,9 @@ try:
 except:
     pass
 
+print("**** extra_flags", extra_flags)
+print("**** link_args", link_args["LINKFLAGS"])
+
 #
 # Process project sources
 #
