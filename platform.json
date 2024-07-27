@@ -55,15 +55,15 @@
     },
     "toolchain-xtensa-esp-elf": {
       "type": "toolchain",
-      "optional": false,
-      "owner": "",
-      "version": ""
+      "optional": true,
+      "owner": "platformio",
+      "version": "13.2.0+20230928"
     },
     "toolchain-riscv32-esp": {
       "type": "toolchain",
-      "optional": false,
-      "owner": "",
-      "version": ""
+      "optional": true,
+      "owner": "platformio",
+      "version": "13.2.0+20230928"
     },
     "toolchain-esp32ulp": {
       "type": "toolchain",
