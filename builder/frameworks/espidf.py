@@ -362,6 +362,7 @@ def extract_link_args(target_config):
     for f in target_config.get("link", {}).get("commandFragments", []):
         fragment = f.get("fragment", "").strip()
         fragment_role = f.get("role", "").strip()
+        print(" fragment_role:", fragment_role, " ", fragment)
         if not fragment or not fragment_role:
             continue
         args = click.parser.split_arg_string(fragment)
