@@ -55,13 +55,13 @@
     },
     "toolchain-xtensa-esp-elf": {
       "type": "toolchain",
-      "optional": true,
+      "optional": false,
       "owner": "",
       "version": ""
     },
     "toolchain-riscv32-esp": {
       "type": "toolchain",
-      "optional": true,
+      "optional": false,
       "owner": "",
       "version": ""
     },
