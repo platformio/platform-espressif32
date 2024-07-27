@@ -26,9 +26,6 @@ IS_WINDOWS = sys.platform.startswith("win")
 
 class Espressif32Platform(PlatformBase):
 
-    def is_embedded(self):
-        return True
-
     xtensa_toolchain = {
         # Windows
         "windows_amd64": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20240530/xtensa-esp-elf-13.2.0_20240530-x86_64-w64-mingw32_hotfix.zip",
