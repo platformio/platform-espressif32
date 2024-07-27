@@ -72,7 +72,6 @@ class Espressif32Platform(PlatformBase):
         sys_type = util.get_systype()
 
         if "espidf" in frameworks:
-            print("***** espidf *******")
             self.packages["framework-espidf"]["optional"] = False
             # Configure toolchain download link dynamically
             self.packages["toolchain-xtensa-esp-elf"]["optional"] = False
