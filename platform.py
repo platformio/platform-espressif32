@@ -71,6 +71,7 @@ class Espressif32Platform(PlatformBase):
         core_variant_board = core_variant_board.replace("-D", " ")
         core_variant_build = (''.join(variables.get("build_flags", []))).replace("-D", " ")
         frameworks = variables.get("pioframework", [])
+        print("frameworks:", frameworks)
         # Use the same string identifier as seen in "pio system info" and registry
         sys_type = util.get_systype()
 
