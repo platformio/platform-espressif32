@@ -1371,7 +1371,7 @@ if not board.get("build.ldscript", ""):
         ),
     )
 
-    print("***** linker script", linker_script)
+    print("***** linker command", '$CC -I"$BUILD_DIR/config" -I"%s" -C -P -x c -E $SOURCE -o $TARGET' % os.path.join(FRAMEWORK_DIR, "components", "esp_system", "ld")
     env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", linker_script)
     env.Replace(LDSCRIPT_PATH="memory.ld")
 
