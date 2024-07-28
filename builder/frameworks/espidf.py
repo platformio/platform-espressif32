@@ -1370,8 +1370,6 @@ if not board.get("build.ldscript", ""):
             "Generating LD script $TARGET",
         ),
     )
-
-    print("***** linker command", env.subst("$CC"), env.subst("$SOURCE"), env.subst("$TARGET"))
     env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", linker_script)
     env.Replace(LDSCRIPT_PATH="memory.ld")
 
