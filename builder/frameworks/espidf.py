@@ -250,7 +250,7 @@ def populate_idf_env_vars(idf_env):
         os.path.dirname(get_python_exe()),
     ]
 
-    if mcu not in ("esp32c2", "esp32c3", "esp32c6","esp32h2","esp32p4"):
+    if mcu not in ("esp32c2", "esp32c3", "esp32h2"):
         additional_packages.append(
             os.path.join(platform.get_package_dir("toolchain-esp32ulp"), "bin"),
         )
@@ -492,7 +492,7 @@ def load_component_paths(framework_components_dir, ignored_component_prefixes=No
 def extract_linker_script_fragments_backup(framework_components_dir, sdk_config):
     # Hardware-specific components are excluded from search and added manually below
     project_components = load_component_paths(
-        framework_components_dir, ignored_component_prefixes=("esp32", "riscv")
+        framework_components_dir, ignored_component_prefixes=("esp32", "riscv", "idf_test")
     )
 
     result = []
