@@ -58,12 +58,9 @@ board = env.BoardConfig()
 mcu = board.get("build.mcu", "esp32")
 idf_variant = mcu.lower()
 
-# Required until Arduino switches to v5
-IDF5 = (
-    platform.get_package_version("framework-espidf")
-    .split(".")[1]
-    .startswith("5")
-)
+IDF_version = platform.get_package_version("framework-espidf")
+IDF5 = IDF_version.split(".")[1].startswith("5")               # bool; Major IDF5 ?
+IDF_minor = int(("".join(IDF_version.split(".")[1]))[1:3])     # Minor version as int
 IDF_ENV_VERSION = "1.0.0"
 FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
 TOOLCHAIN_DIR = platform.get_package_dir(
@@ -255,8 +252,8 @@ def populate_idf_env_vars(idf_env):
             os.path.join(platform.get_package_dir("toolchain-esp32ulp"), "bin"),
         )
 
-    if IS_WINDOWS:
-        additional_packages.append(platform.get_package_dir("tool-mconf"))
+#    if IS_WINDOWS:
+#        additional_packages.append(platform.get_package_dir("tool-mconf"))
 
     idf_env["PATH"] = os.pathsep.join(additional_packages + [idf_env["PATH"]])
 
@@ -655,7 +652,7 @@ def generate_project_ld_script(sdk_config, ignore_targets=None):
         "sections.ld.in",
     )
 
-    if IDF5:
+    if IDF5 and IDF_minor > 2:
         initial_ld_script = preprocess_linker_file(
             initial_ld_script,
             os.path.join(
@@ -1294,16 +1291,16 @@ def install_python_deps():
             )
         )
 
-        # A special "esp-windows-curses" python package is required on Windows
-        # for Menuconfig on IDF <5
-        if not IDF5 and "esp-windows-curses" not in installed_packages:
-            env.Execute(
-                env.VerboseAction(
-                    '"%s" -m pip install "file://%s/tools/kconfig_new/esp-windows-curses"'
-                    % (python_exe_path, FRAMEWORK_DIR),
-                    "Installing windows-curses package",
-                )
-            )
+#        # A special "esp-windows-curses" python package is required on Windows
+#        # for Menuconfig on IDF <5
+#        if not IDF5 and "esp-windows-curses" not in installed_packages:
+#            env.Execute(
+#                env.VerboseAction(
+#                    '"%s" -m pip install "file://%s/tools/kconfig_new/esp-windows-curses"'
+#                    % (python_exe_path, FRAMEWORK_DIR),
+#                    "Installing windows-curses package",
+#                )
+#            )
 
 
 def get_idf_venv_dir():
@@ -1414,7 +1411,7 @@ if not board.get("build.ldscript", ""):
         "memory.ld.in",
     ))
 
-    if IDF5:
+    if IDF5 and IDF_minor > 2:
         initial_ld_script = preprocess_linker_file(
             initial_ld_script,
             os.path.join(
