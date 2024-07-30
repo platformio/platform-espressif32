@@ -114,8 +114,6 @@ def generate_ulp_config(target_config):
             os.path.join(FRAMEWORK_DIR, "components", "ulp", "cmake"),
         )
 
-        print(555, cmd)
-
         result = exec_command(cmd)
         if result["returncode"] != 0:
             sys.stderr.write(result["err"] + "\n")
