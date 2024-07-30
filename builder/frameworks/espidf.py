@@ -59,11 +59,9 @@ mcu = board.get("build.mcu", "esp32")
 idf_variant = mcu.lower()
 
 # Required until Arduino switches to v5
-IDF5 = (
-    platform.get_package_version("framework-espidf")
-    .split(".")[1]
-    .startswith("5")
-)
+IDF_version = platform.get_package_version("framework-espidf")
+IDF5 = IDF_version.split(".")[1].startswith("5")
+IDF_minor = int(("".join(IDF_version.split(".")[1]))[1:3])
 IDF_ENV_VERSION = "1.0.0"
 FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
 TOOLCHAIN_DIR = platform.get_package_dir(
@@ -661,7 +659,7 @@ def generate_project_ld_script(sdk_config, ignore_targets=None):
         "sections.ld.in",
     )
 
-    if IDF5:
+    if IDF5 and IDF_minor > 2:
         initial_ld_script = preprocess_linker_file(
             initial_ld_script,
             os.path.join(
@@ -1419,7 +1417,7 @@ if not board.get("build.ldscript", ""):
         "memory.ld.in",
     ))
 
-    if IDF5:
+    if IDF5 and IDF_minor > 2:
         initial_ld_script = preprocess_linker_file(
             initial_ld_script,
             os.path.join(
