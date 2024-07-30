@@ -492,7 +492,7 @@ def load_component_paths(framework_components_dir, ignored_component_prefixes=No
 def extract_linker_script_fragments_backup(framework_components_dir, sdk_config):
     # Hardware-specific components are excluded from search and added manually below
     project_components = load_component_paths(
-        framework_components_dir, ignored_component_prefixes=("esp32", "riscv", "idf_test")
+        framework_components_dir, ignored_component_prefixes=("esp32", "riscv")
     )
 
     result = []
@@ -646,16 +646,30 @@ def generate_project_ld_script(sdk_config, ignore_targets=None):
         '--objdump "{objdump}"'
     ).format(**args)
 
+    initial_ld_script = os.path.join(
+        FRAMEWORK_DIR,
+        "components",
+        "esp_system",
+        "ld",
+        idf_variant,
+        "sections.ld.in",
+    )
+
+    if IDF5:
+        initial_ld_script = preprocess_linker_file(
+            initial_ld_script,
+            os.path.join(
+                BUILD_DIR,
+                "esp-idf",
+                "esp_system",
+                "ld",
+                "sections.ld.in",
+            )
+        )
+
     return env.Command(
         os.path.join("$BUILD_DIR", "sections.ld"),
-        os.path.join(
-            FRAMEWORK_DIR,
-            "components",
-            "esp_system",
-            "ld",
-            idf_variant,
-            "sections.ld.in",
-        ),
+        initial_ld_script,
         env.VerboseAction(cmd, "Generating project linker script $TARGET"),
     )
 
@@ -1105,6 +1119,46 @@ def get_app_partition_offset(pt_table, pt_offset):
     return app_params.get("offset", "0x10000")
 
 
+def preprocess_linker_file(src_ld_script, target_ld_script):
+    return env.Command(
+        target_ld_script,
+        src_ld_script,
+        env.VerboseAction(
+            " ".join(
+                [
+                    os.path.join(
+                        platform.get_package_dir("tool-cmake"),
+                        "bin",
+                        "cmake",
+                    ),
+                    "-DCC=%s"
+                    % os.path.join(
+                        TOOLCHAIN_DIR,
+                        "bin",
+                        "$CC",
+                    ),
+                    "-DSOURCE=$SOURCE",
+                    "-DTARGET=$TARGET",
+                    "-DCONFIG_DIR=%s" % os.path.join(BUILD_DIR, "config"),
+                    "-DLD_DIR=%s"
+                    % os.path.join(
+                        FRAMEWORK_DIR, "components", "esp_system", "ld"
+                    ),
+                    "-P",
+                    os.path.join(
+                        "$BUILD_DIR",
+                        "esp-idf",
+                        "esp_system",
+                        "ld",
+                        "linker_script_generator.cmake",
+                    ),
+                ]
+            ),
+            "Generating LD script $TARGET",
+        ),
+    )
+
+
 def generate_mbedtls_bundle(sdk_config):
     bundle_path = os.path.join("$BUILD_DIR", "x509_crt_bundle")
     if os.path.isfile(env.subst(bundle_path)):
@@ -1351,25 +1405,37 @@ generate_default_component()
 #
 
 if not board.get("build.ldscript", ""):
-    linker_script = env.Command(
-        os.path.join("$BUILD_DIR", "memory.ld"),
-        board.get(
-            "build.esp-idf.ldscript",
+    initial_ld_script = board.get("build.esp-idf.ldscript", os.path.join(
+        FRAMEWORK_DIR,
+        "components",
+        "esp_system",
+        "ld",
+        idf_variant,
+        "memory.ld.in",
+    ))
+
+    if IDF5:
+        initial_ld_script = preprocess_linker_file(
+            initial_ld_script,
             os.path.join(
-                FRAMEWORK_DIR,
-                "components",
+                BUILD_DIR,
+                "esp-idf",
                 "esp_system",
                 "ld",
-                idf_variant,
                 "memory.ld.in",
-            ),
-        ),
+            )
+        )
+
+    linker_script = env.Command(
+        os.path.join("$BUILD_DIR", "memory.ld"),
+        initial_ld_script,
         env.VerboseAction(
             '$CC -I"$BUILD_DIR/config" -I"%s" -C -P -x c -E $SOURCE -o $TARGET'
             % os.path.join(FRAMEWORK_DIR, "components", "esp_system", "ld"),
             "Generating LD script $TARGET",
         ),
     )
+
     env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", linker_script)
     env.Replace(LDSCRIPT_PATH="memory.ld")
 
@@ -1524,7 +1590,9 @@ libs = find_lib_deps(
 
 # Extra flags which need to be explicitly specified in LINKFLAGS section because SCons
 # cannot merge them correctly
-extra_flags = filter_args(link_args["LINKFLAGS"], ["-T", "-u"])
+extra_flags = filter_args(
+    link_args["LINKFLAGS"], ["-T", "-u", "-Wl,--start-group", "-Wl,--end-group"]
+)
 link_args["LINKFLAGS"] = sorted(list(set(link_args["LINKFLAGS"]) - set(extra_flags)))
 
 # remove the main linker script flags '-T memory.ld'
@@ -1534,19 +1602,6 @@ try:
     extra_flags.pop(ld_index - 1)
 except:
     print("Warning! Couldn't find the main linker script in the CMake code model.")
-
-# remove circle linker commands
-try:
-    link_args_index = link_args["LINKFLAGS"].index("-Wl,--start-group")
-    link_args["LINKFLAGS"].pop(link_args_index)
-except:
-    pass
-
-try:
-    link_args_index = link_args["LINKFLAGS"].index("-Wl,--end-group")
-    link_args["LINKFLAGS"].pop(link_args_index)
-except:
-    pass
 
 #
 # Process project sources
