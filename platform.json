@@ -51,7 +51,7 @@
       "type": "framework",
       "optional": true,
       "owner": "Jason2866",
-      "version": "https://github.com/Jason2866/esp-idf/releases/download/v5.3.0.240728/esp-idf-v5.3.0.zip"
+      "version": "https://github.com/Jason2866/esp-idf/releases/download/v5.3.0/esp-idf-v5.3.0.zip"
     },
     "toolchain-xtensa-esp-elf": {
       "type": "toolchain",
