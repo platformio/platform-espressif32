@@ -50,8 +50,8 @@ def prepare_ulp_env_vars(env):
         os.path.dirname(where_is_program("python")),
     ]
 
-    if "windows" in get_systype():
-        additional_packages.append(platform.get_package_dir("tool-mconf"))
+#    if "windows" in get_systype():
+#        additional_packages.append(platform.get_package_dir("tool-mconf"))
 
     for package in additional_packages:
         ulp_env.PrependENVPath("PATH", package)
