@@ -661,7 +661,8 @@ def generate_project_ld_script(sdk_config, ignore_targets=None):
         "sections.ld.in",
     )
 
-    if IDF5:
+    framework_version = [int(v) for v in get_framework_version().split(".")]
+    if framework_version[:2] > [5, 2]:
         initial_ld_script = preprocess_linker_file(
             initial_ld_script,
             os.path.join(
@@ -1419,7 +1420,8 @@ if not board.get("build.ldscript", ""):
         "memory.ld.in",
     ))
 
-    if IDF5:
+    framework_version = [int(v) for v in get_framework_version().split(".")]
+    if framework_version[:2] > [5, 2]:
         initial_ld_script = preprocess_linker_file(
             initial_ld_script,
             os.path.join(
