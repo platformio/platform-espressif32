@@ -57,13 +57,15 @@
       "type": "toolchain",
       "optional": true,
       "owner": "platformio",
-      "version": "13.2.0+20240530"
+      "version": "13.2.0+20230928",
+      "optionalVersions": ["13.2.0+20240530"]
     },
     "toolchain-riscv32-esp": {
       "type": "toolchain",
       "optional": true,
       "owner": "platformio",
-      "version": "13.2.0+20240530"
+      "version": "13.2.0+20230928",
+      "optionalVersions": ["13.2.0+20240530"]
     },
     "toolchain-esp32ulp": {
       "type": "toolchain",
@@ -86,7 +88,7 @@
     "tool-esptoolpy": {
       "type": "uploader",
       "owner": "tasmota",
-      "version": "https://github.com/Jason2866/esptool/releases/download/v4.7.5/esptool.zip"
+      "version": "https://github.com/Jason2866/esptool/releases/download/v4.7.6/esptool.zip"
     },
     "tool-dfuutil-arduino": {
       "type": "uploader",
