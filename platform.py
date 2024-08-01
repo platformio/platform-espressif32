@@ -45,6 +45,17 @@ class Espressif32Platform(PlatformBase):
             else:
                 self.packages["framework-arduinoespressif32"]["optional"] = False
 
+        if "arduino" in frameworks and "espidf" not in frameworks:
+            # Pull the latest toolchains
+            self.packages["toolchain-riscv32-esp"]["owner"] = "platformio"
+            self.packages["toolchain-riscv32-esp"][
+                "version"
+            ] = "13.2.0+20240530"
+            self.packages["toolchain-xtensa-esp-elf"]["owner"] = "platformio"
+            self.packages["toolchain-xtensa-esp-elf"][
+                "version"
+            ] = "13.2.0+20240530"
+
         if "buildfs" in targets:
             filesystem = variables.get("board_build.filesystem", "littlefs")
             if filesystem == "littlefs":
