@@ -6,7 +6,7 @@
     },
     "core": "esp32",
     "extra_flags": [
-      "-DARDUINO_heltec_wifi_lora_32_V3",
+      "-DARDUINO_heltec_wifi_paper",
       "-DARDUINO_USB_MODE=1",
       "-DARDUINO_RUNNING_CORE=1",
       "-DARDUINO_EVENT_RUNNING_CORE=1"
@@ -21,7 +21,7 @@
       ]
     ],
     "mcu": "esp32s3",
-    "variant": "heltec_wifi_lora_32_V3"
+    "variant": "heltec_wireless_paper"
   },
   "connectivity": [
     "wifi",
@@ -35,7 +35,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "Heltec WiFi LoRa 32 (V3)",
+  "name": "Heltec WiFi Paper",
   "upload": {
     "flash_size": "8MB",
     "maximum_ram_size": 327680,
@@ -43,6 +43,6 @@
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://heltec.org/project/wifi-lora-32-v3/",
+  "url": "https://heltec.org/project/wireless-paper",
   "vendor": "Heltec"
 }
