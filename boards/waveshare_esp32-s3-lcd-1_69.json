@@ -34,7 +34,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "ESP32-S3-LCD-1.69",
+  "name": "Waveshare ESP32-S3-LCD-1.69",
   "upload": {
     "flash_size": "16MB",
     "maximum_ram_size": 327680,
