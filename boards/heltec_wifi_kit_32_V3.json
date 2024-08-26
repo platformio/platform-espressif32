@@ -21,7 +21,7 @@
       ]
     ],
     "mcu": "esp32s3",
-    "variant": "heltec_wifi_kit_32_v3"
+    "variant": "heltec_wifi_kit_32_V3"
   },
   "connectivity": [
     "wifi",
