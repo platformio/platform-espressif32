@@ -82,7 +82,7 @@ class Espressif32Platform(PlatformBase):
         if "espidf" in frameworks:
             self.packages["toolchain-esp32ulp"]["optional"] = False
             for p in self.packages:
-                if p in ("tool-cmake", "tool-ninja"):
+                if p in ("tool-scons", "tool-cmake", "tool-ninja"):
                     self.packages[p]["optional"] = False
                 elif p in ("tool-mconf", "tool-idf") and IS_WINDOWS:
                     self.packages[p]["optional"] = False
