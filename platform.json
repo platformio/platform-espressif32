@@ -121,6 +121,11 @@
       "owner": "platformio",
       "version": "^1.7.0"
     },
+    "tool-scons": {
+      "optional": false,
+      "owner": "platformio",
+      "version": "~4.8.0"
+    },
     "tool-mconf": {
       "optional": true,
       "owner": "platformio",
