@@ -124,7 +124,7 @@
     "tool-scons": {
       "optional": false,
       "owner": "platformio",
-      "version": "~4.8.0"
+      "version": "~4.40800.0"
     },
     "tool-mconf": {
       "optional": true,
