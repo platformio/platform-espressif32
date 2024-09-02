@@ -122,7 +122,7 @@
       "version": "^1.7.0"
     },
     "tool-scons": {
-      "optional": false,
+      "optional": true,
       "owner": "platformio",
       "version": "~4.40800.0"
     },
