@@ -23,6 +23,11 @@ from platformio.public import PlatformBase, to_unix_path
 
 
 IS_WINDOWS = sys.platform.startswith("win")
+# Set Platformio env var to use windows_amd64 for all windows architectures
+# only windows_amd64 native espressif toolchains are available
+# needs platformio core >= 6.1.16b2 or pioarduino core 6.1.16+test
+if IS_WINDOWS:
+    os.environ["PLATFORMIO_SYSTEM_TYPE"] = "windows_amd64"
 
 
 class Espressif32Platform(PlatformBase):
