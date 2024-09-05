@@ -332,7 +332,7 @@ def extract_defines(compile_group):
             define, value = define_string.split("=", maxsplit=1)
             if any(char in value for char in (' ', '<', '>')):
                 value = f'"{value}"'
-            elif any(char in value for char in ('"', '\'')):
+            elif '"' in value and not value.startswith("\\"):
                 value = value.replace('"', '\\"')
             return (define, value)
         return define_string
