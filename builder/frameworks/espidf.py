@@ -326,8 +326,9 @@ def extract_defines(compile_group):
         define_string = define_string.strip()
         if "=" in define_string:
             define, value = define_string.split("=", maxsplit=1)
-            if '"' in value and not value.startswith("\\"):
-                # Escape only raw values
+            if any(char in value for char in (' ', '<', '>')):
+                value = f'"{value}"'
+            elif '"' in value and not value.startswith("\\"):
                 value = value.replace('"', '\\"')
             return (define, value)
         return define_string
@@ -338,8 +339,11 @@ def extract_defines(compile_group):
     ]
 
     for f in compile_group.get("compileCommandFragments", []):
-        if f.get("fragment", "").startswith("-D"):
-            result.append(_normalize_define(f["fragment"][2:]))
+        fragment = f.get("fragment", "").strip()
+        if fragment.startswith('"'):
+            fragment = fragment.strip('"')
+        if fragment.startswith("-D"):
+            result.append(_normalize_define(fragment[2:]))
 
     return result
 
