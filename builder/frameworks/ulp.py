@@ -105,7 +105,7 @@ def generate_ulp_config(target_config):
             "-DIDF_PATH=" + fs.to_unix_path(FRAMEWORK_DIR),
             "-DSDKCONFIG_HEADER=" + os.path.join(BUILD_DIR, "config", "sdkconfig.h"),
             "-DPYTHON=" + env.subst("$PYTHONEXE"),
-            "-DULP_COCPU_IS_RISCV=%s" % ("ON" if riscv_ulp_enabled else "OFF"),
+            "-DSDKCONFIG_CMAKE=" + os.path.join(BUILD_DIR, "config", "sdkconfig.cmake"),
             "-GNinja",
             "-B",
             ULP_BUILD_DIR,
