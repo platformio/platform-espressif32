@@ -252,7 +252,7 @@ def populate_idf_env_vars(idf_env):
         os.path.dirname(get_python_exe()),
     ]
 
-    if mcu not in ("esp32c2", "esp32c3", "esp32c6", "esp32h2", "esp32p4"):
+    if mcu not in ("esp32c2", "esp32c3", "esp32h2"):
         additional_packages.append(
             os.path.join(platform.get_package_dir("toolchain-esp32ulp"), "bin"),
         )
