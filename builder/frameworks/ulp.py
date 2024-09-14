@@ -89,7 +89,7 @@ def generate_ulp_config(target_config):
                 "-riscv" if riscv_ulp_enabled else "",
             )
         else:
-            ulp_toolchain = "toolchain-lp-core-riscv"
+            ulp_toolchain = "toolchain-lp-core-riscv.cmake"
 
         cmd = (
             os.path.join(platform.get_package_dir("tool-cmake"), "bin", "cmake"),
