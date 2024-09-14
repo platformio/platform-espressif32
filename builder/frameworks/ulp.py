@@ -81,6 +81,15 @@ def get_component_includes(target_config):
 def generate_ulp_config(target_config):
     def _generate_ulp_configuration_action(env, target, source):
         riscv_ulp_enabled = sdk_config.get("ULP_COPROC_TYPE_RISCV", False)
+        lp_core_ulp_enabled = sdk_config.get("ULP_COPROC_TYPE_LP_CORE", False)
+
+        if lp_core_ulp_enabled == False:
+            ulp_toolchain = "toolchain-%sulp%s.cmake"% (
+                "" if riscv_ulp_enabled else idf_variant + "-",
+                "-riscv" if riscv_ulp_enabled else "",
+            )
+        else:
+            ulp_toolchain = "toolchain-lp-core-riscv"
 
         cmd = (
             os.path.join(platform.get_package_dir("tool-cmake"), "bin", "cmake"),
@@ -91,11 +100,7 @@ def generate_ulp_config(target_config):
                 "components",
                 "ulp",
                 "cmake",
-                "toolchain-%sulp%s.cmake"
-                % (
-                    "" if riscv_ulp_enabled else idf_variant + "-",
-                    "-riscv" if riscv_ulp_enabled else "",
-                ),
+                ulp_toolchain,
             ),
             "-DULP_S_SOURCES=%s" % ";".join([fs.to_unix_path(s.get_abspath()) for s in source]),
             "-DULP_APP_NAME=ulp_main",
