@@ -37,21 +37,23 @@ def prepare_ulp_env_vars(env):
 
     toolchain_path = platform.get_package_dir(
         "toolchain-xtensa-esp-elf"
+        if idf_variant not in ("esp32c6", "esp32p4")
+        else "toolchain-riscv32-esp"
+    )
+
+    toolchain_path_ulp = platform.get_package_dir(
+        "toolchain-esp32ulp"
+        if idf_variant not in ("esp32c6", "esp32p4")
+        else ""
     )
 
     additional_packages = [
         toolchain_path,
-        os.path.join(
-            platform.get_package_dir("toolchain-esp32ulp"),
-            "bin",
-        ),
+        toolchain_path_ulp,
         platform.get_package_dir("tool-ninja"),
         os.path.join(platform.get_package_dir("tool-cmake"), "bin"),
         os.path.dirname(where_is_program("python")),
     ]
-
-#    if "windows" in get_systype():
-#        additional_packages.append(platform.get_package_dir("tool-mconf"))
 
     for package in additional_packages:
         ulp_env.PrependENVPath("PATH", package)
