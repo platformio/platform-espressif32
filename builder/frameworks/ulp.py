@@ -43,7 +43,7 @@ def prepare_ulp_env_vars(env):
 
     toolchain_path_ulp = platform.get_package_dir(
         "toolchain-esp32ulp"
-        if idf_variant not in ("esp32c6", "esp32p4")
+        if idf_variant in ("esp32", "esp32s2", "esp32s3")
         else ""
     )
 
