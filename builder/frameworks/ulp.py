@@ -21,7 +21,7 @@ from platformio.proc import where_is_program, exec_command
 
 from SCons.Script import Import
 
-Import("env sdk_config project_config idf_variant")
+Import("env sdk_config project_config app_includes idf_variant")
 
 ulp_env = env.Clone()
 platform = ulp_env.PioPlatform()
@@ -93,6 +93,10 @@ def generate_ulp_config(target_config):
         else:
             ulp_toolchain = "toolchain-lp-core-riscv.cmake"
 
+        comp_includes = ";".join(get_component_includes(target_config))
+        plain_includes = ";".join(app_includes["plain_includes"])
+        comp_includes = comp_includes + plain_includes
+
         cmd = (
             os.path.join(platform.get_package_dir("tool-cmake"), "bin", "cmake"),
             "-DCMAKE_GENERATOR=Ninja",
@@ -107,7 +111,7 @@ def generate_ulp_config(target_config):
             "-DULP_S_SOURCES=%s" % ";".join([fs.to_unix_path(s.get_abspath()) for s in source]),
             "-DULP_APP_NAME=ulp_main",
             "-DCOMPONENT_DIR=" + os.path.join(ulp_env.subst("$PROJECT_DIR"), "ulp"),
-            "-DCOMPONENT_INCLUDES=%s" % ";".join(get_component_includes(target_config)),
+            "-DCOMPONENT_INCLUDES=" + comp_includes,
             "-DIDF_TARGET=%s" % idf_variant,
             "-DIDF_PATH=" + fs.to_unix_path(FRAMEWORK_DIR),
             "-DSDKCONFIG_HEADER=" + os.path.join(BUILD_DIR, "config", "sdkconfig.h"),
