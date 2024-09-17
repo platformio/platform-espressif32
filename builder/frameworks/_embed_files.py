@@ -110,14 +110,14 @@ env.Append(
                 " ".join(
                     [
                         "riscv32-esp-elf-objcopy"
-                        if mcu in ("esp32c2","esp32c3","esp32c6","esp32h2")
+                        if mcu in ("esp32c2","esp32c3","esp32c6","esp32h2","esp32p4")
                         else "xtensa-%s-elf-objcopy" % mcu,
                         "--input-target",
                         "binary",
                         "--output-target",
-                        "elf32-littleriscv" if mcu in ("esp32c2","esp32c3","esp32c6","esp32h2") else "elf32-xtensa-le",
+                        "elf32-littleriscv" if mcu in ("esp32c2","esp32c3","esp32c6","esp32h2","esp32p4") else "elf32-xtensa-le",
                         "--binary-architecture",
-                        "riscv" if mcu in ("esp32c2","esp32c3","esp32c6","esp32h2") else "xtensa",
+                        "riscv" if mcu in ("esp32c2","esp32c3","esp32c6","esp32h2","esp32p4") else "xtensa",
                         "--rename-section",
                         ".data=.rodata.embedded",
                         "$SOURCE",
