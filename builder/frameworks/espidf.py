@@ -69,9 +69,9 @@ IDF5 = (
 IDF_ENV_VERSION = "1.0.0"
 FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
 TOOLCHAIN_DIR = platform.get_package_dir(
-    "toolchain-riscv32-esp"
-    if mcu in ("esp32c2", "esp32c3", "esp32c6", "esp32h2", "esp32p4")
-    else "toolchain-xtensa-esp-elf"
+    "toolchain-xtensa-esp-elf"
+    if mcu in ("esp32", "esp32s2", "esp32s3")
+    else "toolchain-riscv32-esp"
 )
 
 
@@ -251,12 +251,6 @@ def populate_idf_env_vars(idf_env):
         os.path.join(platform.get_package_dir("tool-cmake"), "bin"),
         os.path.dirname(get_python_exe()),
     ]
-
-#    if mcu in ("esp32", "esp32s2", "esp32s3"):
-#        additional_packages.append(
-#            os.path.join(platform.get_package_dir("toolchain-esp32ulp"), "bin"),
-#        )
-
 
     idf_env["PATH"] = os.pathsep.join(additional_packages + [idf_env["PATH"]])
 
@@ -509,7 +503,7 @@ def extract_linker_script_fragments_backup(framework_components_dir, sdk_config)
         sys.stderr.write("Error: Failed to extract paths to linker script fragments\n")
         env.Exit(1)
 
-    if mcu in ("esp32c2", "esp32c3", "esp32c6", "esp32h2", "esp32p4"):
+    if mcu not in ("esp32", "esp32s2", "esp32s3"):
         result.append(os.path.join(framework_components_dir, "riscv", "linker.lf"))
 
     # Add extra linker fragments
@@ -1300,17 +1294,6 @@ def install_python_deps():
             )
         )
 
-#        # A special "esp-windows-curses" python package is required on Windows
-#        # for Menuconfig on IDF <5
-#        if not IDF5 and "esp-windows-curses" not in installed_packages:
-#            env.Execute(
-#                env.VerboseAction(
-#                    '"%s" -m pip install "file://%s/tools/kconfig_new/esp-windows-curses"'
-#                    % (python_exe_path, FRAMEWORK_DIR),
-#                    "Installing windows-curses package",
-#                )
-#            )
-
 
 def get_idf_venv_dir():
     # The name of the IDF venv contains the IDF version to avoid possible conflicts and
@@ -1675,7 +1658,7 @@ env.Prepend(
         (
             board.get(
                 "upload.bootloader_offset",
-                "0x0" if mcu in ["esp32c2", "esp32c3", "esp32c6", "esp32s3", "esp32h2"] else ("0x2000" if mcu in ["esp32p4"] else "0x1000"),
+                "0x1000" if mcu in ["esp32", "esp32s2"] else ("0x2000" if mcu in ["esp32p4"] else "0x0"),
             ),
             os.path.join("$BUILD_DIR", "bootloader.bin"),
         ),
