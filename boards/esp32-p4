@@ -1,0 +1,31 @@
+{
+  "build": {
+    "core": "esp32",
+    "f_cpu": "360000000L",
+    "f_flash": "80000000L",
+    "flash_mode": "qio",
+    "mcu": "esp32p4",
+    "variant": "esp32p4"
+  },
+  "connectivity": [
+    "bluetooth",
+    "openthread"
+  ],
+  "debug": {
+    "openocd_target": "esp32p4.cfg"
+  },
+  "frameworks": [
+    "arduino",
+    "espidf"
+  ],
+  "name": "Espressif ESP32-P4 generic",
+  "upload": {
+    "flash_size": "4MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 4194304,
+    "require_upload_port": true,
+    "speed": 460800
+  },
+  "url": "https://docs.espressif.com",
+  "vendor": "Espressif"
+}
