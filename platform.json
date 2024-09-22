@@ -125,16 +125,6 @@
       "optional": true,
       "owner": "platformio",
       "version": "~4.40801.0"
-    },
-    "tool-mconf": {
-      "optional": true,
-      "owner": "platformio",
-      "version": "~1.4060000.0"
-    },
-    "tool-idf": {
-      "optional": true,
-      "owner": "platformio",
-      "version": "~1.0.1"
     }
   }
 }
