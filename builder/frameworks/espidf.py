@@ -1798,17 +1798,54 @@ if ota_partition_params["size"] and ota_partition_params["offset"]:
         ]
     )
 
+def _parse_size(value):
+    if isinstance(value, int):
+        return value
+    elif value.isdigit():
+        return int(value)
+    elif value.startswith("0x"):
+        return int(value, 16)
+    elif value[-1].upper() in ("K", "M"):
+        base = 1024 if value[-1].upper() == "K" else 1024 * 1024
+        return int(value[:-1]) * base
+    return value
+
 #
 # Configure application partition offset
 #
 
-env.Replace(
-    ESP32_APP_OFFSET=get_app_partition_offset(
-        env.subst("$PARTITIONS_TABLE_CSV"), partition_table_offset
-    )
-)
+partitions_csv = env.subst("$PARTITIONS_TABLE_CSV")
+result = []
+next_offset = 0
+bound = int(board.get("upload.offset_address", "0x10000"), 16) # default 0x10000
+with open(partitions_csv) as fp:
+    for line in fp.readlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        tokens = [t.strip() for t in line.split(",")]
+        if len(tokens) < 5:
+            continue
+        partition = {
+            "name": tokens[0],
+            "type": tokens[1],
+            "subtype": tokens[2],
+            "offset": tokens[3] or next_offset,
+            "size": tokens[4],
+            "flags": tokens[5] if len(tokens) > 5 else None
+        }
+        result.append(partition)
+        next_offset = _parse_size(partition["offset"])
+        if (partition["subtype"] == "ota_0"):
+            bound = next_offset
+        next_offset = (next_offset + bound - 1) & ~(bound - 1)
 
+env.Replace(ESP32_APP_OFFSET=str(hex(bound)))
+
+#
 # Propagate application offset to debug configurations
+#
+
 env["INTEGRATION_EXTRA_DATA"].update(
     {"application_offset": env.subst("$ESP32_APP_OFFSET")}
 )
