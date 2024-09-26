@@ -44,7 +44,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install wheel
-          pip install -U https://github.com/platformio/platformio/archive/develop.zip
+          pip install -U https://github.com/Jason2866/platformio-core/archive/refs/tags/v6.1.16.tar.gz
           pio pkg install --global --platform symlink://.
       - name: git clone Tasmota and add to examples
         if: "matrix.example == 'examples/tasmota' && matrix.os != 'windows-2022'"
