@@ -1785,7 +1785,11 @@ ota_partition_params = get_partition_info(
 if ota_partition_params["size"] and ota_partition_params["offset"]:
     # Generate an empty image if OTA is enabled in partition table
     ota_partition_image = os.path.join("$BUILD_DIR", "ota_data_initial.bin")
-    generate_empty_partition_image(ota_partition_image, ota_partition_params["size"])
+    if "arduino" in env.subst("$PIOFRAMEWORK"):
+        from arduino import ARDUINO_FRAMEWORK_DIR
+        ota_partition_image = os.path.join(ARDUINO_FRAMEWORK_DIR, "tools", "partitions", "boot_app0.bin")
+    else:
+        generate_empty_partition_image(ota_partition_image, ota_partition_params["size"])
 
     env.Append(
         FLASH_EXTRA_IMAGES=[
