@@ -1,6 +1,6 @@
 {
   "build": {
-    "arduino":{
+    "arduino": {
       "ldscript": "esp32s3_out.ld",
       "partitions": "default_8MB.csv",
       "memory_type": "qio_opi"
@@ -20,7 +20,7 @@
     "psram_type": "opi",
     "hwids": [
       [
-        "0X303A",
+        "0x303A",
         "0x1001"
       ]
     ],
