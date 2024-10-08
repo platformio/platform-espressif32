@@ -9,8 +9,6 @@
         "extra_flags": [
             "-DBOARD_HAS_PSRAM",
             "-DARDUINO_ESP32_S3_N16R8",
-            "-DARDUINO_USB_MODE=1",
-            "-DARDUINO_USB_CDC_ON_BOOT=1",
             "-DARDUINO_RUNNING_CORE=1",
             "-DARDUINO_EVENT_RUNNING_CORE=1"
         ],
@@ -24,7 +22,7 @@
             ]
         ],
         "mcu": "esp32s3",
-        "variant": "esp32_s3_wroom_1_n16r8"
+        "variant": "esp32_s3"
     },
     "connectivity": [
         "bluetooth",
@@ -33,6 +31,10 @@
     "debug": {
         "openocd_target": "esp32s3.cfg"
     },
+    "default_tool": "esp-builtin",
+    "onboard_tools": [
+        "esp-builtin"
+    ],
     "frameworks": [
         "arduino",
         "espidf"
@@ -43,7 +45,7 @@
         "maximum_ram_size": 327680,
         "maximum_size": 16777216,
         "require_upload_port": true,
-        "speed": 460800
+        "speed": 921600
     },
     "url": "https://www.espressif.com/sites/default/files/documentation/esp32-s3-wroom-1_wroom-1u_datasheet_en.pdf",
     "vendor": "Espressif"
