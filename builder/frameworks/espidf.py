@@ -330,8 +330,9 @@ def extract_defines(compile_group):
         define_string = define_string.strip()
         if "=" in define_string:
             define, value = define_string.split("=", maxsplit=1)
-            if '"' in value and not value.startswith("\\"):
-                # Escape only raw values
+            if any(char in value for char in (' ', '<', '>')):
+                value = f'"{value}"'
+            elif '"' in value and not value.startswith("\\"):
                 value = value.replace('"', '\\"')
             return (define, value)
         return define_string
@@ -342,8 +343,11 @@ def extract_defines(compile_group):
     ]
 
     for f in compile_group.get("compileCommandFragments", []):
-        if f.get("fragment", "").startswith("-D"):
-            result.append(_normalize_define(f["fragment"][2:]))
+        fragment = f.get("fragment", "").strip()
+        if fragment.startswith('"'):
+            fragment = fragment.strip('"')
+        if fragment.startswith("-D"):
+            result.append(_normalize_define(fragment[2:]))
 
     return result
 
@@ -429,8 +433,8 @@ def get_app_flags(app_config, default_config):
         for cg in config["compileGroups"]:
             flags[cg["language"]] = []
             for ccfragment in cg["compileCommandFragments"]:
-                fragment = ccfragment.get("fragment", "")
-                if not fragment.strip() or fragment.startswith("-D"):
+                fragment = ccfragment.get("fragment", "").strip("\" ")
+                if not fragment or fragment.startswith("-D"):
                     continue
                 flags[cg["language"]].extend(
                     click.parser.split_arg_string(fragment.strip())
@@ -652,16 +656,31 @@ def generate_project_ld_script(sdk_config, ignore_targets=None):
         '--objdump "{objdump}"'
     ).format(**args)
 
+    initial_ld_script = os.path.join(
+        FRAMEWORK_DIR,
+        "components",
+        "esp_system",
+        "ld",
+        idf_variant,
+        "sections.ld.in",
+    )
+
+    framework_version = [int(v) for v in get_framework_version().split(".")]
+    if framework_version[:2] > [5, 2]:
+        initial_ld_script = preprocess_linker_file(
+            initial_ld_script,
+            os.path.join(
+                BUILD_DIR,
+                "esp-idf",
+                "esp_system",
+                "ld",
+                "sections.ld.in",
+            )
+        )
+
     return env.Command(
         os.path.join("$BUILD_DIR", "sections.ld"),
-        os.path.join(
-            FRAMEWORK_DIR,
-            "components",
-            "esp_system",
-            "ld",
-            idf_variant,
-            "sections.ld.in",
-        ),
+        initial_ld_script,
         env.VerboseAction(cmd, "Generating project linker script $TARGET"),
     )
 
@@ -700,7 +719,7 @@ def prepare_build_envs(config, default_env, debug_allowed=True):
         build_env = default_env.Clone()
         build_env.SetOption("implicit_cache", 1)
         for cc in compile_commands:
-            build_flags = cc.get("fragment")
+            build_flags = cc.get("fragment", "").strip("\" ")
             if not build_flags.startswith("-D"):
                 if build_flags.startswith("-include") and ".." in build_flags:
                     source_index = cg.get("sourceIndexes")[0]
@@ -752,8 +771,8 @@ def compile_source_files(
                     obj_path = os.path.join(obj_path, os.path.basename(src_path))
 
             preserve_source_file_extension = board.get(
-                "build.esp-idf.preserve_source_file_extension", True
-            )
+                "build.esp-idf.preserve_source_file_extension", "yes"
+            ) == "yes"
 
             objects.append(
                 build_envs[compile_group_idx].StaticObject(
@@ -860,6 +879,7 @@ def build_bootloader(sdk_config):
             "-DPYTHON=" + get_python_exe(),
             "-DIDF_PATH=" + FRAMEWORK_DIR,
             "-DSDKCONFIG=" + SDKCONFIG_PATH,
+            "-DPROJECT_SOURCE_DIR=" + PROJECT_DIR,
             "-DLEGACY_INCLUDE_COMMON_HEADERS=",
             "-DEXTRA_COMPONENT_DIRS="
             + os.path.join(FRAMEWORK_DIR, "components", "bootloader"),
@@ -999,12 +1019,38 @@ def find_default_component(target_configs):
     env.Exit(1)
 
 
+def get_framework_version():
+    def _extract_from_cmake_version_file():
+        version_cmake_file = os.path.join(
+            FRAMEWORK_DIR, "tools", "cmake", "version.cmake"
+        )
+        if not os.path.isfile(version_cmake_file):
+            return
+
+        with open(version_cmake_file, encoding="utf8") as fp:
+            pattern = r"set\(IDF_VERSION_(MAJOR|MINOR|PATCH) (\d+)\)"
+            matches = re.findall(pattern, fp.read())
+            if len(matches) != 3:
+                return
+            # If found all three parts of the version
+            return ".".join([match[1] for match in matches])
+
+    pkg = platform.get_package("framework-espidf")
+    version = get_original_version(str(pkg.metadata.version.truncate()))
+    if not version:
+        # Fallback value extracted directly from the cmake version file
+        version = _extract_from_cmake_version_file()
+        if not version:
+            version = "0.0.0"
+
+    return version
+
+
 def create_version_file():
     version_file = os.path.join(FRAMEWORK_DIR, "version.txt")
     if not os.path.isfile(version_file):
         with open(version_file, "w") as fp:
-            package_version = platform.get_package_version("framework-espidf")
-            fp.write(get_original_version(package_version) or package_version)
+            fp.write(get_framework_version())
 
 
 def generate_empty_partition_image(binary_path, image_size):
@@ -1083,6 +1129,46 @@ def get_app_partition_offset(pt_table, pt_offset):
     # Get the default boot partition offset
     app_params = get_partition_info(pt_table, pt_offset, {"name": "boot"})
     return app_params.get("offset", "0x10000")
+
+
+def preprocess_linker_file(src_ld_script, target_ld_script):
+    return env.Command(
+        target_ld_script,
+        src_ld_script,
+        env.VerboseAction(
+            " ".join(
+                [
+                    os.path.join(
+                        platform.get_package_dir("tool-cmake"),
+                        "bin",
+                        "cmake",
+                    ),
+                    "-DCC=%s"
+                    % os.path.join(
+                        TOOLCHAIN_DIR,
+                        "bin",
+                        "$CC",
+                    ),
+                    "-DSOURCE=$SOURCE",
+                    "-DTARGET=$TARGET",
+                    "-DCONFIG_DIR=%s" % os.path.join(BUILD_DIR, "config"),
+                    "-DLD_DIR=%s"
+                    % os.path.join(
+                        FRAMEWORK_DIR, "components", "esp_system", "ld"
+                    ),
+                    "-P",
+                    os.path.join(
+                        "$BUILD_DIR",
+                        "esp-idf",
+                        "esp_system",
+                        "ld",
+                        "linker_script_generator.cmake",
+                    ),
+                ]
+            ),
+            "Generating LD script $TARGET",
+        ),
+    )
 
 
 def generate_mbedtls_bundle(sdk_config):
@@ -1236,7 +1322,7 @@ def get_idf_venv_dir():
     # unnecessary reinstallation of Python dependencies in cases when Arduino
     # as an IDF component requires a different version of the IDF package and
     # hence a different set of Python deps or their versions
-    idf_version = get_original_version(platform.get_package_version("framework-espidf"))
+    idf_version = get_framework_version()
     return os.path.join(
         env.subst("$PROJECT_CORE_DIR"), "penv", ".espidf-" + idf_version
     )
@@ -1330,19 +1416,31 @@ generate_default_component()
 #
 
 if not board.get("build.ldscript", ""):
-    linker_script = env.Command(
-        os.path.join("$BUILD_DIR", "memory.ld"),
-        board.get(
-            "build.esp-idf.ldscript",
+    initial_ld_script = board.get("build.esp-idf.ldscript", os.path.join(
+        FRAMEWORK_DIR,
+        "components",
+        "esp_system",
+        "ld",
+        idf_variant,
+        "memory.ld.in",
+    ))
+
+    framework_version = [int(v) for v in get_framework_version().split(".")]
+    if framework_version[:2] > [5, 2]:
+        initial_ld_script = preprocess_linker_file(
+            initial_ld_script,
             os.path.join(
-                FRAMEWORK_DIR,
-                "components",
+                BUILD_DIR,
+                "esp-idf",
                 "esp_system",
                 "ld",
-                idf_variant,
                 "memory.ld.in",
-            ),
-        ),
+            )
+        )
+
+    linker_script = env.Command(
+        os.path.join("$BUILD_DIR", "memory.ld"),
+        initial_ld_script,
         env.VerboseAction(
             '$CC -I"$BUILD_DIR/config" -I"%s" -C -P -x c -E $SOURCE -o $TARGET'
             % os.path.join(FRAMEWORK_DIR, "components", "esp_system", "ld"),
@@ -1504,7 +1602,9 @@ libs = find_lib_deps(
 
 # Extra flags which need to be explicitly specified in LINKFLAGS section because SCons
 # cannot merge them correctly
-extra_flags = filter_args(link_args["LINKFLAGS"], ["-T", "-u"])
+extra_flags = filter_args(
+    link_args["LINKFLAGS"], ["-T", "-u", "-Wl,--start-group", "-Wl,--end-group"]
+)
 link_args["LINKFLAGS"] = sorted(list(set(link_args["LINKFLAGS"]) - set(extra_flags)))
 
 # remove the main linker script flags '-T memory.ld'
