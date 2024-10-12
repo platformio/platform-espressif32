@@ -12,7 +12,7 @@
     "RISC-V"
   ],
   "engines": {
-    "platformio": ">=6.1.15"
+    "platformio": ">=6.1.16"
   },
   "repository": {
     "type": "git",
@@ -86,7 +86,7 @@
     "tool-esptoolpy": {
       "type": "uploader",
       "owner": "tasmota",
-      "version": "https://github.com/Jason2866/esptool/releases/download/v4.8.0/esptool.zip"
+      "version": "https://github.com/Jason2866/esptool/releases/download/v4.8.1/esptool.zip"
     },
     "tool-dfuutil-arduino": {
       "type": "uploader",
