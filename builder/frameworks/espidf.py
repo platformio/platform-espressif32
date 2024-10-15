@@ -26,6 +26,7 @@ import subprocess
 import sys
 import shutil
 import os
+from os.path import join
 import re
 import platform as sys_platform
 
@@ -57,6 +58,7 @@ env.SConscript("_embed_files.py", exports="env")
 os.environ["IDF_COMPONENT_OVERWRITE_MANAGED_COMPONENTS"] = "1"
 
 platform = env.PioPlatform()
+config = env.GetProjectConfig()
 board = env.BoardConfig()
 mcu = board.get("build.mcu", "esp32")
 idf_variant = mcu.lower()
@@ -78,7 +80,6 @@ TOOLCHAIN_DIR = platform.get_package_dir(
 assert os.path.isdir(FRAMEWORK_DIR)
 assert os.path.isdir(TOOLCHAIN_DIR)
 
-# The latest IDF uses a standalone GDB package which requires at least PlatformIO 6.1.11
 if (
     ["espidf"] == env.get("PIOFRAMEWORK")
     and semantic_version.Version.coerce(__version__)
@@ -87,9 +88,9 @@ if (
 ):
     print("Warning! Debugging an IDF project requires PlatformIO Core >= 6.1.11!")
 
-# Arduino framework as a component is not compatible with ESP-IDF >5.2
+# Arduino framework as a component is not compatible with ESP-IDF >5.3
 if "arduino" in env.subst("$PIOFRAMEWORK"):
-    ARDUINO_FRAMEWORK_DIR = platform.get_package_dir("framework-arduinoespressif32")
+    ARDUINO_FRAMEWORK_DIR = platform.get_package_dir("framework-arduinoespressif32") # todo Tasmota ?
     # Possible package names in 'package@version' format is not compatible with CMake
     if "@" in os.path.basename(ARDUINO_FRAMEWORK_DIR):
         new_path = os.path.join(
@@ -109,6 +110,69 @@ SDKCONFIG_PATH = os.path.expandvars(board.get(
         os.path.join(PROJECT_DIR, "sdkconfig.%s" % env.subst("$PIOENV")),
 ))
 
+#
+# generate modified Arduino IDF sdkconfig, applying settings from "custom_sdkconfig"
+#
+if config.has_option("env:"+env["PIOENV"], "custom_sdkconfig"):
+    flag_custom_sdkonfig = True
+else:
+    flag_custom_sdkonfig = False
+
+def HandleArduinoIDFsettings(env):
+    def get_MD5_hash(phrase):
+        import hashlib
+        return hashlib.md5((phrase).encode('utf-8')).hexdigest()[:16]
+
+    if flag_custom_sdkonfig == True:
+        print("*** Add \"custom_sdkconfig\" settings to IDF sdkconfig.defaults ***")
+        idf_config_flags = env.GetProjectOption("custom_sdkconfig").splitlines()
+        sdkconfig_src = join(ARDUINO_FRAMEWORK_DIR,"tools","esp32-arduino-libs",mcu,"sdkconfig")
+
+        def get_flag(line):
+            if line.startswith("#") and "is not set" in line:
+                return line.split(" ")[1]
+            elif not line.startswith("#") and len(line.split("=")) > 1:
+                return line.split("=")[0]
+            else:
+                return None
+
+        with open(sdkconfig_src) as src:
+            sdkconfig_dst = os.path.join(PROJECT_DIR, "sdkconfig.defaults")
+            dst = open(sdkconfig_dst,"w")
+            dst.write("# TASMOTA__"+ get_MD5_hash(env.GetProjectOption("custom_sdkconfig").strip() + mcu) +"\n")
+            while line := src.readline():
+                flag = get_flag(line)
+                if flag is None:
+                    dst.write(line)
+                else:
+                    no_match = True
+                    for item in idf_config_flags:
+                        if flag in item:
+                            dst.write(item.replace("\'", "")+"\n")
+                            no_match = False
+                            print("Replace:",line,"with:",item.replace("\'", ""))
+                    if no_match:
+                        dst.write(line)
+            dst.close()
+        return
+    else:
+        return
+
+if flag_custom_sdkonfig:
+    HandleArduinoIDFsettings(env)
+    LIB_SOURCE = os.path.join(env.subst("$PROJECT_CORE_DIR"), "platforms", "espressif32", "builder", "build_lib")
+    if not bool(os.path.exists(os.path.join(PROJECT_DIR, ".dummy"))):
+        shutil.copytree(LIB_SOURCE, os.path.join(PROJECT_DIR, ".dummy"))
+    PROJECT_SRC_DIR = os.path.join(PROJECT_DIR, ".dummy")
+    env.Replace(
+        PROJECT_SRC_DIR=PROJECT_SRC_DIR,
+        BUILD_FLAGS="",
+        BUILD_UNFLAGS="",
+        LINKFLAGS="",
+        PIOFRAMEWORK="arduino",
+        ARDUINO_LIB_COMPILE_FLAG="Build",
+    )
+    env["INTEGRATION_EXTRA_DATA"].update({"arduino_lib_compile_flag": env.subst("$ARDUINO_LIB_COMPILE_FLAG")})
 
 def get_project_lib_includes(env):
     project = ProjectAsLibBuilder(env, "$PROJECT_DIR")
@@ -1060,7 +1124,8 @@ def generate_empty_partition_image(binary_path, image_size):
         ),
     )
 
-    env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", empty_partition)
+    if flag_custom_sdkonfig == False:
+        env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", empty_partition)
 
 
 def get_partition_info(pt_path, pt_offset, pt_params):
@@ -1557,7 +1622,8 @@ app_includes = get_app_includes(elf_config)
 # Compile bootloader
 #
 
-env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", build_bootloader(sdk_config))
+if flag_custom_sdkonfig == False:
+    env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", build_bootloader(sdk_config))
 
 #
 # Target: ESP-IDF menuconfig
@@ -1773,6 +1839,40 @@ if os.path.isdir(ulp_dir) and os.listdir(ulp_dir) and mcu not in ("esp32c2", "es
     env.SConscript("ulp.py", exports="env sdk_config project_config app_includes idf_variant")
 
 #
+# Compile Arduino IDF sources
+#
+
+if "arduino" in env.get("PIOFRAMEWORK") and "espidf" not in env.get("PIOFRAMEWORK"):
+    def idf_lib_copy(source, target, env):
+        lib_src = join(env["PROJECT_BUILD_DIR"],env["PIOENV"],"esp-idf")
+        lib_dst = join(ARDUINO_FRAMEWORK_DIR,"tools","esp32-arduino-libs",mcu,"lib")
+        src = [join(lib_src,x) for x in os.listdir(lib_src)]
+        src = [folder for folder in src if not os.path.isfile(folder)] # folders only
+        for folder in src:
+            files = [join(folder,x) for x in os.listdir(folder)]
+            for file in files:
+                if file.strip().endswith(".a"):
+                    shutil.copyfile(file,join(lib_dst,file.split(os.path.sep)[-1]))
+        if not bool(os.path.isfile(join(ARDUINO_FRAMEWORK_DIR,"tools","esp32-arduino-libs",mcu,"sdkconfig.orig"))):
+            shutil.move(join(ARDUINO_FRAMEWORK_DIR,"tools","esp32-arduino-libs",mcu,"sdkconfig"),join(ARDUINO_FRAMEWORK_DIR,"tools","esp32-arduino-libs",mcu,"sdkconfig.orig"))
+        shutil.copyfile(join(env.subst("$PROJECT_DIR"),"sdkconfig."+env["PIOENV"]),join(ARDUINO_FRAMEWORK_DIR,"tools","esp32-arduino-libs",mcu,"sdkconfig"))
+        shutil.copyfile(join(env.subst("$PROJECT_DIR"),"sdkconfig."+env["PIOENV"]),join(ARDUINO_FRAMEWORK_DIR,"tools","esp32-arduino-libs","sdkconfig"))
+        print("*** Copied compiled %s IDF libraries to Arduino framework ***" % idf_variant)
+
+        pio_exe_path = shutil.which("platformio"+(".exe" if IS_WINDOWS else ""))
+        pio_cmd = env["PIOENV"]
+        env.Execute(
+            env.VerboseAction(
+                (
+                    '"%s" run -e ' % pio_exe_path
+                    + " ".join(['"%s"' % pio_cmd])
+                ),
+                "*** Starting Arduino compile %s with custom libraries ***" % pio_cmd,
+            )
+        )
+    env.AddPostAction("checkprogsize", idf_lib_copy)
+
+#
 # Process OTA partition and image
 #
 
@@ -1786,7 +1886,6 @@ if ota_partition_params["size"] and ota_partition_params["offset"]:
     # Generate an empty image if OTA is enabled in partition table
     ota_partition_image = os.path.join("$BUILD_DIR", "ota_data_initial.bin")
     if "arduino" in env.subst("$PIOFRAMEWORK"):
-        from arduino import ARDUINO_FRAMEWORK_DIR
         ota_partition_image = os.path.join(ARDUINO_FRAMEWORK_DIR, "tools", "partitions", "boot_app0.bin")
     else:
         generate_empty_partition_image(ota_partition_image, ota_partition_params["size"])
@@ -1799,6 +1898,12 @@ if ota_partition_params["size"] and ota_partition_params["offset"]:
                 ),
                 ota_partition_image,
             )
+        ]
+    )
+    EXTRA_IMG_DIR = join(env.subst("$PROJECT_DIR"), "variants", "tasmota")
+    env.Append(
+        FLASH_EXTRA_IMAGES=[
+            (offset, join(EXTRA_IMG_DIR, img)) for offset, img in board.get("upload.arduino.flash_extra_images", [])
         ]
     )
 

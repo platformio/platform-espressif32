@@ -1,3 +1,4 @@
+
 # Copyright 2014-present PlatformIO <contact@platformio.org>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,29 +26,98 @@ http://arduino.cc/en/Reference/HomePage
 import subprocess
 import json
 import semantic_version
+import os
+import shutil
 from os.path import join
 
 from SCons.Script import COMMAND_LINE_TARGETS, DefaultEnvironment, SConscript
 from platformio.package.version import pepver_to_semver
+from platformio.project.config import ProjectConfig
+from platformio.package.manager.tool import ToolPackageManager
 
 env = DefaultEnvironment()
 platform = env.PioPlatform()
+config = env.GetProjectConfig()
+board = env.BoardConfig()
+mcu = board.get("build.mcu", "esp32")
+flag_custom_sdkconfig = config.has_option("env:"+env["PIOENV"], "custom_sdkconfig")
+framework_reinstall = False
 
-extra_flags = ''.join([element.replace("-D", " ") for element in env.BoardConfig().get("build.extra_flags", "")])
+extra_flags = ''.join([element.replace("-D", " ") for element in board.get("build.extra_flags", "")])
 build_flags = ''.join([element.replace("-D", " ") for element in env.GetProjectOption("build_flags")])
+pm = ToolPackageManager()
 
 SConscript("_embed_files.py", exports="env")
 
-if ("CORE32SOLO1" in extra_flags or "FRAMEWORK_ARDUINO_SOLO1" in build_flags) and ("arduino" in env.subst("$PIOFRAMEWORK")):
+if ("CORE32SOLO1" in extra_flags or "FRAMEWORK_ARDUINO_SOLO1" in build_flags) and ("arduino" in env.subst("$PIOFRAMEWORK")) and flag_custom_sdkconfig == False:
     FRAMEWORK_DIR = platform.get_package_dir("framework-arduino-solo1")
-elif ("CORE32ITEAD" in extra_flags or "FRAMEWORK_ARDUINO_ITEAD" in build_flags) and ("arduino" in env.subst("$PIOFRAMEWORK")):
+elif ("CORE32ITEAD" in extra_flags or "FRAMEWORK_ARDUINO_ITEAD" in build_flags) and ("arduino" in env.subst("$PIOFRAMEWORK")) and flag_custom_sdkconfig == False:
     FRAMEWORK_DIR = platform.get_package_dir("framework-arduino-ITEAD")
 elif "arduino" in env.subst("$PIOFRAMEWORK") and "CORE32SOLO1" not in extra_flags and "FRAMEWORK_ARDUINO_SOLO1" not in build_flags and "CORE32ITEAD" not in extra_flags and "FRAMEWORK_ARDUINO_ITEAD" not in build_flags:
     FRAMEWORK_DIR = platform.get_package_dir("framework-arduinoespressif32")
-ARDUINO_FRAMEWORK_DIR = FRAMEWORK_DIR
+elif "arduino" in env.subst("$PIOFRAMEWORK") and flag_custom_sdkconfig == True:
+    FRAMEWORK_DIR = platform.get_package_dir("framework-arduinoespressif32")
 
-if "espidf" not in env.subst("$PIOFRAMEWORK"):
-    SConscript(join(FRAMEWORK_DIR, "tools", "platformio-build.py"))
+flag_any_custom_sdkconfig = os.path.exists(join(FRAMEWORK_DIR,"tools","esp32-arduino-libs","sdkconfig"))
+
+def get_MD5_hash(phrase):
+    import hashlib
+    return hashlib.md5((phrase).encode('utf-8')).hexdigest()[:16]
+
+
+def matching_custom_sdkconfig():
+    # check if current env is matching to existing sdkconfig
+    cust_sdk_is_present = False
+    matching_sdkconfig = False
+    last_sdkconfig_path = join(env.subst("$PROJECT_DIR"),"sdkconfig.defaults")
+    if flag_any_custom_sdkconfig == False:
+        matching_sdkconfig = True
+        return matching_sdkconfig, cust_sdk_is_present
+    if os.path.exists(last_sdkconfig_path) == False:
+        return matching_sdkconfig, cust_sdk_is_present
+    if flag_custom_sdkconfig == False:
+        matching_sdkconfig = False
+        return matching_sdkconfig, cust_sdk_is_present
+    with open(last_sdkconfig_path) as src:
+        line = src.readline()
+        if line.startswith("# TASMOTA__"):
+            cust_sdk_is_present = True;
+            costum_options = env.GetProjectOption("custom_sdkconfig")
+            if (line.split("__")[1]).strip() == get_MD5_hash((costum_options).strip() + mcu):
+                matching_sdkconfig = True
+
+    return matching_sdkconfig, cust_sdk_is_present
+
+def check_reinstall_frwrk():
+    framework_reinstall = False
+    cust_sdk_is_present = False
+    matching_sdkconfig = False
+    if flag_custom_sdkconfig:
+        matching_sdkconfig, cust_sdk_is_present = matching_custom_sdkconfig()
+    if flag_custom_sdkconfig == False and flag_any_custom_sdkconfig == True:
+        # case custom sdkconfig exists and a env without "custom_sdkconfig"
+        framework_reinstall = True
+    if flag_custom_sdkconfig == True  and matching_sdkconfig == False:
+        # check if current custom sdkconfig is different from existing
+        framework_reinstall = True
+    return framework_reinstall
+
+def call_compile_libs():
+    print("*** Compile Arduino IDF libs for %s ***" % env["PIOENV"])
+    SConscript("espidf.py")
+
+if check_reinstall_frwrk() == True:
+    print("*** Reinstall Arduino framework ***")
+    shutil.rmtree(FRAMEWORK_DIR)
+    ARDUINO_FRMWRK_URL = str(platform.get_package_spec("framework-arduinoespressif32")).split("uri=",1)[1][:-1]
+    pm.install(ARDUINO_FRMWRK_URL)
+    if flag_custom_sdkconfig == True:
+        call_compile_libs()
+        flag_custom_sdkconfig = False
+    
+if flag_custom_sdkconfig == True and flag_any_custom_sdkconfig == False:
+    call_compile_libs()
+
 
 def install_python_deps():
     def _get_installed_pip_packages():
@@ -101,8 +171,11 @@ def install_python_deps():
                         ]
                     )
                 ),
-                "Installing Python dependencies",
+                "Installing Arduino Python dependencies",
             )
         )
+    return
 
-install_python_deps()
+if "arduino" in env.subst("$PIOFRAMEWORK") and "espidf" not in env.subst("$PIOFRAMEWORK") and env.subst("$ARDUINO_LIB_COMPILE_FLAG") in ("Inactive", "True"):
+    install_python_deps()
+    SConscript(join(FRAMEWORK_DIR, "tools", "platformio-build.py"))

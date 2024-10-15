@@ -24,17 +24,22 @@ from platformio.util import get_serial_ports
 
 env = DefaultEnvironment()
 platform = env.PioPlatform()
+config = env.GetProjectConfig()
 
 #
 # Helpers
 #
 
+flag_custom_sdkonfig = False
+if config.has_option("env:"+env["PIOENV"], "custom_sdkconfig"):
+    flag_custom_sdkonfig = True
+
 extra_flags = ''.join([element.replace("-D", " ") for element in env.BoardConfig().get("build.extra_flags", "")])
 build_flags = ''.join([element.replace("-D", " ") for element in env.GetProjectOption("build_flags")])
 
-if "CORE32SOLO1" in extra_flags or "FRAMEWORK_ARDUINO_SOLO1" in build_flags:
+if "CORE32SOLO1" in extra_flags or "FRAMEWORK_ARDUINO_SOLO1" in build_flags and flag_custom_sdkonfig == False:
     FRAMEWORK_DIR = platform.get_package_dir("framework-arduino-solo1")
-elif "CORE32ITEAD" in extra_flags or "FRAMEWORK_ARDUINO_ITEAD" in build_flags:
+elif "CORE32ITEAD" in extra_flags or "FRAMEWORK_ARDUINO_ITEAD" in build_flags and flag_custom_sdkonfig == False:
     FRAMEWORK_DIR = platform.get_package_dir("framework-arduino-ITEAD")
 else:
     FRAMEWORK_DIR = platform.get_package_dir("framework-arduinoespressif32")
@@ -294,6 +299,7 @@ env.Replace(
     ),
 
     ESP32_APP_OFFSET=env.get("INTEGRATION_EXTRA_DATA").get("application_offset"),
+    ARDUINO_LIB_COMPILE_FLAG="Inactive",
 
     PROGSUFFIX=".elf"
 )

@@ -16,7 +16,6 @@ jobs:
         example:
           - "examples/arduino-blink"
           - "examples/arduino-rmt-blink"
-          #- "examples/arduino-usb-keyboard" # tinyusb support disabled
           - "examples/arduino-wifiscan"
           - "examples/espidf-arduino-blink"
           - "examples/espidf-arduino-littlefs"
