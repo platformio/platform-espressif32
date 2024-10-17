@@ -151,8 +151,12 @@ def HandleArduinoIDFsettings(env):
                             dst.write(item.replace("\'", "")+"\n")
                             no_match = False
                             print("Replace:",line,"with:",item.replace("\'", ""))
+                            idf_config_flags.remove(item)
                     if no_match:
                         dst.write(line)
+            for item in idf_config_flags: # are there new flags?
+                print("Add:",item.replace("\'", ""))
+                dst.write(item.replace("\'", "")+"\n")
             dst.close()
         return
     else:
