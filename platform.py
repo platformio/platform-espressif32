@@ -37,23 +37,14 @@ class Espressif32Platform(PlatformBase):
 
         board_config = self.board_config(variables.get("board"))
         mcu = variables.get("board_build.mcu", board_config.get("build.mcu", "esp32"))
-        core_variant_board = ''.join(variables.get("board_build.extra_flags", board_config.get("build.extra_flags", "")))
-        core_variant_board = core_variant_board.replace("-D", " ")
-        core_variant_build = (''.join(variables.get("build_flags", []))).replace("-D", " ")
         frameworks = variables.get("pioframework", [])
 
-        if "arduino" in frameworks and variables.get("custom_sdkconfig") is None:
-            if "CORE32SOLO1" in core_variant_board or "FRAMEWORK_ARDUINO_SOLO1" in core_variant_build:
-                self.packages["framework-arduino-solo1"]["optional"] = False
-            elif "CORE32ITEAD" in core_variant_board or "FRAMEWORK_ARDUINO_ITEAD" in core_variant_build:
-                self.packages["framework-arduino-ITEAD"]["optional"] = False
-            else:
-                self.packages["framework-arduinoespressif32"]["optional"] = False
+        if "arduino" in frameworks:
+            self.packages["framework-arduinoespressif32"]["optional"] = False
 
         if variables.get("custom_sdkconfig") is not None:
             frameworks.append("espidf")
             self.packages["framework-espidf"]["optional"] = False
-            self.packages["framework-arduinoespressif32"]["optional"] = False
 
         if "buildfs" in targets:
             filesystem = variables.get("board_build.filesystem", "littlefs")
