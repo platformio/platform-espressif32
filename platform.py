@@ -74,10 +74,10 @@ class Espressif32Platform(PlatformBase):
         # and RISC-V targets.
         for gdb_package in ("tool-xtensa-esp-elf-gdb", "tool-riscv32-esp-elf-gdb"):
             self.packages[gdb_package]["optional"] = False
-            if IS_WINDOWS:
+            # if IS_WINDOWS:
                 # Note: On Windows GDB v12 is not able to
                 # launch a GDB server in pipe mode while v11 works fine
-                self.packages[gdb_package]["version"] = "~11.2.0"
+                # self.packages[gdb_package]["version"] = "~11.2.0"
 
         # Common packages for IDF and mixed Arduino+IDF projects
         if "espidf" in frameworks:
