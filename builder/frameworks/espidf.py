@@ -118,6 +118,11 @@ if config.has_option("env:"+env["PIOENV"], "custom_sdkconfig"):
 else:
     flag_custom_sdkonfig = False
 
+if config.has_option("env:"+env["PIOENV"], "custom_component_add") or config.has_option("env:"+env["PIOENV"], "custom_component_remove"):
+    flag_custom_component = True
+else:
+    flag_custom_component = False
+
 def HandleArduinoIDFsettings(env):
     def get_MD5_hash(phrase):
         import hashlib
@@ -125,7 +130,10 @@ def HandleArduinoIDFsettings(env):
 
     if flag_custom_sdkonfig == True:
         print("*** Add \"custom_sdkconfig\" settings to IDF sdkconfig.defaults ***")
-        idf_config_flags = env.GetProjectOption("custom_sdkconfig").splitlines()
+        idf_config_flags = env.GetProjectOption("custom_sdkconfig")
+        if mcu in ("esp32") and "CONFIG_FREERTOS_UNICORE=y" in idf_config_flags:
+            idf_config_flags = idf_config_flags + "\n# CONFIG_SPIRAM is not set\n"
+        idf_config_flags = idf_config_flags.splitlines()
         sdkconfig_src = join(ARDUINO_FRAMEWORK_DIR,"tools","esp32-arduino-libs",mcu,"sdkconfig")
 
         def get_flag(line):
@@ -161,6 +169,28 @@ def HandleArduinoIDFsettings(env):
         return
     else:
         return
+
+def HandleArduinoCOMPONENTsettings(env):
+    if flag_custom_component == True:
+        import yaml
+        from yaml import SafeLoader
+        print("*** \"custom_component\" is used to specify managed idf components ***")
+        idf_component_yml_src = os.path.join(ARDUINO_FRAMEWORK_DIR, "idf_component.yml")
+        if not bool(os.path.isfile(join(ARDUINO_FRAMEWORK_DIR,"idf_component.yml.orig"))):
+            shutil.copy(join(ARDUINO_FRAMEWORK_DIR,"idf_component.yml"),join(ARDUINO_FRAMEWORK_DIR,"idf_component.yml.orig"))
+        yaml_file=open(idf_component_yml_src,"r")
+        idf_component=yaml.load(yaml_file, Loader=SafeLoader)
+        idf_component_json_string=json.dumps(idf_component)
+        idf_component_json_file=open(os.path.join(ARDUINO_FRAMEWORK_DIR, "idf_component.json"),"w")
+        json.dump(idf_component,idf_component_json_file)
+        idf_component_json_file.close()
+        # print("JSON from idf_component.yml:")
+        # print(idf_component_json_string)
+        return
+    return
+
+if flag_custom_component:
+    HandleArduinoCOMPONENTsettings(env)
 
 if flag_custom_sdkonfig:
     HandleArduinoIDFsettings(env)
@@ -1874,6 +1904,9 @@ if "arduino" in env.get("PIOFRAMEWORK") and "espidf" not in env.get("PIOFRAMEWOR
                 "*** Starting Arduino compile %s with custom libraries ***" % pio_cmd,
             )
         )
+        if flag_custom_component == True:
+            shutil.copy(join(ARDUINO_FRAMEWORK_DIR,"idf_component.yml.orig"),join(ARDUINO_FRAMEWORK_DIR,"idf_component.yml"))
+            print("*** Original Arduino \"idf_component.yml\" restored ***")
     env.AddPostAction("checkprogsize", idf_lib_copy)
 
 #

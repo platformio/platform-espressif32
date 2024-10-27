@@ -41,6 +41,7 @@ config = env.GetProjectConfig()
 board = env.BoardConfig()
 mcu = board.get("build.mcu", "esp32")
 flag_custom_sdkconfig = config.has_option("env:"+env["PIOENV"], "custom_sdkconfig")
+extra_flags = (''.join([element for element in board.get("build.extra_flags", "")])).replace("-D", " ")
 framework_reinstall = False
 
 pm = ToolPackageManager()
@@ -49,6 +50,82 @@ SConscript("_embed_files.py", exports="env")
 
 FRAMEWORK_DIR = platform.get_package_dir("framework-arduinoespressif32")
 flag_any_custom_sdkconfig = os.path.exists(join(FRAMEWORK_DIR,"tools","esp32-arduino-libs","sdkconfig"))
+
+# Esp32-solo1 libs needs adopted settings
+if flag_custom_sdkconfig and "CORE32SOLO1" in extra_flags and "CONFIG_FREERTOS_UNICORE=y" in env.GetProjectOption("custom_sdkconfig"):
+    if len(str(env.GetProjectOption("build_flags"))) > 2:
+        build_flags = " ".join(env['BUILD_FLAGS'])
+        build_flags = build_flags + " -Tesp32.rom.newlib-funcs.ld"
+        new_build_flags = build_flags.split()
+        env.Replace(
+          BUILD_FLAGS=new_build_flags
+        )
+    if len(str(env.GetProjectOption("build_unflags"))) > 2:
+        build_unflags = " ".join(env['BUILD_UNFLAGS'])
+        build_unflags = build_unflags + " -mdisable-hardware-atomics -ustart_app_other_cores"
+        new_build_unflags = build_unflags.split()
+        env.Replace(
+          BUILD_UNFLAGS=new_build_unflags
+        )
+
+def install_python_deps():
+    def _get_installed_pip_packages():
+        result = {}
+        packages = {}
+        pip_output = subprocess.check_output(
+            [
+                env.subst("$PYTHONEXE"),
+                "-m",
+                "pip",
+                "list",
+                "--format=json",
+                "--disable-pip-version-check",
+            ]
+        )
+        try:
+            packages = json.loads(pip_output)
+        except:
+            print("Warning! Couldn't extract the list of installed Python packages.")
+            return {}
+        for p in packages:
+            result[p["name"]] = pepver_to_semver(p["version"])
+
+        return result
+
+    deps = {
+        "wheel": ">=0.35.1",
+        "zopfli": ">=0.2.2",
+        "tasmota-metrics": ">=0.4.3"
+    }
+
+    installed_packages = _get_installed_pip_packages()
+    packages_to_install = []
+    for package, spec in deps.items():
+        if package not in installed_packages:
+            packages_to_install.append(package)
+        else:
+            version_spec = semantic_version.Spec(spec)
+            if not version_spec.match(installed_packages[package]):
+                packages_to_install.append(package)
+
+    if packages_to_install:
+        env.Execute(
+            env.VerboseAction(
+                (
+                    '"$PYTHONEXE" -m pip install -U '
+                    + " ".join(
+                        [
+                            '"%s%s"' % (p, deps[p])
+                            for p in packages_to_install
+                        ]
+                    )
+                ),
+                "Installing Arduino Python dependencies",
+            )
+        )
+    return
+
+install_python_deps()
 
 def get_MD5_hash(phrase):
     import hashlib
@@ -108,64 +185,5 @@ if check_reinstall_frwrk() == True:
 if flag_custom_sdkconfig == True and flag_any_custom_sdkconfig == False:
     call_compile_libs()
 
-
-def install_python_deps():
-    def _get_installed_pip_packages():
-        result = {}
-        packages = {}
-        pip_output = subprocess.check_output(
-            [
-                env.subst("$PYTHONEXE"),
-                "-m",
-                "pip",
-                "list",
-                "--format=json",
-                "--disable-pip-version-check",
-            ]
-        )
-        try:
-            packages = json.loads(pip_output)
-        except:
-            print("Warning! Couldn't extract the list of installed Python packages.")
-            return {}
-        for p in packages:
-            result[p["name"]] = pepver_to_semver(p["version"])
-
-        return result
-
-    deps = {
-        "wheel": ">=0.35.1",
-        "zopfli": ">=0.2.2",
-        "tasmota-metrics": ">=0.4.3"
-    }
-
-    installed_packages = _get_installed_pip_packages()
-    packages_to_install = []
-    for package, spec in deps.items():
-        if package not in installed_packages:
-            packages_to_install.append(package)
-        else:
-            version_spec = semantic_version.Spec(spec)
-            if not version_spec.match(installed_packages[package]):
-                packages_to_install.append(package)
-
-    if packages_to_install:
-        env.Execute(
-            env.VerboseAction(
-                (
-                    '"$PYTHONEXE" -m pip install -U '
-                    + " ".join(
-                        [
-                            '"%s%s"' % (p, deps[p])
-                            for p in packages_to_install
-                        ]
-                    )
-                ),
-                "Installing Arduino Python dependencies",
-            )
-        )
-    return
-
 if "arduino" in env.subst("$PIOFRAMEWORK") and "espidf" not in env.subst("$PIOFRAMEWORK") and env.subst("$ARDUINO_LIB_COMPILE_FLAG") in ("Inactive", "True"):
-    install_python_deps()
     SConscript(join(FRAMEWORK_DIR, "tools", "platformio-build.py"))
