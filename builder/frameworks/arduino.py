@@ -55,7 +55,7 @@ elif "arduino" in env.subst("$PIOFRAMEWORK") and "CORE32SOLO1" not in extra_flag
     FRAMEWORK_DIR = platform.get_package_dir("framework-arduinoespressif32")
 elif "arduino" in env.subst("$PIOFRAMEWORK") and flag_custom_sdkconfig:
     FRAMEWORK_DIR = platform.get_package_dir("framework-arduinoespressif32")
-print("Framework Dir", FRAMEWORK_DIR)
+
 SConscript("_embed_files.py", exports="env")
 
 if "framework-arduinoespressif32" in FRAMEWORK_DIR:
