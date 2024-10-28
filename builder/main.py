@@ -25,16 +25,23 @@ from platformio.util import get_serial_ports
 env = DefaultEnvironment()
 platform = env.PioPlatform()
 config = env.GetProjectConfig()
+extra_flags = ''.join([element.replace("-D", " ") for element in env.BoardConfig().get("build.extra_flags", "")])
+build_flags = ''.join([element.replace("-D", " ") for element in env.GetProjectOption("build_flags")])
+flag_custom_sdkonfig = False
+if config.has_option("env:"+env["PIOENV"], "custom_sdkconfig"):
+    flag_custom_sdkonfig = True
 
 #
 # Helpers
 #
 
-flag_custom_sdkonfig = False
-if config.has_option("env:"+env["PIOENV"], "custom_sdkconfig"):
-    flag_custom_sdkonfig = True
+if "CORE32SOLO1" in extra_flags or "FRAMEWORK_ARDUINO_SOLO1" in build_flags and flag_custom_sdkonfig is False:
+    FRAMEWORK_DIR = platform.get_package_dir("framework-arduino-solo1")
+elif "CORE32ITEAD" in extra_flags or "FRAMEWORK_ARDUINO_ITEAD" in build_flags and flag_custom_sdkonfig is False:
+    FRAMEWORK_DIR = platform.get_package_dir("framework-arduino-ITEAD")
+else:
+    FRAMEWORK_DIR = platform.get_package_dir("framework-arduinoespressif32")
 
-FRAMEWORK_DIR = platform.get_package_dir("framework-arduinoespressif32")
 
 def BeforeUpload(target, source, env):
     upload_options = {}
