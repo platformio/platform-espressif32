@@ -57,7 +57,7 @@ elif "arduino" in env.subst("$PIOFRAMEWORK") and flag_custom_sdkconfig == True:
 
 SConscript("_embed_files.py", exports="env")
 
-flag_any_custom_sdkconfig = os.path.exists(join(FRAMEWORK_DIR,"tools","esp32-arduino-libs","sdkconfig"))
+flag_any_custom_sdkconfig = os.path.exists(join(platform.get_package_dir("framework-arduinoespressif32"),"tools","esp32-arduino-libs","sdkconfig"))
 
 # Esp32-solo1 libs needs adopted settings
 if flag_custom_sdkconfig and "CORE32SOLO1" in extra_flags and "CONFIG_FREERTOS_UNICORE=y" in env.GetProjectOption("custom_sdkconfig"):
@@ -183,7 +183,7 @@ def call_compile_libs():
 
 if check_reinstall_frwrk() == True:
     print("*** Reinstall Arduino framework ***")
-    shutil.rmtree(FRAMEWORK_DIR)
+    shutil.rmtree(platform.get_package_dir("framework-arduinoespressif32"))
     ARDUINO_FRMWRK_URL = str(platform.get_package_spec("framework-arduinoespressif32")).split("uri=",1)[1][:-1]
     pm.install(ARDUINO_FRMWRK_URL)
     if flag_custom_sdkconfig == True:
