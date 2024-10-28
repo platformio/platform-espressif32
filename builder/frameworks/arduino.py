@@ -46,13 +46,13 @@ extra_flags = (''.join([element for element in board.get("build.extra_flags", ""
 build_flags = ''.join([element.replace("-D", " ") for element in env.GetProjectOption("build_flags")])
 framework_reinstall = False
 
-if ("CORE32SOLO1" in extra_flags or "FRAMEWORK_ARDUINO_SOLO1" in build_flags) and ("arduino" in env.subst("$PIOFRAMEWORK")) and flag_custom_sdkconfig == False:
+if ("CORE32SOLO1" in extra_flags or "FRAMEWORK_ARDUINO_SOLO1" in build_flags) and ("arduino" in env.subst("$PIOFRAMEWORK")) and flag_custom_sdkconfig is False:
     FRAMEWORK_DIR = platform.get_package_dir("framework-arduino-solo1")
-elif ("CORE32ITEAD" in extra_flags or "FRAMEWORK_ARDUINO_ITEAD" in build_flags) and ("arduino" in env.subst("$PIOFRAMEWORK")) and flag_custom_sdkconfig == False:
+elif ("CORE32ITEAD" in extra_flags or "FRAMEWORK_ARDUINO_ITEAD" in build_flags) and ("arduino" in env.subst("$PIOFRAMEWORK")) and flag_custom_sdkconfig is False:
     FRAMEWORK_DIR = platform.get_package_dir("framework-arduino-ITEAD")
 elif "arduino" in env.subst("$PIOFRAMEWORK") and "CORE32SOLO1" not in extra_flags and "FRAMEWORK_ARDUINO_SOLO1" not in build_flags and "CORE32ITEAD" not in extra_flags and "FRAMEWORK_ARDUINO_ITEAD" not in build_flags:
     FRAMEWORK_DIR = platform.get_package_dir("framework-arduinoespressif32")
-elif "arduino" in env.subst("$PIOFRAMEWORK") and flag_custom_sdkconfig == True:
+elif "arduino" in env.subst("$PIOFRAMEWORK") and flag_custom_sdkconfig:
     FRAMEWORK_DIR = platform.get_package_dir("framework-arduinoespressif32")
 
 SConscript("_embed_files.py", exports="env")
