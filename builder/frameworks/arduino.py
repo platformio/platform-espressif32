@@ -45,6 +45,7 @@ flag_custom_sdkconfig = config.has_option("env:"+env["PIOENV"], "custom_sdkconfi
 extra_flags = (''.join([element for element in board.get("build.extra_flags", "")])).replace("-D", " ")
 build_flags = ''.join([element.replace("-D", " ") for element in env.GetProjectOption("build_flags")])
 framework_reinstall = False
+flag_any_custom_sdkconfig = False
 
 if ("CORE32SOLO1" in extra_flags or "FRAMEWORK_ARDUINO_SOLO1" in build_flags) and ("arduino" in env.subst("$PIOFRAMEWORK")) and not flag_custom_sdkconfig:
     FRAMEWORK_DIR = platform.get_package_dir("framework-arduino-solo1")
