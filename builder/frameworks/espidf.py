@@ -62,6 +62,9 @@ config = env.GetProjectConfig()
 board = env.BoardConfig()
 mcu = board.get("build.mcu", "esp32")
 idf_variant = mcu.lower()
+flag_custom_sdkonfig = False
+flag_custom_component_add = False
+flag_custom_component_remove = False
 
 IDF5 = (
     platform.get_package_version("framework-espidf")
@@ -115,13 +118,13 @@ SDKCONFIG_PATH = os.path.expandvars(board.get(
 #
 if config.has_option("env:"+env["PIOENV"], "custom_sdkconfig"):
     flag_custom_sdkonfig = True
-else:
-    flag_custom_sdkonfig = False
 
-if config.has_option("env:"+env["PIOENV"], "custom_component_add") or config.has_option("env:"+env["PIOENV"], "custom_component_remove"):
-    flag_custom_component = True
-else:
-    flag_custom_component = False
+if config.has_option("env:"+env["PIOENV"], "custom_component_add"):
+    flag_custom_component_add = True
+
+if config.has_option("env:"+env["PIOENV"], "custom_component_remove"):
+    flag_custom_component_remove = True
+    
 
 def HandleArduinoIDFsettings(env):
     def get_MD5_hash(phrase):
@@ -171,25 +174,48 @@ def HandleArduinoIDFsettings(env):
         return
 
 def HandleArduinoCOMPONENTsettings(env):
-    if flag_custom_component == True:
+    if flag_custom_component_add == True or flag_custom_component_remove == True: # todo remove duplicated
         import yaml
         from yaml import SafeLoader
-        print("*** \"custom_component\" is used to specify managed idf components ***")
+        print("*** \"custom_component\" is used to select managed idf components ***")
+        if flag_custom_component_remove == True:
+            idf_custom_component_remove = env.GetProjectOption("custom_component_remove").splitlines()
+        else:
+            idf_custom_component_remove = ""
+        if flag_custom_component_add == True:
+            idf_custom_component_add = env.GetProjectOption("custom_component_add").splitlines()
+        else:
+            idf_custom_component_add = ""
         idf_component_yml_src = os.path.join(ARDUINO_FRAMEWORK_DIR, "idf_component.yml")
         if not bool(os.path.isfile(join(ARDUINO_FRAMEWORK_DIR,"idf_component.yml.orig"))):
             shutil.copy(join(ARDUINO_FRAMEWORK_DIR,"idf_component.yml"),join(ARDUINO_FRAMEWORK_DIR,"idf_component.yml.orig"))
         yaml_file=open(idf_component_yml_src,"r")
         idf_component=yaml.load(yaml_file, Loader=SafeLoader)
-        idf_component_json_string=json.dumps(idf_component)
-        idf_component_json_file=open(os.path.join(ARDUINO_FRAMEWORK_DIR, "idf_component.json"),"w")
-        json.dump(idf_component,idf_component_json_file)
-        idf_component_json_file.close()
-        # print("JSON from idf_component.yml:")
-        # print(idf_component_json_string)
+        idf_component_str=json.dumps(idf_component)      # convert to json string
+        idf_component_json=json.loads(idf_component_str) # convert string to json dict
+
+        if idf_custom_component_remove != "":
+            for entry in idf_custom_component_remove:
+                # checking if the entry exists before removing
+                if entry in idf_component_json["dependencies"]:
+                    print("*** Removing component:",entry)
+                    del idf_component_json["dependencies"][entry]
+
+        if idf_custom_component_add != "":
+            for entry in idf_custom_component_add:
+                # add entrys to json
+                print("*** Adding component:",entry)
+                # todo  idf_component_json["dependencies"][entry]
+
+        idf_component_yml_file = open(os.path.join(ARDUINO_FRAMEWORK_DIR, "idf_component.yml"),"w")
+        yaml.dump(idf_component_json, idf_component_yml_file)
+        idf_component_yml_file.close()
+        # print("JSON from modified idf_component.yml:")
+        # print(json.dumps(idf_component_json))
         return
     return
 
-if flag_custom_component:
+if flag_custom_component_add == True or flag_custom_component_remove == True:
     HandleArduinoCOMPONENTsettings(env)
 
 if flag_custom_sdkonfig:
@@ -1904,7 +1930,7 @@ if "arduino" in env.get("PIOFRAMEWORK") and "espidf" not in env.get("PIOFRAMEWOR
                 "*** Starting Arduino compile %s with custom libraries ***" % pio_cmd,
             )
         )
-        if flag_custom_component == True:
+        if flag_custom_component_add == True or flag_custom_component_remove == True:
             shutil.copy(join(ARDUINO_FRAMEWORK_DIR,"idf_component.yml.orig"),join(ARDUINO_FRAMEWORK_DIR,"idf_component.yml"))
             print("*** Original Arduino \"idf_component.yml\" restored ***")
     env.AddPostAction("checkprogsize", idf_lib_copy)
