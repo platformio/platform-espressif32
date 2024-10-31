@@ -225,7 +225,7 @@ def HandleArduinoCOMPONENTsettings(env):
 if flag_custom_component_add == True or flag_custom_component_remove == True:
     HandleArduinoCOMPONENTsettings(env)
 
-if flag_custom_sdkonfig:
+if flag_custom_sdkonfig and "arduino" in env.subst("$PIOFRAMEWORK"):
     HandleArduinoIDFsettings(env)
     LIB_SOURCE = os.path.join(env.subst("$PROJECT_CORE_DIR"), "platforms", "espressif32", "builder", "build_lib")
     if not bool(os.path.exists(os.path.join(PROJECT_DIR, ".dummy"))):

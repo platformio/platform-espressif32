@@ -3,12 +3,6 @@ dependencies:
   idf: ">=5.1"
   espressif/cmake_utilities:
     version: "0.*"
-  espressif/esp32-camera:
-    version: "master"
-    git: https://github.com/espressif/esp32-camera.git
-    require: public
-    rules:
-      - if: "target in [esp32, esp32s2, esp32s3, esp32p4]"
   espressif/fb_gfx:
     version: "master"
     path: components/fb_gfx
