@@ -54,6 +54,64 @@ if os.environ.get("PYTHONPATH"):
 env = DefaultEnvironment()
 env.SConscript("_embed_files.py", exports="env")
 
+def install_standard_python_deps():
+    def _get_installed_standard_pip_packages():
+        result = {}
+        packages = {}
+        pip_output = subprocess.check_output(
+            [
+                env.subst("$PYTHONEXE"),
+                "-m",
+                "pip",
+                "list",
+                "--format=json",
+                "--disable-pip-version-check",
+            ]
+        )
+        try:
+            packages = json.loads(pip_output)
+        except:
+            print("Warning! Couldn't extract the list of installed Python packages.")
+            return {}
+        for p in packages:
+            result[p["name"]] = pepver_to_semver(p["version"])
+
+        return result
+
+    deps = {
+        "wheel": ">=0.35.1",
+        "PyYAML": ">=6.0.2"
+    }
+
+    installed_packages = _get_installed_standard_pip_packages()
+    packages_to_install = []
+    for package, spec in deps.items():
+        if package not in installed_packages:
+            packages_to_install.append(package)
+        else:
+            version_spec = semantic_version.Spec(spec)
+            if not version_spec.match(installed_packages[package]):
+                packages_to_install.append(package)
+
+    if packages_to_install:
+        env.Execute(
+            env.VerboseAction(
+                (
+                    '"$PYTHONEXE" -m pip install -U '
+                    + " ".join(
+                        [
+                            '"%s%s"' % (p, deps[p])
+                            for p in packages_to_install
+                        ]
+                    )
+                ),
+                "Installing standard Python dependencies",
+            )
+        )
+    return
+
+install_standard_python_deps()
+
 # Allow changes in folders of managed components
 os.environ["IDF_COMPONENT_OVERWRITE_MANAGED_COMPONENTS"] = "1"
 
@@ -186,9 +244,28 @@ def HandleArduinoCOMPONENTsettings(env):
             idf_custom_component_add = env.GetProjectOption("custom_component_add").splitlines()
         else:
             idf_custom_component_add = ""
-        idf_component_yml_src = os.path.join(ARDUINO_FRAMEWORK_DIR, "idf_component.yml")
-        if not bool(os.path.isfile(join(ARDUINO_FRAMEWORK_DIR,"idf_component.yml.orig"))):
+
+        # search "idf_component.yml" file
+        try: # 1.st in Arduino framework
+            idf_component_yml_src = os.path.join(ARDUINO_FRAMEWORK_DIR, "idf_component.yml")
             shutil.copy(join(ARDUINO_FRAMEWORK_DIR,"idf_component.yml"),join(ARDUINO_FRAMEWORK_DIR,"idf_component.yml.orig"))
+            yml_file_dir = idf_component_yml_src
+        except: # 2.nd Project source
+            try:
+                idf_component_yml_src = os.path.join(PROJECT_SRC_DIR, "idf_component.yml")
+                shutil.copy(join(PROJECT_SRC_DIR,"idf_component.yml"),join(PROJECT_SRC_DIR,"idf_component.yml.orig"))
+                yml_file_dir = idf_component_yml_src
+            except: # no idf_component.yml in Project source -> create
+                idf_component_yml_src = os.path.join(PROJECT_SRC_DIR, "idf_component.yml")
+                yml_file_dir = idf_component_yml_src
+                idf_component_yml_str = """
+                    dependencies:
+                      idf: \">=5.1\"
+                """
+                idf_component_yml = yaml.safe_load(idf_component_yml_str)
+                with open(idf_component_yml_src, 'w',) as f :
+                    yaml.dump(idf_component_yml,f) 
+
         yaml_file=open(idf_component_yml_src,"r")
         idf_component=yaml.load(yaml_file, Loader=SafeLoader)
         idf_component_str=json.dumps(idf_component)      # convert to json string
@@ -203,18 +280,20 @@ def HandleArduinoCOMPONENTsettings(env):
 
         if idf_custom_component_add != "":
             for entry in idf_custom_component_add:
-                # add entrys to json
-                if "@" in entry:
-                    idf_comp_entry = str(entry.split("@")[0]).replace(" ", "")
-                    idf_comp_vers = str(entry.split("@")[1]).replace(" ", "")
-                else:
-                    idf_comp_entry = str(entry).replace(" ", "")
-                    idf_comp_vers = "*"
-                print("*** Adding component:", idf_comp_entry, idf_comp_vers)
-                new_entry = {idf_comp_entry: {"version": idf_comp_vers}}
-                idf_component_json["dependencies"].update(new_entry)
+                if len(str(entry)) > 4: # too short or empty entry
+                    # add new entrys to json
+                    if "@" in entry:
+                        idf_comp_entry = str(entry.split("@")[0]).replace(" ", "")
+                        idf_comp_vers = str(entry.split("@")[1]).replace(" ", "")
+                    else:
+                        idf_comp_entry = str(entry).replace(" ", "")
+                        idf_comp_vers = "*"
+                    if idf_comp_entry not in idf_component_json["dependencies"]:
+                        print("*** Adding component:", idf_comp_entry, idf_comp_vers)
+                        new_entry = {idf_comp_entry: {"version": idf_comp_vers}}
+                        idf_component_json["dependencies"].update(new_entry)
 
-        idf_component_yml_file = open(os.path.join(ARDUINO_FRAMEWORK_DIR, "idf_component.yml"),"w")
+        idf_component_yml_file = open(yml_file_dir,"w")
         yaml.dump(idf_component_json, idf_component_yml_file)
         idf_component_yml_file.close()
         # print("JSON from modified idf_component.yml:")
@@ -1938,10 +2017,29 @@ if "arduino" in env.get("PIOFRAMEWORK") and "espidf" not in env.get("PIOFRAMEWOR
             )
         )
         if flag_custom_component_add == True or flag_custom_component_remove == True:
-            shutil.copy(join(ARDUINO_FRAMEWORK_DIR,"idf_component.yml.orig"),join(ARDUINO_FRAMEWORK_DIR,"idf_component.yml"))
-            print("*** Original Arduino \"idf_component.yml\" restored ***")
+            try:
+                shutil.copy(join(ARDUINO_FRAMEWORK_DIR,"idf_component.yml.orig"),join(ARDUINO_FRAMEWORK_DIR,"idf_component.yml"))
+                print("*** Original Arduino \"idf_component.yml\" restored ***")         
+            except:
+                print("*** Original Arduino \"idf_component.yml\" couldnt be restored ***") 
     env.AddPostAction("checkprogsize", idf_lib_copy)
 
+if "espidf" in env.get("PIOFRAMEWORK") and (flag_custom_component_add == True or flag_custom_component_remove == True):
+    def idf_custom_component(source, target, env):
+        try:
+            shutil.copy(join(ARDUINO_FRAMEWORK_DIR,"idf_component.yml.orig"),join(ARDUINO_FRAMEWORK_DIR,"idf_component.yml"))
+            print("*** Original Arduino \"idf_component.yml\" restored ***")
+        except:
+            try:
+                shutil.copy(join(PROJECT_SRC_DIR,"idf_component.yml.orig"),join(PROJECT_SRC_DIR,"idf_component.yml"))
+                print("*** Original \"idf_component.yml\" restored ***")
+            except: # no "idf_component.yml" in source folder
+                try:
+                    os.remove(join(PROJECT_SRC_DIR,"idf_component.yml"))
+                    print("*** pioarduino generated \"idf_component.yml\" removed ***")
+                except:
+                    print("*** \"idf_component.yml\" couldnt be removed ***") 
+    env.AddPostAction("checkprogsize", idf_custom_component)
 #
 # Process OTA partition and image
 #
