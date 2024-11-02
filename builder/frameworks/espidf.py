@@ -216,7 +216,7 @@ def HandleArduinoIDFsettings(env):
                 else:
                     no_match = True
                     for item in idf_config_flags:
-                        if flag in item:
+                        if flag == get_flag(item.replace("\'", "")):
                             dst.write(item.replace("\'", "")+"\n")
                             no_match = False
                             print("Replace:",line,"with:",item.replace("\'", ""))
@@ -231,7 +231,7 @@ def HandleArduinoIDFsettings(env):
     else:
         return
 
-def HandleArduinoCOMPONENTsettings(env):
+def HandleCOMPONENTsettings(env):
     if flag_custom_component_add == True or flag_custom_component_remove == True: # todo remove duplicated
         import yaml
         from yaml import SafeLoader
@@ -302,7 +302,7 @@ def HandleArduinoCOMPONENTsettings(env):
     return
 
 if flag_custom_component_add == True or flag_custom_component_remove == True:
-    HandleArduinoCOMPONENTsettings(env)
+    HandleCOMPONENTsettings(env)
 
 if flag_custom_sdkonfig and "arduino" in env.subst("$PIOFRAMEWORK"):
     HandleArduinoIDFsettings(env)
@@ -1999,10 +1999,15 @@ if "arduino" in env.get("PIOFRAMEWORK") and "espidf" not in env.get("PIOFRAMEWOR
             for file in files:
                 if file.strip().endswith(".a"):
                     shutil.copyfile(file,join(lib_dst,file.split(os.path.sep)[-1]))
+
+        # /home/runner/work/platform-espressif32/platform-espressif32/examples/arduino-blink/.pio/build/esp32solo1/config/sdkconfig.h
+        sdkconfig_h_path = join(env["PROJECT_BUILD_DIR"],env["PIOENV"],"config","sdkconfig.h")
+
         if not bool(os.path.isfile(join(ARDUINO_FRAMEWORK_DIR,"tools","esp32-arduino-libs",mcu,"sdkconfig.orig"))):
             shutil.move(join(ARDUINO_FRAMEWORK_DIR,"tools","esp32-arduino-libs",mcu,"sdkconfig"),join(ARDUINO_FRAMEWORK_DIR,"tools","esp32-arduino-libs",mcu,"sdkconfig.orig"))
         shutil.copyfile(join(env.subst("$PROJECT_DIR"),"sdkconfig."+env["PIOENV"]),join(ARDUINO_FRAMEWORK_DIR,"tools","esp32-arduino-libs",mcu,"sdkconfig"))
         shutil.copyfile(join(env.subst("$PROJECT_DIR"),"sdkconfig."+env["PIOENV"]),join(ARDUINO_FRAMEWORK_DIR,"tools","esp32-arduino-libs","sdkconfig"))
+        shutil.copyfile(sdkconfig_h_path,join(ARDUINO_FRAMEWORK_DIR,"tools","esp32-arduino-libs",mcu,board.get("build.arduino.memory_type", (board.get("build.flash_mode", "dio") + "_qspi")),"include","sdkconfig.h"))
         print("*** Copied compiled %s IDF libraries to Arduino framework ***" % idf_variant)
 
         pio_exe_path = shutil.which("platformio"+(".exe" if IS_WINDOWS else ""))
