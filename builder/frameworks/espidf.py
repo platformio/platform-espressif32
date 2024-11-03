@@ -2008,7 +2008,7 @@ if "arduino" in env.get("PIOFRAMEWORK") and "espidf" not in env.get("PIOFRAMEWOR
         shutil.copyfile(join(env_build,"memory.ld"),join(ld_dst,"memory.ld"))
         shutil.copyfile(join(env_build,"sections.ld"),join(ld_dst,"sections.ld"))
         shutil.move(join(lib_dst,"libspi_flash.a"),join(mem_var,"libspi_flash.a"))
-        if mcu in ("esp32s3"):
+        if mcu == "esp32s3":
             shutil.copyfile(join(env_build,"sections.ld"),join(mem_var,"sections.ld"))
             shutil.move(join(lib_dst,"libbootloader_support.a"),join(mem_var,"libbootloader_support.a"))
             shutil.move(join(lib_dst,"libesp_hw_support.a"),join(mem_var,"libesp_hw_support.a"))
