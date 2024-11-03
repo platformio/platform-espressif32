@@ -1990,8 +1990,13 @@ if os.path.isdir(ulp_dir) and os.listdir(ulp_dir) and mcu not in ("esp32c2", "es
 
 if "arduino" in env.get("PIOFRAMEWORK") and "espidf" not in env.get("PIOFRAMEWORK"):
     def idf_lib_copy(source, target, env):
-        lib_src = join(env["PROJECT_BUILD_DIR"],env["PIOENV"],"esp-idf")
-        lib_dst = join(ARDUINO_FRAMEWORK_DIR,"tools","esp32-arduino-libs",mcu,"lib")
+        env_build = join(env["PROJECT_BUILD_DIR"],env["PIOENV"])
+        sdkconfig_h_path = join(env_build,"config","sdkconfig.h")
+        arduino_libs = join(ARDUINO_FRAMEWORK_DIR,"tools","esp32-arduino-libs")
+        lib_src = join(env_build,"esp-idf")
+        lib_dst = join(arduino_libs,mcu,"lib")
+        ld_dst = join(arduino_libs,mcu,"ld")
+        mem_var = join(arduino_libs,mcu,board.get("build.arduino.memory_type", (board.get("build.flash_mode", "dio") + "_qspi")))
         src = [join(lib_src,x) for x in os.listdir(lib_src)]
         src = [folder for folder in src if not os.path.isfile(folder)] # folders only
         for folder in src:
@@ -2000,14 +2005,21 @@ if "arduino" in env.get("PIOFRAMEWORK") and "espidf" not in env.get("PIOFRAMEWOR
                 if file.strip().endswith(".a"):
                     shutil.copyfile(file,join(lib_dst,file.split(os.path.sep)[-1]))
 
-        # /home/runner/work/platform-espressif32/platform-espressif32/examples/arduino-blink/.pio/build/esp32solo1/config/sdkconfig.h
-        sdkconfig_h_path = join(env["PROJECT_BUILD_DIR"],env["PIOENV"],"config","sdkconfig.h")
-
-        if not bool(os.path.isfile(join(ARDUINO_FRAMEWORK_DIR,"tools","esp32-arduino-libs",mcu,"sdkconfig.orig"))):
-            shutil.move(join(ARDUINO_FRAMEWORK_DIR,"tools","esp32-arduino-libs",mcu,"sdkconfig"),join(ARDUINO_FRAMEWORK_DIR,"tools","esp32-arduino-libs",mcu,"sdkconfig.orig"))
-        shutil.copyfile(join(env.subst("$PROJECT_DIR"),"sdkconfig."+env["PIOENV"]),join(ARDUINO_FRAMEWORK_DIR,"tools","esp32-arduino-libs",mcu,"sdkconfig"))
-        shutil.copyfile(join(env.subst("$PROJECT_DIR"),"sdkconfig."+env["PIOENV"]),join(ARDUINO_FRAMEWORK_DIR,"tools","esp32-arduino-libs","sdkconfig"))
-        shutil.copyfile(sdkconfig_h_path,join(ARDUINO_FRAMEWORK_DIR,"tools","esp32-arduino-libs",mcu,board.get("build.arduino.memory_type", (board.get("build.flash_mode", "dio") + "_qspi")),"include","sdkconfig.h"))
+        shutil.copyfile(join(env_build,"memory.ld"),join(ld_dst,"memory.ld"))
+        shutil.copyfile(join(env_build,"sections.ld"),join(ld_dst,"sections.ld"))
+        shutil.move(join(lib_dst,"libspi_flash.a"),join(mem_var,"libspi_flash.a"))
+        if mcu in ("esp32s3"):
+            shutil.copyfile(join(env_build,"sections.ld"),join(mem_var,"sections.ld"))
+            shutil.move(join(lib_dst,"libbootloader_support.a"),join(mem_var,"libbootloader_support.a"))
+            shutil.move(join(lib_dst,"libesp_hw_support.a"),join(mem_var,"libesp_hw_support.a"))
+            shutil.move(join(lib_dst,"libesp_psram.a"),join(mem_var,"libesp_psram.a"))
+            shutil.move(join(lib_dst,"libesp_system.a"),join(mem_var,"libesp_system.a"))
+            shutil.move(join(lib_dst,"libfreertos.a"),join(mem_var,"libfreertos.a"))
+        shutil.copyfile(sdkconfig_h_path,join(mem_var,"include","sdkconfig.h"))
+        if not bool(os.path.isfile(join(arduino_libs,mcu,"sdkconfig.orig"))):
+            shutil.move(join(arduino_libs,mcu,"sdkconfig"),join(arduino_libs,mcu,"sdkconfig.orig"))
+        shutil.copyfile(join(env.subst("$PROJECT_DIR"),"sdkconfig."+env["PIOENV"]),join(arduino_libs,mcu,"sdkconfig"))
+        shutil.copyfile(join(env.subst("$PROJECT_DIR"),"sdkconfig."+env["PIOENV"]),join(arduino_libs,"sdkconfig"))
         print("*** Copied compiled %s IDF libraries to Arduino framework ***" % idf_variant)
 
         pio_exe_path = shutil.which("platformio"+(".exe" if IS_WINDOWS else ""))
