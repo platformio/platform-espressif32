@@ -2005,16 +2005,16 @@ if "arduino" in env.get("PIOFRAMEWORK") and "espidf" not in env.get("PIOFRAMEWOR
                 if file.strip().endswith(".a"):
                     shutil.copyfile(file,join(lib_dst,file.split(os.path.sep)[-1]))
 
-        shutil.copyfile(join(env_build,"memory.ld"),join(ld_dst,"memory.ld"))
-        shutil.copyfile(join(env_build,"sections.ld"),join(ld_dst,"sections.ld"))
         shutil.move(join(lib_dst,"libspi_flash.a"),join(mem_var,"libspi_flash.a"))
+        shutil.move(join(env_build,"memory.ld"),join(ld_dst,"memory.ld"))
         if mcu == "esp32s3":
-            shutil.copyfile(join(env_build,"sections.ld"),join(mem_var,"sections.ld"))
-            shutil.move(join(lib_dst,"libbootloader_support.a"),join(mem_var,"libbootloader_support.a"))
-            shutil.move(join(lib_dst,"libesp_hw_support.a"),join(mem_var,"libesp_hw_support.a"))
+            print("**** Debug: Copy S3 specific ***")
             shutil.move(join(lib_dst,"libesp_psram.a"),join(mem_var,"libesp_psram.a"))
             shutil.move(join(lib_dst,"libesp_system.a"),join(mem_var,"libesp_system.a"))
             shutil.move(join(lib_dst,"libfreertos.a"),join(mem_var,"libfreertos.a"))
+            shutil.move(join(lib_dst,"libbootloader_support.a"),join(mem_var,"libbootloader_support.a"))
+            shutil.move(join(lib_dst,"libesp_hw_support.a"),join(mem_var,"libesp_hw_support.a"))
+
         shutil.copyfile(sdkconfig_h_path,join(mem_var,"include","sdkconfig.h"))
         if not bool(os.path.isfile(join(arduino_libs,mcu,"sdkconfig.orig"))):
             shutil.move(join(arduino_libs,mcu,"sdkconfig"),join(arduino_libs,mcu,"sdkconfig.orig"))
@@ -2036,9 +2036,9 @@ if "arduino" in env.get("PIOFRAMEWORK") and "espidf" not in env.get("PIOFRAMEWOR
         if flag_custom_component_add == True or flag_custom_component_remove == True:
             try:
                 shutil.copy(join(ARDUINO_FRAMEWORK_DIR,"idf_component.yml.orig"),join(ARDUINO_FRAMEWORK_DIR,"idf_component.yml"))
-                print("*** Original Arduino \"idf_component.yml\" restored ***")         
+                print("*** Original Arduino \"idf_component.yml\" restored ***")
             except:
-                print("*** Original Arduino \"idf_component.yml\" couldnt be restored ***") 
+                print("*** Original Arduino \"idf_component.yml\" couldnt be restored ***")
     env.AddPostAction("checkprogsize", idf_lib_copy)
 
 if "espidf" in env.get("PIOFRAMEWORK") and (flag_custom_component_add == True or flag_custom_component_remove == True):
@@ -2055,7 +2055,7 @@ if "espidf" in env.get("PIOFRAMEWORK") and (flag_custom_component_add == True or
                     os.remove(join(PROJECT_SRC_DIR,"idf_component.yml"))
                     print("*** pioarduino generated \"idf_component.yml\" removed ***")
                 except:
-                    print("*** \"idf_component.yml\" couldnt be removed ***") 
+                    print("*** \"idf_component.yml\" couldnt be removed ***")
     env.AddPostAction("checkprogsize", idf_custom_component)
 #
 # Process OTA partition and image
