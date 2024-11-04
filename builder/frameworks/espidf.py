@@ -2008,7 +2008,6 @@ if "arduino" in env.get("PIOFRAMEWORK") and "espidf" not in env.get("PIOFRAMEWOR
         shutil.move(join(lib_dst,"libspi_flash.a"),join(mem_var,"libspi_flash.a"))
         shutil.move(join(env_build,"memory.ld"),join(ld_dst,"memory.ld"))
         if mcu == "esp32s3":
-            print("**** Debug: Copy S3 specific ***")
             shutil.move(join(lib_dst,"libesp_psram.a"),join(mem_var,"libesp_psram.a"))
             shutil.move(join(lib_dst,"libesp_system.a"),join(mem_var,"libesp_system.a"))
             shutil.move(join(lib_dst,"libfreertos.a"),join(mem_var,"libfreertos.a"))
