@@ -64,13 +64,6 @@ if "framework-arduinoespressif32" in FRAMEWORK_DIR:
 # Esp32-solo1 libs needs adopted settings
 # TODO: Check if '-Tesp32.rom.newlib-funcs.ld' is working and needed at all
 if flag_custom_sdkconfig and "CORE32SOLO1" in extra_flags and "CONFIG_FREERTOS_UNICORE=y" in env.GetProjectOption("custom_sdkconfig"):
-    if len(str(env.GetProjectOption("build_flags"))) > 2:
-        build_flags = " ".join(env['BUILD_FLAGS'])
-        build_flags = build_flags + " -Tesp32.rom.newlib-funcs.ld"
-        new_build_flags = build_flags.split()
-        env.Replace(
-          BUILD_FLAGS=new_build_flags
-        )
     if len(str(env.GetProjectOption("build_unflags"))) > 2:
         build_unflags = " ".join(env['BUILD_UNFLAGS'])
         build_unflags = build_unflags + " -mdisable-hardware-atomics -ustart_app_other_cores"
