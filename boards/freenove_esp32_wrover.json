@@ -1,15 +1,20 @@
 {
   "build": {
-    "arduino":{
+    "arduino": {
       "ldscript": "esp32_out.ld"
     },
     "core": "esp32",
-    "extra_flags": "-DARDUINO_HELTEC_WIRELESS_STICK_LITE",
+    "extra_flags": [
+      "-DARDUINO_ESP32_DEV",
+      "-DBOARD_HAS_PSRAM",
+      "-mfix-esp32-psram-cache-issue",
+      "-mfix-esp32-psram-cache-strategy=memw"
+    ],
     "f_cpu": "240000000L",
-    "f_flash": "80000000L",
+    "f_flash": "40000000L",
     "flash_mode": "dio",
     "mcu": "esp32",
-    "variant": "heltec_wireless_stick_lite"
+    "variant": "esp32"
   },
   "connectivity": [
     "wifi",
@@ -17,11 +22,14 @@
     "ethernet",
     "can"
   ],
+  "debug": {
+    "openocd_board": "esp-wrover-32.cfg"
+  },
   "frameworks": [
     "arduino",
     "espidf"
   ],
-  "name": "Heltec Wireless Stick Lite",
+  "name": "Freenove ESP32-Wrover",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
@@ -29,6 +37,6 @@
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://heltec.org/project/wireless-stick-lite/",
-  "vendor": "Heltec Automation"
+  "url": "https://store.freenove.com/products/fnk0060",
+  "vendor": "Freenove"
 }
