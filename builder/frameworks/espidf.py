@@ -177,25 +177,36 @@ SDKCONFIG_PATH = os.path.expandvars(board.get(
 #
 # generate modified Arduino IDF sdkconfig, applying settings from "custom_sdkconfig"
 #
-if config.has_option("env:"+env["PIOENV"], "custom_sdkconfig"):
-    flag_custom_sdkonfig = True
-
 if config.has_option("env:"+env["PIOENV"], "custom_component_add"):
     flag_custom_component_add = True
-
 if config.has_option("env:"+env["PIOENV"], "custom_component_remove"):
     flag_custom_component_remove = True
-    
+
+if config.has_option("env:"+env["PIOENV"], "custom_sdkconfig"):
+    flag_custom_sdkonfig = True
+if "espidf.custom_sdkconfig" in board:
+    flag_custom_sdkonfig = True
 
 def HandleArduinoIDFsettings(env):
     def get_MD5_hash(phrase):
         import hashlib
         return hashlib.md5((phrase).encode('utf-8')).hexdigest()[:16]
 
-    if flag_custom_sdkonfig == True:
+    custom_sdk_config_flags = ""
+    board_idf_config_flags = ""
+
+    if config.has_option("env:"+env["PIOENV"], "custom_sdkconfig"):
+        flag_custom_sdkonfig = True
+        custom_sdk_config_flags = (env.GetProjectOption("custom_sdkconfig").rstrip("\n")) + "\n"
+
+    if "espidf.custom_sdkconfig" in board:
+        board_idf_config_flags = ('\n'.join([element for element in board.get("espidf.custom_sdkconfig", "")])).rstrip("\n") + "\n"
+        flag_custom_sdkonfig = True
+
+    if flag_custom_sdkonfig == True: # TDOO duplicated
         print("*** Add \"custom_sdkconfig\" settings to IDF sdkconfig.defaults ***")
-        idf_config_flags = env.GetProjectOption("custom_sdkconfig")
-        idf_config_flags = idf_config_flags + "\n"
+        idf_config_flags = custom_sdk_config_flags
+        idf_config_flags = idf_config_flags + board_idf_config_flags
         if flash_frequency != "80m":
             idf_config_flags = idf_config_flags + "# CONFIG_ESPTOOLPY_FLASHFREQ_80M is not set\n"
             esptool_flashfreq_y = "CONFIG_ESPTOOLPY_FLASHFREQ_%s=y\n" % flash_frequency.upper()
@@ -223,7 +234,7 @@ def HandleArduinoIDFsettings(env):
         with open(sdkconfig_src) as src:
             sdkconfig_dst = os.path.join(PROJECT_DIR, "sdkconfig.defaults")
             dst = open(sdkconfig_dst,"w")
-            dst.write("# TASMOTA__"+ get_MD5_hash(env.GetProjectOption("custom_sdkconfig").strip() + mcu) +"\n")
+            dst.write("# TASMOTA__"+ get_MD5_hash(''.join(custom_sdk_config_flags).strip() + mcu) +"\n")
             while line := src.readline():
                 flag = get_flag(line)
                 if flag is None:
@@ -319,7 +330,7 @@ def HandleCOMPONENTsettings(env):
 if flag_custom_component_add == True or flag_custom_component_remove == True:
     HandleCOMPONENTsettings(env)
 
-if flag_custom_sdkonfig and "arduino" in env.subst("$PIOFRAMEWORK"):
+if flag_custom_sdkonfig == True and "arduino" in env.subst("$PIOFRAMEWORK"):
     HandleArduinoIDFsettings(env)
     LIB_SOURCE = os.path.join(env.subst("$PROJECT_CORE_DIR"), "platforms", "espressif32", "builder", "build_lib")
     if not bool(os.path.exists(os.path.join(PROJECT_DIR, ".dummy"))):
