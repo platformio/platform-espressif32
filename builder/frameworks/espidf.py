@@ -43,6 +43,7 @@ from platformio import fs, __version__
 from platformio.compat import IS_WINDOWS
 from platformio.proc import exec_command
 from platformio.builder.tools.piolib import ProjectAsLibBuilder
+from platformio.project.config import ProjectConfig
 from platformio.package.version import get_original_version, pepver_to_semver
 
 # Added to avoid conflicts between installed Python packages from
@@ -332,7 +333,7 @@ if flag_custom_component_add == True or flag_custom_component_remove == True:
 
 if flag_custom_sdkonfig == True and "arduino" in env.subst("$PIOFRAMEWORK"):
     HandleArduinoIDFsettings(env)
-    LIB_SOURCE = os.path.join(env.subst("$PROJECT_CORE_DIR"), "platforms", "espressif32", "builder", "build_lib")
+    LIB_SOURCE = os.path.join(ProjectConfig.get_instance().get("platformio", "platforms_dir"), "espressif32", "builder", "build_lib")
     if not bool(os.path.exists(os.path.join(PROJECT_DIR, ".dummy"))):
         shutil.copytree(LIB_SOURCE, os.path.join(PROJECT_DIR, ".dummy"))
     PROJECT_SRC_DIR = os.path.join(PROJECT_DIR, ".dummy")
