@@ -72,7 +72,7 @@ if "framework-arduinoespressif32" in FRAMEWORK_DIR:
     flag_any_custom_sdkconfig = os.path.exists(join(platform.get_package_dir("framework-arduinoespressif32"),"tools","esp32-arduino-libs","sdkconfig"))
 
 # Esp32-solo1 libs needs adopted settings
-if flag_custom_sdkconfig == True and "CORE32SOLO1" in extra_flags and ("CONFIG_FREERTOS_UNICORE=y" in entry_custom_sdkconfig or "CONFIG_FREERTOS_UNICORE=y" in board_sdkconfig):
+if flag_custom_sdkconfig == True and ("CORE32SOLO1" in extra_flags or "CONFIG_FREERTOS_UNICORE=y" in entry_custom_sdkconfig or "CONFIG_FREERTOS_UNICORE=y" in board_sdkconfig):
     if len(str(env.GetProjectOption("build_unflags"))) == 2: # No valid env, needs init
         env['BUILD_UNFLAGS'] = {}
     build_unflags = " ".join(env['BUILD_UNFLAGS'])
