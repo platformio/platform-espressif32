@@ -28,6 +28,7 @@ import shutil
 import os
 from os.path import join
 import re
+import requests
 import platform as sys_platform
 
 import click
@@ -193,12 +194,40 @@ def HandleArduinoIDFsettings(env):
         import hashlib
         return hashlib.md5((phrase).encode('utf-8')).hexdigest()[:16]
 
+    def custom_sdkconfig_file(string):
+        if not config.has_option("env:"+env["PIOENV"], "custom_sdkconfig"):
+            return ""
+        sdkconfig_entrys = env.GetProjectOption("custom_sdkconfig").splitlines()
+        for file in sdkconfig_entrys:
+            if "http" in file and "://" in file:
+                response = requests.get(file.split(" ")[0])
+                if response.ok:
+                    target = str(response.content.decode('utf-8'))
+                else:
+                    print("Failed to download:", file)
+                    return ""
+                return target
+            if "file://" in file:
+                file_path = join(PROJECT_DIR,file.lstrip("file://").split(os.path.sep)[-1])
+                if os.path.exists(file_path):
+                    with open(file_path, 'r') as file:
+                        target = file.read()
+                else:
+                    print("File not found:", file_path)
+                    return ""
+                return target
+        return ""
+
+
     custom_sdk_config_flags = ""
     board_idf_config_flags = ""
+    sdkconfig_file_flags = ""
+    custom_sdkconfig_file_str = ""
 
     if config.has_option("env:"+env["PIOENV"], "custom_sdkconfig"):
         flag_custom_sdkonfig = True
         custom_sdk_config_flags = (env.GetProjectOption("custom_sdkconfig").rstrip("\n")) + "\n"
+        custom_sdkconfig_file_str = custom_sdkconfig_file(sdkconfig_file_flags)
 
     if "espidf.custom_sdkconfig" in board:
         board_idf_config_flags = ('\n'.join([element for element in board.get("espidf.custom_sdkconfig", "")])).rstrip("\n") + "\n"
@@ -207,6 +236,9 @@ def HandleArduinoIDFsettings(env):
     if flag_custom_sdkonfig == True: # TDOO duplicated
         print("*** Add \"custom_sdkconfig\" settings to IDF sdkconfig.defaults ***")
         idf_config_flags = custom_sdk_config_flags
+        if custom_sdkconfig_file_str != "":
+            sdkconfig_file_flags = custom_sdkconfig_file_str + "\n"
+            idf_config_flags = idf_config_flags + sdkconfig_file_flags
         idf_config_flags = idf_config_flags + board_idf_config_flags
         if flash_frequency != "80m":
             idf_config_flags = idf_config_flags + "# CONFIG_ESPTOOLPY_FLASHFREQ_80M is not set\n"
