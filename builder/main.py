@@ -143,7 +143,7 @@ def _parse_partitions(env):
 
     result = []
     next_offset = 0
-    bound = int(board.get("upload.offset_address", "0x10000"), 16) # default 0x10000
+    app_offset = int(board.get("upload.offset_address", "0x10000"), 16) # default 0x10000
     with open(partitions_csv) as fp:
         for line in fp.readlines():
             line = line.strip()
@@ -152,23 +152,25 @@ def _parse_partitions(env):
             tokens = [t.strip() for t in line.split(",")]
             if len(tokens) < 5:
                 continue
+            bound = 0x10000 if tokens[1] in ("0", "app") else 4
+            calculated_offset = (next_offset + bound - 1) & ~(bound - 1)
             partition = {
                 "name": tokens[0],
                 "type": tokens[1],
                 "subtype": tokens[2],
-                "offset": tokens[3] or next_offset,
+                "offset": tokens[3] or calculated_offset,
                 "size": tokens[4],
                 "flags": tokens[5] if len(tokens) > 5 else None
             }
             result.append(partition)
             next_offset = _parse_size(partition["offset"])
             if (partition["subtype"] == "ota_0"):
-                bound = next_offset
-            next_offset = (next_offset + bound - 1) & ~(bound - 1)
+                app_offset = next_offset
+            next_offset = next_offset + _parse_size(partition["size"])
     # Configure application partition offset
-    env.Replace(ESP32_APP_OFFSET=str(hex(bound)))
+    env.Replace(ESP32_APP_OFFSET=str(hex(app_offset)))
     # Propagate application offset to debug configurations
-    env["INTEGRATION_EXTRA_DATA"].update({"application_offset": str(hex(bound))})
+    env["INTEGRATION_EXTRA_DATA"].update({"application_offset": str(hex(app_offset))})
     return result
 
 
