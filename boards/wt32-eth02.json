@@ -1,0 +1,36 @@
+{
+  "build": {
+    "core": "esp32",
+    "extra_flags": [
+      "-DARDUINO_WT32_ETH01",
+      "-DCONFIG_FREERTOS_UNICORE=1"
+    ],
+    "f_cpu": "240000000L",
+    "f_flash": "80000000L",
+    "flash_mode": "qio",
+    "mcu": "esp32",
+    "variant": "wt32-eth02"
+  },
+  "connectivity": [
+    "wifi",
+    "bluetooth",
+    "ethernet",
+    "can"
+  ],
+  "debug": {
+    "openocd_board": "esp32-solo-1.cfg"
+  },
+  "frameworks": [
+    "espidf"
+  ],
+  "name": "Wireless-Tag WT32-ETH02 Ethernet Module",
+  "upload": {
+    "flash_size": "16MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 16777216,
+    "require_upload_port": true,
+    "speed": 921600
+  },
+  "url": "http://www.wireless-tag.com/",
+  "vendor": "Wireless-Tag"
+}
