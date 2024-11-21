@@ -20,7 +20,7 @@
       ]
     ],
     "mcu": "esp32s3",
-    "variant": "waveshare_esp32s3_tiny"
+    "variant": "waveshare_esp32_s3_tiny"
   },
   "connectivity": [
     "bluetooth",
