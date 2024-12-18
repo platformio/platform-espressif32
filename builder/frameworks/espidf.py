@@ -271,6 +271,13 @@ def populate_idf_env_vars(idf_env):
     if "IDF_TOOLS_PATH" in idf_env:
         del idf_env["IDF_TOOLS_PATH"]
 
+    # Unlike IDF, PlatformIO allows multiple targets per environment. This
+    # difference may cause CMake configuration errors if the automatically
+    # handled folder "managed_components" was modified on the disk by
+    # a previous target
+    if board.get("build.esp-idf.overwrite_managed_components", "yes") == "yes":
+        idf_env["IDF_COMPONENT_OVERWRITE_MANAGED_COMPONENTS"] = "1"
+
 
 def get_target_config(project_configs, target_index, cmake_api_reply_dir):
     target_json = project_configs.get("targets")[target_index].get("jsonFile", "")
