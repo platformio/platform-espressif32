@@ -139,13 +139,15 @@ def is_cmake_reconfigure_required(cmake_api_reply_dir):
     ]
     cmake_preconf_dir = os.path.join(BUILD_DIR, "config")
     deafult_sdk_config = os.path.join(PROJECT_DIR, "sdkconfig.defaults")
+    idf_deps_lock = os.path.join(PROJECT_DIR, "dependencies.lock")
+    ninja_buildfile = os.path.join(BUILD_DIR, "build.ninja")
 
     for d in (cmake_api_reply_dir, cmake_preconf_dir):
         if not os.path.isdir(d) or not os.listdir(d):
             return True
     if not os.path.isfile(cmake_cache_file):
         return True
-    if not os.path.isfile(os.path.join(BUILD_DIR, "build.ninja")):
+    if not os.path.isfile(ninja_buildfile):
         return True
     if not os.path.isfile(SDKCONFIG_PATH) or os.path.getmtime(
         SDKCONFIG_PATH
@@ -154,6 +156,10 @@ def is_cmake_reconfigure_required(cmake_api_reply_dir):
     if os.path.isfile(deafult_sdk_config) and os.path.getmtime(
         deafult_sdk_config
     ) > os.path.getmtime(cmake_cache_file):
+        return True
+    if os.path.isfile(idf_deps_lock) and os.path.getmtime(
+        idf_deps_lock
+    ) > os.path.getmtime(ninja_buildfile):
         return True
     if any(
         os.path.getmtime(f) > os.path.getmtime(cmake_cache_file)
@@ -270,6 +276,13 @@ def populate_idf_env_vars(idf_env):
     # underlying build system. Unsetting it is a safe workaround.
     if "IDF_TOOLS_PATH" in idf_env:
         del idf_env["IDF_TOOLS_PATH"]
+
+    # Unlike IDF, PlatformIO allows multiple targets per environment. This
+    # difference may cause CMake configuration errors if the automatically
+    # handled folder "managed_components" was modified on the disk by
+    # a previous target
+    if board.get("build.esp-idf.overwrite_managed_components", "yes") == "yes":
+        idf_env["IDF_COMPONENT_OVERWRITE_MANAGED_COMPONENTS"] = "1"
 
 
 def get_target_config(project_configs, target_index, cmake_api_reply_dir):
