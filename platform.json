@@ -18,7 +18,7 @@
     "type": "git",
     "url": "https://github.com/tasmota/platform-espressif32.git"
   },
-  "version": "2024.11.31",
+  "version": "2025.01.30",
   "frameworks": {
     "arduino": {
       "script": "builder/frameworks/arduino.py"
@@ -86,7 +86,7 @@
     "tool-esptoolpy": {
       "type": "uploader",
       "owner": "tasmota",
-      "version": "https://github.com/tasmota/esptool/releases/download/v4.8.5/esptool.zip"
+      "version": "https://github.com/tasmota/esptool/releases/download/v4.8.6/esptool.zip"
     },
     "tool-dfuutil-arduino": {
       "type": "uploader",
