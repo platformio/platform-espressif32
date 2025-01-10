@@ -1343,11 +1343,37 @@ def get_idf_venv_dir():
 
 def ensure_python_venv_available():
 
+    def _get_idf_venv_python_version():
+        try:
+            version = subprocess.check_output(
+                [
+                    get_python_exe(),
+                    "-c",
+                    "import sys;print('{0}.{1}.{2}-{3}.{4}'.format(*list(sys.version_info)))"
+                ], text=True
+            )
+            return version.strip()
+        except subprocess.CalledProcessError as e:
+            print("Failed to extract Python version from IDF virtual env!")
+            return None
+
     def _is_venv_outdated(venv_data_file):
         try:
             with open(venv_data_file, "r", encoding="utf8") as fp:
                 venv_data = json.load(fp)
                 if venv_data.get("version", "") != IDF_ENV_VERSION:
+                    print(
+                        "Warning! IDF virtual environment version changed!"
+                    )
+                    return True
+                if (
+                    venv_data.get("python_version", "")
+                    != _get_idf_venv_python_version()
+                ):
+                    print(
+                        "Warning! Python version in the IDF virtual environment"
+                        " differs from the current Python!"
+                    )
                     return True
                 return False
         except:
@@ -1387,8 +1413,13 @@ def ensure_python_venv_available():
     venv_data_file = os.path.join(venv_dir, "pio-idf-venv.json")
     if not os.path.isfile(venv_data_file) or _is_venv_outdated(venv_data_file):
         _create_venv(venv_dir)
+
+        install_python_deps()
         with open(venv_data_file, "w", encoding="utf8") as fp:
-            venv_info = {"version": IDF_ENV_VERSION}
+            venv_info = {
+                "version": IDF_ENV_VERSION,
+                "python_version": _get_idf_venv_python_version()
+            }
             json.dump(venv_info, fp, indent=2)
 
 
@@ -1407,11 +1438,10 @@ def get_python_exe():
 
 
 #
-# ESP-IDF requires Python packages with specific versions in a virtual environment
+# Ensure Python environment contains everything required for IDF
 #
 
 ensure_python_venv_available()
-install_python_deps()
 
 # ESP-IDF package doesn't contain .git folder, instead package version is specified
 # in a special file "version.h" in the root folder of the package
