@@ -28,7 +28,10 @@ platform = ulp_env.PioPlatform()
 FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
 BUILD_DIR = ulp_env.subst("$BUILD_DIR")
 ULP_BUILD_DIR = os.path.join(
-    BUILD_DIR, "esp-idf", project_config["name"].replace("__idf_", ""), "ulp_main"
+    BUILD_DIR,
+    "esp-idf",
+    project_config["name"].replace("__idf_", ""),
+    "ulp_main",
 )
 
 
@@ -36,9 +39,15 @@ def prepare_ulp_env_vars(env):
     ulp_env.PrependENVPath("IDF_PATH", FRAMEWORK_DIR)
 
     toolchain_path = platform.get_package_dir(
-        "toolchain-xtensa-esp-elf"
-        if "arduino" not in env.subst("$PIOFRAMEWORK")
-        else "toolchain-xtensa-%s" % idf_variant
+        "toolchain-riscv32-esp"
+        if idf_variant in ("esp32c3", "esp32c6")
+        else (
+            (
+                "toolchain-xtensa-esp-elf"
+                if "arduino" not in env.subst("$PIOFRAMEWORK")
+                else "toolchain-xtensa-%s" % idf_variant
+            )
+        )
     )
 
     additional_packages = [
@@ -72,9 +81,9 @@ def get_component_includes(target_config):
         if source["path"].endswith("ulp_main.bin.S"):
             return [
                 inc["path"]
-                for inc in target_config["compileGroups"][source["compileGroupIndex"]][
-                    "includes"
-                ]
+                for inc in target_config["compileGroups"][
+                    source["compileGroupIndex"]
+                ]["includes"]
             ]
 
     return [os.path.join(BUILD_DIR, "config")]
@@ -85,7 +94,9 @@ def generate_ulp_config(target_config):
         riscv_ulp_enabled = sdk_config.get("ULP_COPROC_TYPE_RISCV", False)
 
         cmd = (
-            os.path.join(platform.get_package_dir("tool-cmake"), "bin", "cmake"),
+            os.path.join(
+                platform.get_package_dir("tool-cmake"), "bin", "cmake"
+            ),
             "-DCMAKE_GENERATOR=Ninja",
             "-DCMAKE_TOOLCHAIN_FILE="
             + os.path.join(
@@ -93,21 +104,52 @@ def generate_ulp_config(target_config):
                 "components",
                 "ulp",
                 "cmake",
-                "toolchain-%sulp%s.cmake"
-                % (
-                    "" if riscv_ulp_enabled else idf_variant + "-",
-                    "-riscv" if riscv_ulp_enabled else "",
+                (
+                    "toolchain-lp-core-riscv.cmake"
+                    if sdk_config.get("ULP_COPROC_TYPE_LP_CORE", False)
+                    else "toolchain-%sulp%s.cmake"
+                    % (
+                        "" if riscv_ulp_enabled else idf_variant + "-",
+                        "-riscv" if riscv_ulp_enabled else "",
+                    )
                 ),
             ),
-            "-DULP_S_SOURCES=%s" % ";".join([fs.to_unix_path(s.get_abspath()) for s in source]),
+            "-DULP_S_SOURCES=%s"
+            % ";".join([fs.to_unix_path(s.get_abspath()) for s in source]),
             "-DULP_APP_NAME=ulp_main",
-            "-DCOMPONENT_DIR=" + os.path.join(ulp_env.subst("$PROJECT_DIR"), "ulp"),
-            "-DCOMPONENT_INCLUDES=%s" % ";".join(get_component_includes(target_config)),
+            "-DCOMPONENT_DIR="
+            + os.path.join(ulp_env.subst("$PROJECT_DIR"), "ulp"),
+            "-DCOMPONENT_INCLUDES=%s"
+            % ";".join(get_component_includes(target_config)),
             "-DIDF_TARGET=%s" % idf_variant,
             "-DIDF_PATH=" + fs.to_unix_path(FRAMEWORK_DIR),
-            "-DSDKCONFIG_HEADER=" + os.path.join(BUILD_DIR, "config", "sdkconfig.h"),
+            "-DSDKCONFIG_HEADER="
+            + os.path.join(BUILD_DIR, "config", "sdkconfig.h"),
             "-DPYTHON=" + env.subst("$PYTHONEXE"),
-            "-DSDKCONFIG_CMAKE=" + os.path.join(BUILD_DIR, "config", "sdkconfig.cmake"),
+            "-DSDKCONFIG_CMAKE="
+            + os.path.join(BUILD_DIR, "config", "sdkconfig.cmake"),
+            "-DULP_COCPU_IS_RISCV="
+            + (
+                "ON"
+                if idf_variant in ("esp32s2", "esp32s3")
+                and sdk_config.get("ULP_COPROC_TYPE_RISCV", False)
+                else ""
+            ),
+            "-DULP_COCPU_IS_LP_CORE="
+            + (
+                "ON"
+                if sdk_config.get("ULP_COPROC_TYPE_LP_CORE", False)
+                else ""
+            ),
+            "-DESP_ROM_HAS_LP_ROM="
+            + (
+                "ON"
+                if sdk_config.get("ESP_ROM_HAS_LP_ROM", False)
+                else ""
+            ),
+            "-DCMAKE_MODULE_PATH="
+            + fs.to_unix_path(
+                os.path.join(FRAMEWORK_DIR, "components", "ulp", "cmake")),
             "-GNinja",
             "-B",
             ULP_BUILD_DIR,
@@ -152,7 +194,9 @@ def compile_ulp_binary():
             os.path.join(ULP_BUILD_DIR, "ulp_main.bin"),
         ],
         None,
-        ulp_binary_env.VerboseAction(" ".join(cmd), "Generating ULP project files $TARGETS"),
+        ulp_binary_env.VerboseAction(
+            " ".join(cmd), "Generating ULP project files $TARGETS"
+        ),
     )
 
 
@@ -164,14 +208,20 @@ def generate_ulp_assembly():
         "-DFILE_TYPE=BINARY",
         "-P",
         os.path.join(
-            FRAMEWORK_DIR, "tools", "cmake", "scripts", "data_file_embed_asm.cmake"
+            FRAMEWORK_DIR,
+            "tools",
+            "cmake",
+            "scripts",
+            "data_file_embed_asm.cmake",
         ),
     )
 
     return ulp_env.Command(
         os.path.join(BUILD_DIR, "ulp_main.bin.S"),
         os.path.join(ULP_BUILD_DIR, "ulp_main.bin"),
-        ulp_env.VerboseAction(" ".join(cmd), "Generating ULP assembly file $TARGET"),
+        ulp_env.VerboseAction(
+            " ".join(cmd), "Generating ULP assembly file $TARGET"
+        ),
     )
 
 

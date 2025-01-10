@@ -1804,8 +1804,10 @@ env["BUILDERS"]["ElfToBin"].action = action
 #
 
 ulp_dir = os.path.join(PROJECT_DIR, "ulp")
-if os.path.isdir(ulp_dir) and os.listdir(ulp_dir) and mcu not in ("esp32c3", "esp32c6"):
-    env.SConscript("ulp.py", exports="env sdk_config project_config idf_variant")
+if os.path.isdir(ulp_dir) and os.listdir(ulp_dir) and mcu != "esp32c3":
+    env.SConscript(
+        "ulp.py", exports="env sdk_config project_config idf_variant"
+    )
 
 #
 # Process OTA partition and image
