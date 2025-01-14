@@ -56,6 +56,11 @@ class Espressif32Platform(PlatformBase):
             self.packages["framework-espidf"]["optional"] = False
             self.packages["framework-arduinoespressif32"]["optional"] = False
 
+        # Enable check tools only when "check_tool" is enabled
+        for p in self.packages:
+            if p in ("tool-cppcheck", "tool-clangtidy", "tool-pvs-studio"):
+                self.packages[p]["optional"] = False if str(variables.get("check_tool")).strip("['']") in p else True
+
         if "buildfs" in targets:
             filesystem = variables.get("board_build.filesystem", "littlefs")
             if filesystem == "littlefs":
