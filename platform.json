@@ -111,6 +111,21 @@
       "owner": "platformio",
       "version": "~2.0.0"
     },
+    "tool-cppcheck": {
+      "optional": true,
+      "owner": "platformio",
+      "version": "^1.21100.241030"
+    },
+    "tool-clangtidy": {
+      "optional": true,
+      "owner": "platformio",
+      "version": "^1.190100.0"
+    },
+    "tool-pvs-studio": {
+      "optional": true,
+      "owner": "platformio",
+      "version": "^7.18.59866"
+    },
     "tool-cmake": {
       "optional": true,
       "owner": "platformio",
