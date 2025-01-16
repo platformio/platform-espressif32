@@ -31,6 +31,7 @@ import shutil
 from os.path import join
 
 from SCons.Script import COMMAND_LINE_TARGETS, DefaultEnvironment, SConscript
+from platformio import fs
 from platformio.package.version import pepver_to_semver
 from platformio.project.config import ProjectConfig
 from platformio.package.manager.tool import ToolPackageManager
@@ -195,11 +196,67 @@ if check_reinstall_frwrk() == True:
     if flag_custom_sdkconfig == True:
         call_compile_libs()
         flag_custom_sdkconfig = False
-    
+
+
+FRAMEWORK_SDK_DIR = fs.to_unix_path(
+    os.path.join(
+        FRAMEWORK_DIR,
+        "tools",
+        "esp32-arduino-libs",
+        mcu,
+        "include",
+    )
+)
+
+IS_INTEGRATION_DUMP = env.IsIntegrationDump()
+
+
+def is_framework_subfolder(potential_subfolder):
+    if not os.path.isabs(potential_subfolder):
+        return False
+    if (
+        os.path.splitdrive(FRAMEWORK_SDK_DIR)[0]
+        != os.path.splitdrive(potential_subfolder)[0]
+    ):
+        return False
+    return os.path.commonpath([FRAMEWORK_SDK_DIR]) == os.path.commonpath(
+        [FRAMEWORK_SDK_DIR, potential_subfolder]
+    )
+
+
+def shorthen_includes(env, node):
+    if IS_INTEGRATION_DUMP:
+        # Don't shorten include paths for IDE integrations
+        return node
+
+    includes = [fs.to_unix_path(inc) for inc in env.get("CPPPATH", [])]
+    shortened_includes = []
+    generic_includes = []
+    for inc in includes:
+        if is_framework_subfolder(inc):
+            shortened_includes.append(
+                "-iwithprefix/"
+                + fs.to_unix_path(os.path.relpath(inc, FRAMEWORK_SDK_DIR))
+            )
+        else:
+            generic_includes.append(inc)
+
+    return env.Object(
+        node,
+        CPPPATH=generic_includes,
+        CCFLAGS=env["CCFLAGS"]
+        + ["-iprefix", FRAMEWORK_SDK_DIR]
+        + shortened_includes,
+        ASFLAGS=env["ASFLAGS"]
+        + ["-iprefix", FRAMEWORK_SDK_DIR]
+        + shortened_includes,
+    )
+
 if flag_custom_sdkconfig == True and flag_any_custom_sdkconfig == False:
     call_compile_libs()
 
 if "arduino" in env.subst("$PIOFRAMEWORK") and "espidf" not in env.subst("$PIOFRAMEWORK") and env.subst("$ARDUINO_LIB_COMPILE_FLAG") in ("Inactive", "True"):
+    env.AddBuildMiddleware(shorthen_includes)
     if os.path.exists(join(FRAMEWORK_DIR, "tools", "platformio-build.py")):
         PIO_BUILD = "platformio-build.py"
     else:
