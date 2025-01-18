@@ -230,7 +230,7 @@ def shorthen_includes(env, node):
     if IS_INTEGRATION_DUMP:
         # Don't shorten include paths for IDE integrations
         return node
-    print("***** Shorten include path ******")
+
     includes = [fs.to_unix_path(inc) for inc in env.get("CPPPATH", [])]
     shortened_includes = []
     generic_includes = []
