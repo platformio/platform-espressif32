@@ -2115,6 +2115,7 @@ if "arduino" in env.get("PIOFRAMEWORK") and "espidf" not in env.get("PIOFRAMEWOR
             shutil.move(join(lib_dst,"libfreertos.a"),join(mem_var,"libfreertos.a"))
             shutil.move(join(lib_dst,"libbootloader_support.a"),join(mem_var,"libbootloader_support.a"))
             shutil.move(join(lib_dst,"libesp_hw_support.a"),join(mem_var,"libesp_hw_support.a"))
+            shutil.move(join(lib_dst,"libesp_lcd.a"),join(mem_var,"libesp_lcd.a"))
 
         shutil.copyfile(sdkconfig_h_path,join(mem_var,"include","sdkconfig.h"))
         if not bool(os.path.isfile(join(arduino_libs,mcu,"sdkconfig.orig"))):
