@@ -114,7 +114,7 @@
     "tool-cppcheck": {
       "optional": true,
       "owner": "platformio",
-      "version": "^1.21100.241030"
+      "version": "~1.21100"
     },
     "tool-clangtidy": {
       "optional": true,
