@@ -126,7 +126,7 @@ class Espressif32Platform(PlatformBase):
                 ):
                     self.packages.pop("toolchain-%s" % target, None)
 
-                if mcu in ("esp32c3", "esp32c6"):
+                if mcu in ("esp32c3", "esp32c6", "esp32h2"):
                     self.packages.pop("toolchain-xtensa-esp-elf", None)
                 else:
                     self.packages["toolchain-xtensa-esp-elf"][
@@ -150,7 +150,7 @@ class Espressif32Platform(PlatformBase):
                 else:
                     self.packages.pop("toolchain-xtensa-%s" % available_mcu, None)
 
-        if mcu in ("esp32s2", "esp32s3", "esp32c3", "esp32c6"):
+        if mcu in ("esp32s2", "esp32s3", "esp32c3", "esp32c6", "esp32h2"):
             # RISC-V based toolchain for ESP32C3, ESP32C6 ESP32S2, ESP32S3 ULP
             self.packages["toolchain-riscv32-esp"]["optional"] = False
 
@@ -195,7 +195,7 @@ class Espressif32Platform(PlatformBase):
         if board.id == "esp32-s2-kaluga-1":
             supported_debug_tools.append("ftdi")
 
-        if board.get("build.mcu", "") in ("esp32c3", "esp32c6", "esp32s3"):
+        if board.get("build.mcu", "") in ("esp32c3", "esp32c6", "esp32s3", "esp32h2"):
             supported_debug_tools.append("esp-builtin")
 
         upload_protocol = board.manifest.get("upload", {}).get("protocol")
