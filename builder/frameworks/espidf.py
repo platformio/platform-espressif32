@@ -1532,7 +1532,6 @@ def install_python_deps():
         "cryptography": "~=41.0.1",
         "future": ">=0.18.3",
         "pyparsing": ">=3.1.0,<4",
-        "kconfiglib": "~=14.1.0",
         "idf-component-manager": "~=2.0.1",
         "esp-idf-kconfig": ">=2.5.0"
     }
