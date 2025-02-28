@@ -2122,6 +2122,11 @@ if "arduino" in env.get("PIOFRAMEWORK") and "espidf" not in env.get("PIOFRAMEWOR
             shutil.move(join(arduino_libs,mcu,"sdkconfig"),join(arduino_libs,mcu,"sdkconfig.orig"))
         shutil.copyfile(join(env.subst("$PROJECT_DIR"),"sdkconfig."+env["PIOENV"]),join(arduino_libs,mcu,"sdkconfig"))
         shutil.copyfile(join(env.subst("$PROJECT_DIR"),"sdkconfig."+env["PIOENV"]),join(arduino_libs,"sdkconfig"))
+        try:
+            os.remove(join(env.subst("$PROJECT_DIR"),"dependencies.lock"))
+            os.remove(join(env.subst("$PROJECT_DIR"),"CMakeLists.txt"))
+        except:
+            pass
         print("*** Copied compiled %s IDF libraries to Arduino framework ***" % idf_variant)
 
         pio_exe_path = shutil.which("platformio"+(".exe" if IS_WINDOWS else ""))
