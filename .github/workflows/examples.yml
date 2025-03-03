@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, windows-2022, macos-14]
+        os: [ubuntu-latest, windows-latest, macos-15]
         example:
           - "examples/arduino-blink"
           - "examples/arduino-rmt-blink"
@@ -39,19 +39,19 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.13"
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install wheel
-          pip install -U https://github.com/Jason2866/platformio-core/archive/refs/tags/v6.1.16.tar.gz
+          pip install -U https://github.com/Jason2866/platformio-core/archive/refs/tags/v6.1.17.zip
           pio pkg install --global --platform file://.
       - name: git clone Tasmota and add to examples
-        if: "matrix.example == 'examples/tasmota' && matrix.os != 'windows-2022'"
+        if: "matrix.example == 'examples/tasmota' && matrix.os != 'windows-latest'"
         run: |
-          git clone -b development --recursive --depth 1 --shallow-submodule https://github.com/arendst/Tasmota.git examples/tasmota
+          git clone -b development --depth 1 https://github.com/arendst/Tasmota.git examples/tasmota
           cp examples/tasmota_platformio_override.ini examples/tasmota/platformio_override.ini
       - name: Build examples
-        if: "matrix.example != 'examples/tasmota' || matrix.os != 'windows-2022'"
+        if: "matrix.example != 'examples/tasmota' || matrix.os != 'windows-latest'"
         run: |
           pio run -d ${{ matrix.example }}
