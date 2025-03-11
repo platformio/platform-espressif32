@@ -49,7 +49,6 @@
   "url": "https://www.hdwell.com/Product/index46.html",
   "vendor": "Huidu Tech",
   "information_urls": [
-    "https://github.com/mrcodetastic/ESP32-HUB75-MatrixPanel-DMA/discussions/667",
-    "https://github.com/vortigont/FireLamp_JeeUI/wiki/Huidu-HD%E2%80%90WF2"
+    "https://github.com/mrcodetastic/ESP32-HUB75-MatrixPanel-DMA/discussions/667"
   ]
 }
