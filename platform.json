@@ -33,19 +33,19 @@
       "type": "framework",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/3450/framework-arduinoespressif32-all-release_v5.3-a8f33310.zip"
+      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/3460/framework-arduinoespressif32-all-release_v5.3-a99ad828.zip"
     },
      "framework-arduino-solo1": {
       "type": "framework",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/3451/framework-arduinoespressif32-solo1-release_v5.3-a8f33310.zip"
+      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/3461/framework-arduinoespressif32-solo1-release_v5.3-a99ad828.zip"
     },
      "framework-arduino-ITEAD": {
       "type": "framework",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/3452/framework-arduinoespressif32-ITEAD-esp32-release_v5.3-a8f33310.zip"
+      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/3462/framework-arduinoespressif32-ITEAD-esp32-release_v5.3-a99ad828.zip"
     },
     "framework-espidf": {
       "type": "framework",
