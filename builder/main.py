@@ -376,7 +376,7 @@ else:
         env.Depends(target_firm, "checkprogsize")
 
 env.AddPlatformTarget("buildfs", target_firm, target_firm, "Build Filesystem Image")
-AlwaysBuild(env.AddPlatformTarget("nobuild", target_firm))
+AlwaysBuild(env.Alias("nobuild", target_firm))
 target_buildprog = env.Alias("buildprog", target_firm, target_firm)
 
 # update max upload size based on CSV file
