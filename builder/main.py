@@ -376,8 +376,8 @@ else:
         env.Depends(target_firm, "checkprogsize")
 
 env.AddPlatformTarget("buildfs", target_firm, target_firm, "Build Filesystem Image")
-AlwaysBuild(env.Alias("nobuild", target_firm))
-target_buildprog = env.Alias("buildprog", target_firm, target_firm)
+AlwaysBuild(env.AddPlatformTarget("nobuild", target_firm))
+target_buildprog = env.AddPlatformTarget("buildprog", target_firm, target_firm)
 
 # update max upload size based on CSV file
 if env.get("PIOMAINPROG"):
