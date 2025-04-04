@@ -145,6 +145,11 @@
       "optional": true,
       "owner": "platformio",
       "version": "~1.0.1"
+    },
+    "tool-esp-rom-elfs": {
+      "optional": true,
+      "owner": "platformio",
+      "version": "0.0.1+20241011"
     }
   }
 }
