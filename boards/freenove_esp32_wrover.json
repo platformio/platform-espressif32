@@ -23,7 +23,7 @@
     "can"
   ],
   "debug": {
-    "openocd_board": "esp-wrover-32.cfg"
+    "openocd_board": "esp32-wrover.cfg"
   },
   "frameworks": [
     "arduino",
