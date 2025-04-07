@@ -291,8 +291,6 @@ env.Replace(
     ],
     ERASECMD='"$PYTHONEXE" "$OBJCOPY" $ERASEFLAGS erase_flash',
 
-    lib_archive=False,
-
     MKFSTOOL="mk%s" % filesystem,
 
     # Legacy `ESP32_SPIFFS_IMAGE_NAME` is used as the second fallback value for
@@ -306,6 +304,9 @@ env.Replace(
 
     PROGSUFFIX=".elf"
 )
+
+# Set lib_archive to False for all envs to avoid issues with weak defs in framework and libs
+config.set("env:" + env["PIOENV"], "lib_archive", "False")
 
 # Allow user to override via pre:script
 if env.get("PROGNAME", "program") == "program":
