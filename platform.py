@@ -106,7 +106,12 @@ class Espressif32Platform(PlatformBase):
 
             # Common packages for IDF and mixed Arduino+IDF projects
             for p in self.packages:
-                if p in ("tool-cmake", "tool-ninja", "toolchain-esp32ulp"):
+                if p in (
+                    "tool-cmake",
+                    "tool-ninja",
+                    "toolchain-esp32ulp",
+                    "tool-esp-rom-elfs",
+                ):
                     self.packages[p]["optional"] = False
                 elif p in ("tool-mconf", "tool-idf") and IS_WINDOWS:
                     self.packages[p]["optional"] = False
