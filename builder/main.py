@@ -291,6 +291,8 @@ env.Replace(
     ],
     ERASECMD='"$PYTHONEXE" "$OBJCOPY" $ERASEFLAGS erase_flash',
 
+    lib_archive=False,
+
     MKFSTOOL="mk%s" % filesystem,
 
     # Legacy `ESP32_SPIFFS_IMAGE_NAME` is used as the second fallback value for
