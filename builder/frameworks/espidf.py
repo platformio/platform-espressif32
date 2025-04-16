@@ -2218,7 +2218,7 @@ def _parse_size(value):
 partitions_csv = env.subst("$PARTITIONS_TABLE_CSV")
 result = []
 next_offset = 0
-bound = int(board.get("upload.offset_address", "0x10000"), 16) # default 0x10000
+bound = 0x10000
 with open(partitions_csv) as fp:
     for line in fp.readlines():
         line = line.strip()
