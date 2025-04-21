@@ -17,7 +17,6 @@ import urllib
 import sys
 import json
 import re
-import requests
 
 from platformio.public import PlatformBase, to_unix_path
 
