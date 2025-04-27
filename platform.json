@@ -12,7 +12,7 @@
     "RISC-V"
   ],
   "engines": {
-    "platformio": ">=6.1.16"
+    "platformio": ">=6.1.18"
   },
   "repository": {
     "type": "git",
@@ -50,7 +50,7 @@
     "framework-espidf": {
       "type": "framework",
       "optional": true,
-      "owner": "Jason2866",
+      "owner": "tasmota",
       "version": "https://github.com/tasmota/esp-idf/releases/download/v5.3.3.250415/esp-idf-v5.3.3.zip"
     },
     "toolchain-xtensa-esp-elf": {
@@ -85,8 +85,15 @@
     },
     "tool-esptoolpy": {
       "type": "uploader",
+      "optional": false,
       "owner": "tasmota",
       "version": "https://github.com/tasmota/esptool/releases/download/v4.8.9/esptool.zip"
+    },
+    "tl-install": {
+      "type": "tool",
+      "optional": false,
+      "owner": "pioarduino",
+      "version": "https://github.com/pioarduino/esp_install/releases/download/v5.0.0/esp_install-v5.0.0.zip"
     },
     "tool-dfuutil-arduino": {
       "type": "uploader",
@@ -97,11 +104,18 @@
     "tool-openocd-esp32": {
       "type": "debugger",
       "optional": true,
+      "owner": "pioarduino",
+      "version": "https://github.com/pioarduino/registry/releases/download/0.0.1/openocd-v0.12.0-esp32-20250226.zip"
+    },
+    "tool-esp-rom-elfs": {
+      "type": "tool",
+      "optional": true,
       "owner": "platformio",
-      "version": "~2.1100.0"
+      "version": "0.0.1+20241011"
     },
     "tool-mklittlefs": {
       "type": "uploader",
+      "optional": true,
       "owner": "tasmota",
       "version": "^3.2.0"
     },
@@ -112,31 +126,37 @@
       "version": "~2.0.0"
     },
     "tool-cppcheck": {
+      "type": "tool",
       "optional": true,
       "owner": "platformio",
       "version": "~1.21100"
     },
     "tool-clangtidy": {
+      "type": "tool",
       "optional": true,
       "owner": "platformio",
       "version": "^1.190100.0"
     },
     "tool-pvs-studio": {
+      "type": "tool",
       "optional": true,
       "owner": "platformio",
       "version": "^7.18.59866"
     },
     "tool-cmake": {
+      "type": "tool",
       "optional": true,
       "owner": "platformio",
       "version": "~3.30.2"
     },
     "tool-ninja": {
+      "type": "tool",
       "optional": true,
       "owner": "platformio",
       "version": "^1.7.0"
     },
     "tool-scons": {
+      "type": "tool",
       "optional": true,
       "owner": "platformio",
       "version": "~4.40801.0"
