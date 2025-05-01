@@ -74,8 +74,10 @@ class Espressif32Platform(PlatformBase):
                     sys.stderr.write("Error: Couldn't execute 'idf_tools.py install'\n")
                 else:
                     tl_path = "file://" + join(TOOLS_PATH_DEFAULT, "tools", TOOL)
-                    if not os.path.exists(join(TOOLS_PATH_DEFAULT, "tools", TOOL, "package.json")):
+                    try:
                         shutil.copyfile(TOOL_PACKAGE_PATH, join(TOOLS_PATH_DEFAULT, "tools", TOOL, "package.json"))
+                    except FileNotFoundError as e:
+                        sys.stderr.write(f"Error copying tool package file: {e}\n")
                     self.packages.pop(TOOL, None)
                     if os.path.exists(TOOL_PATH) and os.path.isdir(TOOL_PATH):
                         try:
@@ -106,6 +108,51 @@ class Espressif32Platform(PlatformBase):
             self.packages["framework-espidf"]["optional"] = False
             self.packages["framework-arduinoespressif32"]["optional"] = False
 
+        mcu_toolchain_mapping = {
+            # Xtensa based and FSM toolchain
+            ("esp32", "esp32s2", "esp32s3"): {
+                "toolchains": ["toolchain-xtensa-esp-elf"],
+                "ulp_toolchain": ["toolchain-esp32ulp"] + (["toolchain-riscv32-esp"] if mcu != "esp32" else []),
+                "debug_tools": ["tool-xtensa-esp-elf-gdb"]
+            },
+            # RISC-V based toolchain
+            ("esp32c2", "esp32c3", "esp32c5", "esp32c6", "esp32h2", "esp32p4"): {
+                "toolchains": ["toolchain-riscv32-esp"],
+                "ulp_toolchain": None,
+                "debug_tools": ["tool-riscv32-esp-elf-gdb"]
+            }
+        }
+
+        # Iterate through MCU mappings
+        for supported_mcus, toolchain_data in mcu_toolchain_mapping.items():
+            if mcu in supported_mcus:
+                # Set mandatory toolchains
+                for toolchain in toolchain_data["toolchains"]:
+                    self.packages[toolchain]["optional"] = False
+
+                # Set ULP toolchain if applicable
+                ulp_toolchain = toolchain_data.get("ulp_toolchain")
+                if ulp_toolchain and os.path.isdir("ulp"):
+                    for toolchain in ulp_toolchain:
+                        self.packages[toolchain]["optional"] = False
+                # Install debug tools if conditions match
+                if (variables.get("build_type") or "debug" in "".join(targets)) or variables.get("upload_protocol"):
+                    for debug_tool in toolchain_data["debug_tools"]:
+                        self.packages[debug_tool]["optional"] = False
+                    install_tool("tool-openocd-esp32")
+                break  # Exit loop once MCU is matched
+
+        # Common packages for IDF and mixed Arduino+IDF projects
+        COMMON_IDF_PACKAGES = [
+            "tool-cmake",
+            "tool-ninja",
+            "tool-scons",
+            "tool-esp-rom-elfs"
+        ]
+        if "espidf" in frameworks:
+            for package in COMMON_IDF_PACKAGES:
+                self.packages[package]["optional"] = False
+
         # Enable check tools only when "check_tool" is active
         for p in self.packages:
             if p in ("tool-cppcheck", "tool-clangtidy", "tool-pvs-studio"):
@@ -117,8 +164,6 @@ class Espressif32Platform(PlatformBase):
                 self.packages["tool-mklittlefs"]["optional"] = False
             elif filesystem == "fatfs":
                 self.packages["tool-mkfatfs"]["optional"] = False
-        if os.path.isdir("ulp"):
-            self.packages["toolchain-esp32ulp"]["optional"] = False
 
         if "downloadfs" in targets:
             filesystem = variables.get("board_build.filesystem", "littlefs")
@@ -131,34 +176,6 @@ class Espressif32Platform(PlatformBase):
             self.packages["tool-dfuutil-arduino"]["optional"] = False
         else:
             del self.packages["tool-dfuutil-arduino"]
-
-        # install GDB and OpenOCD when debug mode or upload_protocol is set
-        if (variables.get("build_type") or "debug" in "".join(targets)) or variables.get("upload_protocol"):
-            for gdb_package in ("tool-xtensa-esp-elf-gdb", "tool-riscv32-esp-elf-gdb"):
-                self.packages[gdb_package]["optional"] = False
-            install_tool("tool-openocd-esp32")
-
-        # Common packages for IDF and mixed Arduino+IDF projects
-        if "espidf" in frameworks:
-            self.packages["toolchain-esp32ulp"]["optional"] = False
-            for p in self.packages:
-                if p in (
-                    "tool-cmake",
-                    "tool-ninja",
-                    "tool-scons",
-                 ):
-                    self.packages[p]["optional"] = False
-
-        if mcu in ("esp32", "esp32s2", "esp32s3"):
-            self.packages["toolchain-xtensa-esp-elf"]["optional"] = False
-        else:
-            self.packages.pop("toolchain-xtensa-esp-elf", None)
-
-        if mcu in ("esp32s2", "esp32s3", "esp32c2", "esp32c3", "esp32c5", "esp32c6", "esp32h2", "esp32p4"):
-            if mcu in ("esp32c2", "esp32c3", "esp32c5", "esp32c6", "esp32h2", "esp32p4"):
-                self.packages.pop("toolchain-esp32ulp", None)
-            # RISC-V based toolchain for ESP32C3, ESP32C6 ESP32S2, ESP32S3 ULP
-            self.packages["toolchain-riscv32-esp"]["optional"] = False
 
         return super().configure_default_packages(variables, targets)
 
