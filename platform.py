@@ -153,10 +153,17 @@ class Espressif32Platform(PlatformBase):
             for package in COMMON_IDF_PACKAGES:
                 self.packages[package]["optional"] = False
 
-        # Enable check tools only when "check_tool" is active
-        for p in self.packages:
-            if p in ("tool-cppcheck", "tool-clangtidy", "tool-pvs-studio"):
-                self.packages[p]["optional"] = False if str(variables.get("check_tool")).strip("['']") in p else True
+        CHECK_PACKAGES = [
+            "tool-cppcheck",
+            "tool-clangtidy",
+            "tool-pvs-studio"
+        ]
+        # Install check tool listed in pio entry "check_tool"
+        if variables.get("check_tool") is not None:
+            for package in CHECK_PACKAGES:
+                for check_tool in variables.get("check_tool", ""):
+                    if check_tool in package:
+                        self.packages[package]["optional"] = False
 
         if "buildfs" in targets:
             filesystem = variables.get("board_build.filesystem", "littlefs")
