@@ -141,7 +141,7 @@
       "type": "tool",
       "optional": true,
       "owner": "platformio",
-      "version": "^7.18.59866"
+      "version": "^7.18.0"
     },
     "tool-cmake": {
       "type": "tool",
