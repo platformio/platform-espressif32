@@ -2062,6 +2062,15 @@ extra_elf2bin_flags = "--elf-sha256-offset 0xb0"
 # For chips that support configurable MMU page size feature
 # If page size is configured to values other than the default "64KB" in menuconfig,
 mmu_page_size = "64KB"
+if sdk_config.get("MMU_PAGE_SIZE_8KB", False):
+    mmu_page_size = "8KB"
+elif sdk_config.get("MMU_PAGE_SIZE_16KB", False):
+    mmu_page_size = "16KB"
+elif sdk_config.get("MMU_PAGE_SIZE_32KB", False):
+    mmu_page_size = "32KB"
+else:
+    mmu_page_size = "64KB"
+
 if sdk_config.get("SOC_MMU_PAGE_SIZE_CONFIGURABLE", False):
     if board_flash_size == "2MB":
         mmu_page_size = "32KB"
