@@ -34,54 +34,54 @@
       "optional": true,
       "owner": "tasmota",
       "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/3520/framework-arduinoespressif32-all-release_v5.3-599e3a22.zip"
-    },
-     "framework-arduino-solo1": {
-      "type": "framework",
-      "optional": true,
-      "owner": "tasmota",
-      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/3521/framework-arduinoespressif32-solo1-release_v5.3-599e3a22.zip"
-    },
-     "framework-arduino-ITEAD": {
-      "type": "framework",
-      "optional": true,
-      "owner": "tasmota",
-      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/3522/framework-arduinoespressif32-ITEAD-esp32-release_v5.3-599e3a22.zip"
-    },
-    "framework-espidf": {
-      "type": "framework",
-      "optional": true,
-      "owner": "tasmota",
-      "version": "https://github.com/tasmota/esp-idf/releases/download/v5.3.3.250415/esp-idf-v5.3.3.zip"
+  },
+   "framework-arduino-solo1": {
+    "type": "framework",
+    "optional": true,
+    "owner": "tasmota",
+    "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/3521/framework-arduinoespressif32-solo1-release_v5.3-599e3a22.zip"
+  },
+   "framework-arduino-ITEAD": {
+     "type": "framework",
+     "optional": true,
+     "owner": "tasmota",
+     "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/3522/framework-arduinoespressif32-ITEAD-esp32-release_v5.3-599e3a22.zip"
+   },
+   "framework-espidf": {
+     "type": "framework",
+     "optional": true,
+     "owner": "tasmota",
+     "version": "https://github.com/tasmota/esp-idf/releases/download/v5.3.3.250415/esp-idf-v5.3.3.zip"
     },
     "toolchain-xtensa-esp-elf": {
       "type": "toolchain",
       "optional": true,
-      "owner": "platformio",
-      "version": "13.2.0+20240530"
+      "owner": "pioarduino",
+      "version": "https://github.com/pioarduino/registry/releases/download/0.0.1/xtensa-esp-elf-13.2.0_20240530.zip"
     },
     "toolchain-riscv32-esp": {
       "type": "toolchain",
       "optional": true,
-      "owner": "platformio",
-      "version": "13.2.0+20240530"
+      "owner": "pioarduino",
+      "version": "https://github.com/pioarduino/registry/releases/download/0.0.1/riscv32-esp-elf-13.2.0_20240530.zip"
     },
     "toolchain-esp32ulp": {
       "type": "toolchain",
       "optional": true,
-      "owner": "platformio",
-      "version": "~1.23800.0"
+      "owner": "pioarduino",
+      "version": "https://github.com/pioarduino/registry/releases/download/0.0.1/esp32ulp-elf-2.38_20240113.zip"
     },
-      "tool-xtensa-esp-elf-gdb": {
+    "tool-xtensa-esp-elf-gdb": {
       "type": "debugger",
       "optional": true,
-      "owner": "platformio",
-      "version": "14.2.0+20240403"
+      "owner": "pioarduino",
+      "version": "https://github.com/pioarduino/registry/releases/download/0.0.1/xtensa-esp-gdb-v16.2_20250324.zip"
     },
     "tool-riscv32-esp-elf-gdb": {
       "type": "debugger",
       "optional": true,
-      "owner": "platformio",
-      "version": "14.2.0+20240403"
+      "owner": "pioarduino",
+      "version": "https://github.com/pioarduino/registry/releases/download/0.0.1/riscv32-esp-gdb-v16.2_20250324.zip"
     },
     "tool-esptoolpy": {
       "type": "uploader",
@@ -98,8 +98,8 @@
     "tool-dfuutil-arduino": {
       "type": "uploader",
       "optional": true,
-      "owner": "platformio",
-      "version": "~1.11.0"
+      "owner": "pioarduino",
+      "version": "https://github.com/pioarduino/registry/releases/download/0.0.1/dfuutil-arduino-v1.11.0.zip"
     },
     "tool-openocd-esp32": {
       "type": "debugger",
@@ -107,59 +107,59 @@
       "owner": "pioarduino",
       "version": "https://github.com/pioarduino/registry/releases/download/0.0.1/openocd-v0.12.0-esp32-20250226.zip"
     },
-    "tool-esp-rom-elfs": {
-      "type": "tool",
-      "optional": true,
-      "owner": "platformio",
-      "version": "0.0.1+20241011"
-    },
     "tool-mklittlefs": {
       "type": "uploader",
       "optional": true,
-      "owner": "tasmota",
-      "version": "^3.2.0"
+      "owner": "pioarduino",
+      "version": "https://github.com/pioarduino/registry/releases/download/0.0.1/mklittlefs-3.2.0.zip"
     },
     "tool-mkfatfs": {
       "type": "uploader",
       "optional": true,
-      "owner": "platformio",
-      "version": "~2.0.0"
+      "owner": "pioarduino",
+      "version": "https://github.com/pioarduino/registry/releases/download/0.0.1/mkfatfs-v2.0.1.zip"
     },
     "tool-cppcheck": {
       "type": "tool",
       "optional": true,
-      "owner": "platformio",
-      "version": "~1.21100"
+      "owner": "pioarduino",
+      "version": "https://github.com/pioarduino/registry/releases/download/0.0.1/cppcheck-v2.11.0-230717.zip"
     },
     "tool-clangtidy": {
       "type": "tool",
       "optional": true,
-      "owner": "platformio",
-      "version": "^1.190100.0"
+      "owner": "pioarduino",
+      "version": "https://github.com/pioarduino/registry/releases/download/0.0.1/clangtidy-v18.1.1.zip"
     },
     "tool-pvs-studio": {
       "type": "tool",
       "optional": true,
-      "owner": "platformio",
-      "version": "^7.18.0"
+      "owner": "pioarduino",
+      "version": "https://github.com/pioarduino/registry/releases/download/0.0.1/pvs-studio-v7.18.zip"
     },
     "tool-cmake": {
       "type": "tool",
       "optional": true,
-      "owner": "platformio",
-      "version": "~3.30.2"
+      "owner": "pioarduino",
+      "version": "https://github.com/pioarduino/registry/releases/download/0.0.1/cmake-3.30.2.zip"
+    },
+    "tool-esp-rom-elfs": {
+      "type": "tool",
+      "optional": true,
+      "owner": "pioarduino",
+      "version": "https://github.com/pioarduino/registry/releases/download/0.0.1/esp-rom-elfs-20241011.zip"
     },
     "tool-ninja": {
       "type": "tool",
       "optional": true,
-      "owner": "platformio",
-      "version": "^1.7.0"
+      "owner": "pioarduino",
+      "version": "https://github.com/pioarduino/registry/releases/download/0.0.1/ninja-1.10.2.zip"
     },
     "tool-scons": {
       "type": "tool",
       "optional": true,
-      "owner": "platformio",
-      "version": "~4.40801.0"
+      "owner": "pioarduino",
+      "version": "https://github.com/pioarduino/registry/releases/download/0.0.1/scons-4.8.1.zip"
     }
   }
 }
