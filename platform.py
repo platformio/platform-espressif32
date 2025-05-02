@@ -89,6 +89,7 @@ class Espressif32Platform(PlatformBase):
             if tl_flag and pio_flag and not json_flag:
                 self.packages[TOOL]["version"] = TOOL_PATH
                 self.packages[TOOL]["optional"] = False
+            
             return
 
         # Installer only needed for setup, deactivate when installed
@@ -108,7 +109,7 @@ class Espressif32Platform(PlatformBase):
             self.packages["framework-espidf"]["optional"] = False
             self.packages["framework-arduinoespressif32"]["optional"] = False
 
-        mcu_toolchain_mapping = {
+        MCU_TOOLCHAIN_MAPPING = {
             # Xtensa based and FSM toolchain
             ("esp32", "esp32s2", "esp32s3"): {
                 "toolchains": ["toolchain-xtensa-esp-elf"],
@@ -122,23 +123,22 @@ class Espressif32Platform(PlatformBase):
                 "debug_tools": ["tool-riscv32-esp-elf-gdb"]
             }
         }
-
         # Iterate through MCU mappings
-        for supported_mcus, toolchain_data in mcu_toolchain_mapping.items():
+        for supported_mcus, toolchain_data in MCU_TOOLCHAIN_MAPPING.items():
             if mcu in supported_mcus:
                 # Set mandatory toolchains
                 for toolchain in toolchain_data["toolchains"]:
-                    self.packages[toolchain]["optional"] = False
+                    install_tool(toolchain)
 
                 # Set ULP toolchain if applicable
                 ulp_toolchain = toolchain_data.get("ulp_toolchain")
                 if ulp_toolchain and os.path.isdir("ulp"):
                     for toolchain in ulp_toolchain:
-                        self.packages[toolchain]["optional"] = False
+                        install_tool(toolchain)
                 # Install debug tools if conditions match
                 if (variables.get("build_type") or "debug" in "".join(targets)) or variables.get("upload_protocol"):
                     for debug_tool in toolchain_data["debug_tools"]:
-                        self.packages[debug_tool]["optional"] = False
+                        install_tool(debug_tool)
                     install_tool("tool-openocd-esp32")
                 break  # Exit loop once MCU is matched
 
@@ -151,7 +151,7 @@ class Espressif32Platform(PlatformBase):
         ]
         if "espidf" in frameworks:
             for package in COMMON_IDF_PACKAGES:
-                self.packages[package]["optional"] = False
+                install_tool(package)
 
         CHECK_PACKAGES = [
             "tool-cppcheck",
@@ -163,26 +163,26 @@ class Espressif32Platform(PlatformBase):
             for package in CHECK_PACKAGES:
                 for check_tool in variables.get("check_tool", ""):
                     if check_tool in package:
-                        self.packages[package]["optional"] = False
+                        install_tool(package)
 
         if "buildfs" in targets:
             filesystem = variables.get("board_build.filesystem", "littlefs")
             if filesystem == "littlefs":
-                self.packages["tool-mklittlefs"]["optional"] = False
+                install_tool("tool-mklittlefs")
             elif filesystem == "fatfs":
-                self.packages["tool-mkfatfs"]["optional"] = False
+                install_tool("tool-mkfatfs")
 
         if "downloadfs" in targets:
             filesystem = variables.get("board_build.filesystem", "littlefs")
             if filesystem == "littlefs":
                 # Use Tasmota mklittlefs v4.0.0 to unpack, older version is incompatible
-                self.packages["tool-mklittlefs"]["version"] = "~4.0.0"
+                self.packages["tool-mklittlefs"]["version"] = "https://github.com/pioarduino/registry/releases/download/0.0.1/mklittlefs-4.0.0.zip"
+                self.packages["tool-mklittlefs"]["optional"] = False
+                install_tool("tool-mklittlefs")
 
         # Currently only Arduino Nano ESP32 uses the dfuutil tool as uploader
         if variables.get("board") == "arduino_nano_esp32":
-            self.packages["tool-dfuutil-arduino"]["optional"] = False
-        else:
-            del self.packages["tool-dfuutil-arduino"]
+            install_tool("tool-dfuutil-arduino")
 
         return super().configure_default_packages(variables, targets)
 
