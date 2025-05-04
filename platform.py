@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+import json
 import subprocess
 import sys
 import shutil
@@ -47,7 +48,7 @@ class Espressif32Platform(PlatformBase):
         core_variant_build = (''.join(variables.get("build_flags", []))).replace("-D", " ")
         frameworks = variables.get("pioframework", [])
 
-        def install_tool(TOOL):
+        def install_tool(TOOL, retry_count=0):
             self.packages[TOOL]["optional"] = False
             TOOL_PATH = os.path.join(ProjectConfig.get_instance().get("platformio", "packages_dir"), TOOL)
             TOOL_PACKAGE_PATH = os.path.join(TOOL_PATH, "package.json")
@@ -83,13 +84,37 @@ class Espressif32Platform(PlatformBase):
                         try:
                             shutil.rmtree(TOOL_PATH)
                         except Exception as e:
-                            print(f"Error while removing the tool folder: {e}")                   
+                            print(f"Error while removing the tool folder: {e}")
                     pm.install(tl_path)
             # tool is already installed, just activate it
             if tl_flag and pio_flag and not json_flag:
-                self.packages[TOOL]["version"] = TOOL_PATH
-                self.packages[TOOL]["optional"] = False
-            
+                with open(TOOL_PACKAGE_PATH, "r") as file:
+                    package_data = json.load(file)
+                # check installed tool version against listed in platforms.json
+                if "package-version" in self.packages[TOOL] \
+                   and "version" in package_data \
+                   and self.packages[TOOL]["package-version"] == package_data["version"]:
+                    self.packages[TOOL]["version"] = TOOL_PATH
+                    self.packages[TOOL]["optional"] = False
+                elif "package-version" not in self.packages[TOOL]:
+                    # No version check needed, just use the installed tool
+                    self.packages[TOOL]["version"] = TOOL_PATH
+                    self.packages[TOOL]["optional"] = False
+                elif "version" not in package_data:
+                    print(f"Warning: Cannot determine installed version for {TOOL}. Reinstalling...")
+                else:  # Installed version does not match required version, deinstall existing and install needed
+                    self.packages.pop(TOOL, None)
+                    if os.path.exists(TOOL_PATH) and os.path.isdir(TOOL_PATH):
+                        try:
+                            shutil.rmtree(TOOL_PATH)
+                        except Exception as e:
+                            print(f"Error while removing the tool folder: {e}")
+                    if retry_count >= 3:  # Limit to 3 retries
+                        print(f"Failed to install {TOOL} after multiple attempts. Please check your network connection and try again manually.")
+                        return
+                    print(f"Wrong version for {TOOL}. Installing needed version...")
+                    install_tool(TOOL, retry_count + 1)
+
             return
 
         # Installer only needed for setup, deactivate when installed
@@ -129,7 +154,6 @@ class Espressif32Platform(PlatformBase):
                 # Set mandatory toolchains
                 for toolchain in toolchain_data["toolchains"]:
                     install_tool(toolchain)
-
                 # Set ULP toolchain if applicable
                 ulp_toolchain = toolchain_data.get("ulp_toolchain")
                 if ulp_toolchain and os.path.isdir("ulp"):
@@ -168,6 +192,13 @@ class Espressif32Platform(PlatformBase):
         if "buildfs" in targets:
             filesystem = variables.get("board_build.filesystem", "littlefs")
             if filesystem == "littlefs":
+                # ensure use of mklittlefs 3.2.0
+                piopm_path = os.path.join(ProjectConfig.get_instance().get("platformio", "packages_dir"), "tool-mklittlefs", ".piopm")
+                if os.path.exists(piopm_path):
+                    with open(piopm_path, "r") as file:
+                        package_data = json.load(file)
+                    if package_data['version'] == "4.0.0":
+                        os.remove(piopm_path)
                 install_tool("tool-mklittlefs")
             elif filesystem == "fatfs":
                 install_tool("tool-mkfatfs")
@@ -176,9 +207,25 @@ class Espressif32Platform(PlatformBase):
             filesystem = variables.get("board_build.filesystem", "littlefs")
             if filesystem == "littlefs":
                 # Use Tasmota mklittlefs v4.0.0 to unpack, older version is incompatible
-                self.packages["tool-mklittlefs"]["version"] = "https://github.com/pioarduino/registry/releases/download/0.0.1/mklittlefs-4.0.0.zip"
-                self.packages["tool-mklittlefs"]["optional"] = False
-                install_tool("tool-mklittlefs")
+                # make sure mklittlefs 3.2.0 is installed
+                mklittlefs_dir = os.path.join(ProjectConfig.get_instance().get("platformio", "packages_dir"), "tool-mklittlefs")
+                if not os.path.exists(mklittlefs_dir):
+                    install_tool("tool-mklittlefs")
+                if os.path.exists(os.path.join(mklittlefs_dir, "tools.json")):
+                    install_tool("tool-mklittlefs")
+                mklittlefs400_dir = os.path.join(ProjectConfig.get_instance().get("platformio", "packages_dir"), "tool-mklittlefs-4.0.0")
+                if not os.path.exists(mklittlefs400_dir):
+                    # install mklittlefs 4.0.0
+                    install_tool("tool-mklittlefs-4.0.0")
+                if os.path.exists(os.path.join(mklittlefs400_dir, "tools.json")):
+                    install_tool("tool-mklittlefs-4.0.0")
+                # use mklittlefs 4.0.0 instead of 3.2.0 by copying over
+                if os.path.exists(mklittlefs400_dir):
+                    shutil.copyfile(
+                        os.path.join(mklittlefs_dir, "package.json"),
+                        os.path.join(mklittlefs400_dir, "package.json"),
+                    )
+                    shutil.copytree(mklittlefs400_dir, mklittlefs_dir, dirs_exist_ok=True)
 
         # Currently only Arduino Nano ESP32 uses the dfuutil tool as uploader
         if variables.get("board") == "arduino_nano_esp32":
