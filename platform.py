@@ -79,7 +79,6 @@ class Espressif32Platform(PlatformBase):
                         shutil.copyfile(TOOL_PACKAGE_PATH, join(TOOLS_PATH_DEFAULT, "tools", TOOL, "package.json"))
                     except FileNotFoundError as e:
                         sys.stderr.write(f"Error copying tool package file: {e}\n")
-                    self.packages.pop(TOOL, None)
                     if os.path.exists(TOOL_PATH) and os.path.isdir(TOOL_PATH):
                         try:
                             shutil.rmtree(TOOL_PATH)
@@ -103,7 +102,6 @@ class Espressif32Platform(PlatformBase):
                 elif "version" not in package_data:
                     print(f"Warning: Cannot determine installed version for {TOOL}. Reinstalling...")
                 else:  # Installed version does not match required version, deinstall existing and install needed
-                    self.packages.pop(TOOL, None)
                     if os.path.exists(TOOL_PATH) and os.path.isdir(TOOL_PATH):
                         try:
                             shutil.rmtree(TOOL_PATH)
