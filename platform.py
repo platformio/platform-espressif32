@@ -187,7 +187,7 @@ class Espressif32Platform(PlatformBase):
                     if check_tool in package:
                         install_tool(package)
 
-        if "buildfs" in targets:
+        if "buildfs" or "uploadfs" in targets:
             filesystem = variables.get("board_build.filesystem", "littlefs")
             if filesystem == "littlefs":
                 # ensure use of mklittlefs 3.2.0
@@ -195,7 +195,7 @@ class Espressif32Platform(PlatformBase):
                 if os.path.exists(piopm_path):
                     with open(piopm_path, "r") as file:
                         package_data = json.load(file)
-                    if package_data['version'] == "4.0.0":
+                    if package_data['version'] != "3.2.0":
                         os.remove(piopm_path)
                 install_tool("tool-mklittlefs")
             elif filesystem == "fatfs":
@@ -224,10 +224,15 @@ class Espressif32Platform(PlatformBase):
                         os.path.join(mklittlefs400_dir, "package.json"),
                     )
                     shutil.copytree(mklittlefs400_dir, mklittlefs_dir, dirs_exist_ok=True)
+                    del self.packages["tool-mkfatfs"]
+            elif filesystem == "fatfs":
+                install_tool("tool-mkfatfs")
 
         # Currently only Arduino Nano ESP32 uses the dfuutil tool as uploader
         if variables.get("board") == "arduino_nano_esp32":
             install_tool("tool-dfuutil-arduino")
+        else:
+            del self.packages["tool-dfuutil-arduino"]
 
         return super().configure_default_packages(variables, targets)
 
