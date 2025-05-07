@@ -18,7 +18,7 @@
     "type": "git",
     "url": "https://github.com/tasmota/platform-espressif32.git"
   },
-  "version": "2025.04.30",
+  "version": "2025.05.30",
   "frameworks": {
     "arduino": {
       "script": "builder/frameworks/arduino.py"
@@ -91,7 +91,7 @@
     "tool-esptoolpy": {
       "type": "uploader",
       "optional": false,
-      "owner": "tasmota",
+      "owner": "Jason2866",
       "version": "https://github.com/Jason2866/esptool/releases/download/v4.8.10/esptool.zip"
     },
     "tl-install": {
@@ -99,13 +99,6 @@
       "optional": false,
       "owner": "pioarduino",
       "version": "https://github.com/pioarduino/esp_install/releases/download/v5.0.0/esp_install-v5.0.0.zip"
-    },
-    "tool-dfuutil-arduino": {
-      "type": "uploader",
-      "optional": true,
-      "owner": "pioarduino",
-      "package-version": "1.11.0",
-      "version": "https://github.com/pioarduino/registry/releases/download/0.0.1/dfuutil-arduino-v1.11.0.zip"
     },
     "tool-openocd-esp32": {
       "type": "debugger",

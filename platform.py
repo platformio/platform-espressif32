@@ -228,12 +228,6 @@ class Espressif32Platform(PlatformBase):
             elif filesystem == "fatfs":
                 install_tool("tool-mkfatfs")
 
-        # Currently only Arduino Nano ESP32 uses the dfuutil tool as uploader
-        if variables.get("board") == "arduino_nano_esp32":
-            install_tool("tool-dfuutil-arduino")
-        else:
-            del self.packages["tool-dfuutil-arduino"]
-
         return super().configure_default_packages(variables, targets)
 
     def get_boards(self, id_=None):
@@ -344,9 +338,6 @@ class Espressif32Platform(PlatformBase):
                 "default": link == debug.get("default_tool"),
             }
 
-            # Avoid erasing Arduino Nano bootloader by preloading app binary
-            if board.id == "arduino_nano_esp32":
-                debug["tools"][link]["load_cmds"] = "preload"
         board.manifest["debug"] = debug
         return board
 
