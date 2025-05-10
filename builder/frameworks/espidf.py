@@ -26,7 +26,6 @@ import subprocess
 import sys
 import shutil
 import os
-import pkg_resources
 
 import click
 import semantic_version
@@ -1135,19 +1134,6 @@ def install_python_deps():
                 "Installing windows-curses package",
             )
         )
-
-        # A special "esp-windows-curses" python package is required on Windows
-        # for Menuconfig on IDF <5
-        if not IDF5 and "esp-windows-curses" not in {
-            pkg.key for pkg in pkg_resources.working_set
-        }:
-            env.Execute(
-                env.VerboseAction(
-                    '"%s" -m pip install "file://%s/tools/kconfig_new/esp-windows-curses"'
-                    % (python_exe_path, FRAMEWORK_DIR),
-                    "Installing windows-curses package",
-                )
-            )
 
 def get_idf_venv_dir():
     # The name of the IDF venv contains the IDF version to avoid possible conflicts and
