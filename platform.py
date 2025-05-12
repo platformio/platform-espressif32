@@ -43,9 +43,6 @@ class Espressif32Platform(PlatformBase):
         board_config = self.board_config(variables.get("board"))
         mcu = variables.get("board_build.mcu", board_config.get("build.mcu", "esp32"))
         board_sdkconfig = variables.get("board_espidf.custom_sdkconfig", board_config.get("espidf.custom_sdkconfig", ""))
-        core_variant_board = ''.join(variables.get("board_build.extra_flags", board_config.get("build.extra_flags", "")))
-        core_variant_board = core_variant_board.replace("-D", " ")
-        core_variant_build = (''.join(variables.get("build_flags", []))).replace("-D", " ")
         frameworks = variables.get("pioframework", [])
 
         def install_tool(TOOL, retry_count=0):
@@ -120,12 +117,7 @@ class Espressif32Platform(PlatformBase):
             self.packages["tl-install"]["optional"] = True
 
         if "arduino" in frameworks and variables.get("custom_sdkconfig") is None and len(str(board_sdkconfig)) < 3:
-            if "CORE32SOLO1" in core_variant_board or "FRAMEWORK_ARDUINO_SOLO1" in core_variant_build:
-                self.packages["framework-arduino-solo1"]["optional"] = False
-            elif "CORE32ITEAD" in core_variant_board or "FRAMEWORK_ARDUINO_ITEAD" in core_variant_build:
-                self.packages["framework-arduino-ITEAD"]["optional"] = False
-            else:
-                self.packages["framework-arduinoespressif32"]["optional"] = False
+            self.packages["framework-arduinoespressif32"]["optional"] = False
 
         if variables.get("custom_sdkconfig") is not None or len(str(board_sdkconfig)) > 3:
             frameworks.append("espidf")

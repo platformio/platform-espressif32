@@ -33,19 +33,7 @@
       "type": "framework",
       "optional": true,
       "owner": "tasmota",
-      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/3602/framework-arduinoespressif32-all-release_v5.3-138e9bb2.zip"
-    },
-    "framework-arduino-solo1": {
-      "type": "framework",
-      "optional": true,
-      "owner": "tasmota",
-      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/3558/framework-arduinoespressif32-solo1-release_v5.3-a9e96157.zip"
-    },
-    "framework-arduino-ITEAD": {
-      "type": "framework",
-      "optional": true,
-      "owner": "tasmota",
-      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/3559/framework-arduinoespressif32-ITEAD-esp32-release_v5.3-a9e96157.zip"
+      "version": "https://github.com/Jason2866/esp32-arduino-lib-builder/releases/download/3610/framework-arduinoespressif32-all-release_v5.3-58fe5163.zip"
     },
     "framework-espidf": {
       "type": "framework",
@@ -91,8 +79,8 @@
     "tool-esptoolpy": {
       "type": "uploader",
       "optional": false,
-      "owner": "Jason2866",
-      "version": "https://github.com/Jason2866/esptool/releases/download/v4.8.10/esptool.zip"
+      "owner": "tasmota",
+      "version": "https://github.com/tasmota/esptool/releases/download/v4.8.10/esptool.zip"
     },
     "tl-install": {
       "type": "tool",
