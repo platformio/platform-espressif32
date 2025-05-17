@@ -37,7 +37,8 @@ def BeforeUpload(target, source, env):
     if "BOARD" in env:
         upload_options = env.BoardConfig().get("upload", {})
 
-    env.AutodetectUploadPort()
+    if not env.subst("$UPLOAD_PORT"):
+        env.AutodetectUploadPort()
 
     before_ports = get_serial_ports()
     if upload_options.get("use_1200bps_touch", False):
