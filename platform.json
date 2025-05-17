@@ -92,8 +92,8 @@
       "type": "debugger",
       "optional": true,
       "owner": "pioarduino",
-      "package-version": "2.1200.20250226",
-      "version": "https://github.com/pioarduino/registry/releases/download/0.0.1/openocd-v0.12.0-esp32-20250226.zip"
+      "package-version": "2.1200.20250422",
+      "version": "https://github.com/pioarduino/registry/releases/download/0.0.1/openocd-v0.12.0-esp32-20250422.zip"
     },
     "tool-mklittlefs": {
       "type": "uploader",
