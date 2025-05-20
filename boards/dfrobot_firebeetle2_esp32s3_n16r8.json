@@ -2,17 +2,15 @@
   "build": {
     "arduino": {
       "ldscript": "esp32s3_out.ld",
-      "partitions": "app3M_fat9M_16MB.csv",
-      "memory_type": "qio_opi"
+      "partitions": "default_16MB.csv"
     },
     "core": "esp32",
     "extra_flags": [
-      "-DARDUINO_DFROBOT_ROMEO_ESP32S3",
+      "-DARDUINO_ESP32S3_DEV",
       "-DBOARD_HAS_PSRAM",
       "-DARDUINO_USB_MODE=1",
       "-DARDUINO_RUNNING_CORE=1",
-      "-DARDUINO_EVENT_RUNNING_CORE=1",
-      "-DARDUINO_USB_CDC_ON_BOOT=1"
+      "-DARDUINO_EVENT_RUNNING_CORE=1"
     ],
     "f_cpu": "240000000L",
     "f_flash": "160000000L",
@@ -20,11 +18,15 @@
     "hwids": [
       [
         "0x303A",
+        "0x83CF"
+      ],
+      [
+        "0x303A",
         "0x1001"
       ]
     ],
     "mcu": "esp32s3",
-    "variant": "dfrobot_romeo_esp32s3"
+    "variant": "dfrobot_firebeetle2_esp32s3"
   },
   "connectivity": [
     "bluetooth",
@@ -37,7 +39,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "DFRobot Romeo ESP32-S3",
+  "name": "DFRobot Firebeetle 2 ESP32-S3(N16R8)",
   "upload": {
     "flash_size": "16MB",
     "maximum_ram_size": 327680,
@@ -45,6 +47,6 @@
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://www.dfrobot.com/product-2743.html",
+  "url": "https://www.dfrobot.com/product-2676.html",
   "vendor": "DFRobot"
 }
