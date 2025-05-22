@@ -100,7 +100,7 @@ def install_standard_python_deps():
         env.Execute(
             env.VerboseAction(
                 (
-                    '"$PYTHONEXE" -m pip install -U '
+                    '"$PYTHONEXE" -m pip install -U -q -q -q '
                     + " ".join(
                         [
                             '"%s%s"' % (p, deps[p])
@@ -1555,7 +1555,7 @@ def install_python_deps():
         env.Execute(
             env.VerboseAction(
                 (
-                    '"%s" -m pip install -U ' % python_exe_path
+                    '"%s" -m pip install -U -q -q -q ' % python_exe_path
                     + " ".join(['"%s%s"' % (p, deps[p]) for p in packages_to_install])
                 ),
                 "Installing ESP-IDF's Python dependencies",
@@ -1565,7 +1565,7 @@ def install_python_deps():
     if IS_WINDOWS and "windows-curses" not in installed_packages:
         env.Execute(
             env.VerboseAction(
-                '"%s" -m pip install windows-curses' % python_exe_path,
+                '"%s" -m pip install -q -q -q windows-curses' % python_exe_path,
                 "Installing windows-curses package",
             )
         )
