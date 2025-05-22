@@ -28,6 +28,7 @@ from platformio.project.helpers import get_project_dir
 env = DefaultEnvironment()
 platform = env.PioPlatform()
 projectconfig = env.GetProjectConfig()
+IS_WINDOWS = sys.platform.startswith("win")
 
 #
 # Helpers
