@@ -355,12 +355,13 @@ def firmware_metrics(target, source, env):
     if os.path.isfile(map_file):
         try:
             import subprocess
-            env = os.environ.copy()
-            env["PYTHONIOENCODING"] = "utf-8"
+            python_exe = env.subst("$PYTHONEXE")
+            run_env = os.environ.copy()
+            run_env["PYTHONIOENCODING"] = "utf-8"
             # Show output of esp_idf_size, but suppresses the command echo
             subprocess.run([
-                env.subst("$PYTHONEXE"), "-m", "esp_idf_size", "--ng", map_file
-            ], env=env, check=False)
+                python_exe, "-m", "esp_idf_size", "--ng", map_file
+            ], env=run_env, check=False)
         except Exception:
             print("Warning: Failed to run firmware metrics. Is esp-idf-size installed?")
             pass
