@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import re
 import sys
 from os.path import isfile, join
@@ -23,7 +24,6 @@ from SCons.Script import (
 from platformio.util import get_serial_ports
 from platformio.project.helpers import get_project_dir
 
-import os
 
 env = DefaultEnvironment()
 platform = env.PioPlatform()
@@ -380,9 +380,10 @@ if "nobuild" in COMMAND_LINE_TARGETS:
         target_firm = join("$BUILD_DIR", "${PROGNAME}.bin")
 else:
     target_elf = env.BuildProgram()
-    silent_action = env.Action(firmware_metrics)
-    silent_action.strfunction = lambda target, source, env: '' # hack to silence scons command output
-    env.AddPostAction(target_elf, silent_action)
+    if not IS_WINDOWS:
+        silent_action = env.Action(firmware_metrics)
+        silent_action.strfunction = lambda target, source, env: '' # hack to silence scons command output
+        env.AddPostAction(target_elf, silent_action)
     if set(["buildfs", "uploadfs", "uploadfsota"]) & set(COMMAND_LINE_TARGETS):
         target_firm = env.DataToBin(
             join("$BUILD_DIR", "${ESP32_FS_IMAGE_NAME}"), "$PROJECT_DATA_DIR"
