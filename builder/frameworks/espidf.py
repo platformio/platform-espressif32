@@ -593,6 +593,8 @@ def extract_defines(compile_group):
         define_string = define_string.strip()
         if "=" in define_string:
             define, value = define_string.split("=", maxsplit=1)
+            if define == "OPENTHREAD_BUILD_DATETIME":
+                return None
             if any(char in value for char in (' ', '<', '>')):
                 value = f'"{value}"'
             elif '"' in value and not value.startswith("\\"):
