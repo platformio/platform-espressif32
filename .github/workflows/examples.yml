@@ -51,6 +51,9 @@ jobs:
           git clone -b development --depth 1 https://github.com/arendst/Tasmota.git examples/tasmota
           cp examples/tasmota_platformio_override.ini examples/tasmota/platformio_override.ini
       - name: Build examples
+        env:
+          PYTHONIOENCODING: utf-8
+          PYTHONUTF8: '1'
         if: "matrix.example != 'examples/tasmota' || matrix.os != 'windows-latest'"
         run: |
           pio run -d ${{ matrix.example }}
