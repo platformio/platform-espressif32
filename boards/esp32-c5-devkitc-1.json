@@ -1,0 +1,37 @@
+{
+  "build": {
+    "arduino":{
+    },
+    "core": "esp32",
+    "f_cpu": "240000000L",
+    "f_flash": "80000000L",
+    "flash_mode": "qio",
+    "extra_flags": [
+        "-DBOARD_HAS_PSRAM",
+        "-DARDUINO_ESP32C3_DEV"
+    ],
+    "mcu": "esp32c5",
+    "variant": "esp32c5"
+  },
+  "connectivity": [
+    "wifi",
+    "bluetooth"
+  ],
+  "debug": {
+    "openocd_target": "esp32c5.cfg"
+  },
+  "frameworks": [
+    "arduino",
+    "espidf"
+  ],
+  "name": "Espressif ESP32-C3-DevKitC-1 v1.2 (ESP32-C5-WROOM-1-N8R4)",
+  "upload": {
+    "flash_size": "8MB",
+    "maximum_ram_size": 393216,
+    "maximum_size": 8388608,
+    "require_upload_port": true,
+    "speed": 460800
+  },
+  "url": "https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32c5/esp32-c5-devkitc-1/user_guide.html",
+  "vendor": "Espressif"
+}
