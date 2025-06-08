@@ -28,6 +28,7 @@ import shutil
 import os
 import re
 import platform as sys_platform
+from pathlib import Path
 
 import click
 import semantic_version
@@ -760,7 +761,12 @@ def compile_source_files(
 ):
     build_envs = prepare_build_envs(config, default_env, debug_allowed)
     objects = []
-    components_dir = fs.to_unix_path(os.path.join(FRAMEWORK_DIR, "components"))
+    # The source "path" will have had any symlinks resolved, so resolve any
+    # symlinks in components_dir in order for the .startswith() to work as
+    # expected below.
+    components_dir = str(
+        Path(fs.to_unix_path(os.path.join(FRAMEWORK_DIR, "components"))).resolve()
+    )
     for source in config.get("sources", []):
         if source["path"].endswith(".rule"):
             continue
