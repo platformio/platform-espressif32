@@ -7,7 +7,10 @@
     "mcu": "esp32h2"
   },
   "connectivity": [
-    "wifi"
+    "bluetooth",
+    "zigbee",
+    "thread",
+    "matter"
   ],
   "frameworks": [
     "espidf"
