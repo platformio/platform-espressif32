@@ -103,6 +103,7 @@ def install_python_deps():
         "wheel": ">=0.35.1",
         "rich-click": ">=1.8.6",
         "zopfli": ">=0.2.2",
+        "intelhex": ">=2.3.0",
         "esp-idf-size": ">=1.6.1"
     }
 
@@ -269,9 +270,4 @@ if flag_custom_sdkconfig == True and flag_any_custom_sdkconfig == False:
 if "arduino" in env.subst("$PIOFRAMEWORK") and "espidf" not in env.subst("$PIOFRAMEWORK") and env.subst("$ARDUINO_LIB_COMPILE_FLAG") in ("Inactive", "True"):
     if IS_WINDOWS:
         env.AddBuildMiddleware(shorthen_includes)
-    if os.path.exists(join(platform.get_package_dir(
-            "framework-arduinoespressif32"), "tools", "platformio-build.py")):
-        PIO_BUILD = "platformio-build.py"
-    else:
-        PIO_BUILD = "pioarduino-build.py"
-    SConscript(join(platform.get_package_dir("framework-arduinoespressif32"), "tools", PIO_BUILD))
+    SConscript(join(platform.get_package_dir("framework-arduinoespressif32"), "tools", "pioarduino-build.py"))
