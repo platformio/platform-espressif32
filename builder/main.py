@@ -14,6 +14,9 @@
 
 import os
 import re
+import sys
+import subprocess
+import shlex
 import locale
 from os.path import isfile, join
 
@@ -24,6 +27,106 @@ from SCons.Script import (
 from platformio.util import get_serial_ports
 from platformio.project.helpers import get_project_dir
 
+# Progress Bar Logger for esptool
+class EsptoolProgressLogger:
+    """Progress bar logger implementation for esptool output"""
+    
+    def __init__(self):
+        """Initialize the progress logger"""
+        pass
+    
+    def setup_esptool_logger(self):
+        """Configure the custom logger for esptool
+        
+        Returns:
+            bool: True if logger was successfully configured, False otherwise
+        """
+        try:
+            from esptool.logger import log, TemplateLogger
+            
+            class ProgressBarLogger(TemplateLogger):
+                """Custom logger class for esptool progress bar handling"""
+                
+                def __init__(self, parent_logger):
+                    """Initialize the progress bar logger
+                    
+                    Args:
+                        parent_logger: Parent logger instance
+                    """
+                    self.parent = parent_logger
+                
+                def print(self, message="", *args, **kwargs):
+                    """Print a message to stdout
+                    
+                    Args:
+                        message (str): Message to print
+                        *args: Additional arguments
+                        **kwargs: Additional keyword arguments
+                    """
+                    print(message, *args, **kwargs)
+                
+                def note(self, message):
+                    """Print a note message
+                    
+                    Args:
+                        message (str): Note message to print
+                    """
+                    print(f"\n📝 {message}")
+                
+                def warning(self, message):
+                    """Print a warning message
+                    
+                    Args:
+                        message (str): Warning message to print
+                    """
+                    print(f"\n⚠️  WARNING: {message}")
+                
+                def error(self, message):
+                    """Print an error message
+                    
+                    Args:
+                        message (str): Error message to print
+                    """
+                    print(f"\n❌ ERROR: {message}", file=sys.stderr)
+                
+                def stage(self, finish=False):
+                    """Handle stage transitions
+                    
+                    Args:
+                        finish (bool): Whether this is the final stage
+                    """
+                    pass
+                
+                def progress_bar(self, cur_iter, total_iters, prefix="", suffix="", bar_length=40):
+                    """Handle progress bar display
+                    
+                    Args:
+                        cur_iter (int): Current iteration
+                        total_iters (int): Total iterations
+                        prefix (str): Prefix text for progress bar
+                        suffix (str): Suffix text for progress bar
+                        bar_length (int): Length of the progress bar
+                    """
+                    pass
+                
+                def set_verbosity(self, verbosity):
+                    """Set the verbosity level
+                    
+                    Args:
+                        verbosity (int): Verbosity level
+                    """
+                    pass
+            
+            # Set the custom logger
+            log.set_logger(ProgressBarLogger(self))
+            return True
+            
+        except ImportError:
+            # esptool logger not available, use standard output
+            return False
+
+# Global logger instance
+progress_logger = EsptoolProgressLogger()
 
 env = DefaultEnvironment()
 platform = env.PioPlatform()
@@ -37,6 +140,13 @@ terminal_cp = locale.getpreferredencoding().lower()
 FRAMEWORK_DIR = platform.get_package_dir("framework-arduinoespressif32")
 
 def BeforeUpload(target, source, env):
+    """Prepare upload environment and detect upload port
+    
+    Args:
+        target: SCons target
+        source: SCons source
+        env: SCons environment
+    """
     upload_options = {}
     if "BOARD" in env:
         upload_options = env.BoardConfig().get("upload", {})
@@ -51,8 +161,93 @@ def BeforeUpload(target, source, env):
     if upload_options.get("wait_for_upload_port", False):
         env.Replace(UPLOAD_PORT=env.WaitForNewSerialPort(before_ports))
 
+def setup_esptool_progress_wrapper():
+    """Setup wrapper function for esptool commands with progress bar
+    
+    Returns:
+        function: Factory function for creating upload wrappers
+    """
+    
+    def create_upload_wrapper(original_cmd):
+        """Create a wrapper for upload commands with real-time progress display
+        
+        Args:
+            original_cmd (str): Original upload command
+            
+        Returns:
+            function: Wrapper action function
+        """
+        def wrapper_action(target, source, env):
+            """Execute upload command with progress bar handling
+            
+            Args:
+                target: SCons target
+                source: SCons source
+                env: SCons environment
+                
+            Returns:
+                int: Return code (0 for success, non-zero for failure)
+            """
+
+            cmd = env.subst(original_cmd, target=target, source=source)
+            args = shlex.split(cmd) if isinstance(cmd, str) else cmd
+            
+            try:
+                process = subprocess.Popen(
+                    args,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    universal_newlines=True,
+                    bufsize=1
+                )
+                
+                for line in process.stdout:
+                    line_stripped = line.strip()
+                    if not line_stripped:
+                        continue
+                    
+                    # Detect esptool progress bar lines
+                    if ("%" in line_stripped and 
+                        ("Writing" in line_stripped or "Reading" in line_stripped or 
+                         "Uploading" in line_stripped or "Erasing" in line_stripped)):
+                        # This is a progress bar - display it in one line
+                        print(f"{line_stripped}", end='\r')
+                        # Move cursor back up after progress bar output
+                        sys.stdout.write("\033[F")
+                    else:
+                        # Normal output - new line
+                        if line_stripped:
+                            print(f"{line_stripped}")
+                
+                process.wait()
+                
+                if process.returncode == 0:
+                    print("✅ Upload completed successfully!")
+                    return 0
+                else:
+                    print(f"❌ Upload failed (Exit Code: {process.returncode})")
+                    return process.returncode
+                    
+            except Exception as e:
+                print(f"❌ Upload error: {e}")
+                return 1
+        
+        return wrapper_action
+    
+    return create_upload_wrapper
+
+# Create progress wrapper
+upload_wrapper_factory = setup_esptool_progress_wrapper()
 
 def _get_board_memory_type(env):
+    """Get board memory type configuration
+    
+    Args:
+        env: SCons environment
+        
+    Returns:
+        str: Memory type configuration
+    """
     board_config = env.BoardConfig()
     default_type = "%s_%s" % (
         board_config.get("build.flash_mode", "dio"),
@@ -69,14 +264,38 @@ def _get_board_memory_type(env):
     )
 
 def _normalize_frequency(frequency):
+    """Normalize frequency value to MHz format
+    
+    Args:
+        frequency: Frequency value to normalize
+        
+    Returns:
+        str: Normalized frequency in MHz format
+    """
     frequency = str(frequency).replace("L", "")
     return str(int(int(frequency) / 1000000)) + "m"
 
 def _get_board_f_flash(env):
+    """Get board flash frequency
+    
+    Args:
+        env: SCons environment
+        
+    Returns:
+        str: Flash frequency
+    """
     frequency = env.subst("$BOARD_F_FLASH")
     return _normalize_frequency(frequency)
 
 def _get_board_f_image(env):
+    """Get board image frequency
+    
+    Args:
+        env: SCons environment
+        
+    Returns:
+        str: Image frequency
+    """
     board_config = env.BoardConfig()
     if "build.f_image" in board_config:
         return _normalize_frequency(board_config.get("build.f_image"))
@@ -84,6 +303,14 @@ def _get_board_f_image(env):
     return _get_board_f_flash(env)
 
 def _get_board_f_boot(env):
+    """Get board boot frequency
+    
+    Args:
+        env: SCons environment
+        
+    Returns:
+        str: Boot frequency
+    """
     board_config = env.BoardConfig()
     if "build.f_boot" in board_config:
         return _normalize_frequency(board_config.get("build.f_boot"))
@@ -91,6 +318,14 @@ def _get_board_f_boot(env):
     return _get_board_f_flash(env)
 
 def _get_board_flash_mode(env):
+    """Get board flash mode
+    
+    Args:
+        env: SCons environment
+        
+    Returns:
+        str: Flash mode
+    """
     if _get_board_memory_type(env) in (
         "opi_opi",
         "opi_qspi",
@@ -103,6 +338,14 @@ def _get_board_flash_mode(env):
     return mode
 
 def _get_board_boot_mode(env):
+    """Get board boot mode
+    
+    Args:
+        env: SCons environment
+        
+    Returns:
+        str: Boot mode
+    """
     memory_type = env.BoardConfig().get("build.arduino.memory_type", "")
     build_boot = env.BoardConfig().get("build.boot", "$BOARD_FLASH_MODE")
     if memory_type in ("opi_opi", "opi_qspi"):
@@ -110,6 +353,14 @@ def _get_board_boot_mode(env):
     return build_boot
 
 def _parse_size(value):
+    """Parse size value from string or integer
+    
+    Args:
+        value: Size value to parse
+        
+    Returns:
+        int or str: Parsed size value
+    """
     if isinstance(value, int):
         return value
     elif value.isdigit():
@@ -122,6 +373,14 @@ def _parse_size(value):
     return value
 
 def _parse_partitions(env):
+    """Parse partition table CSV file
+    
+    Args:
+        env: SCons environment
+        
+    Returns:
+        list: List of partition dictionaries
+    """
     partitions_csv = env.subst("$PARTITIONS_TABLE_CSV")
     if not isfile(partitions_csv):
         sys.stderr.write("Could not find the file %s with partitions "
@@ -131,7 +390,7 @@ def _parse_partitions(env):
 
     result = []
     next_offset = 0
-    app_offset = 0x10000 # default address for firmware
+    app_offset = 0x10000  # default address for firmware
     with open(partitions_csv) as fp:
         for line in fp.readlines():
             line = line.strip()
@@ -162,6 +421,11 @@ def _parse_partitions(env):
     return result
 
 def _update_max_upload_size(env):
+    """Update maximum upload size based on partition table
+    
+    Args:
+        env: SCons environment
+    """
     if not env.get("PARTITIONS_TABLE_CSV"):
         return
     sizes = {
@@ -190,6 +454,14 @@ def _update_max_upload_size(env):
             break
 
 def _to_unix_slashes(path):
+    """Convert Windows path separators to Unix style
+    
+    Args:
+        path (str): Path to convert
+        
+    Returns:
+        str: Path with Unix-style separators
+    """
     return path.replace("\\", "/")
 
 #
@@ -197,6 +469,11 @@ def _to_unix_slashes(path):
 #
 
 def fetch_fs_size(env):
+    """Fetch filesystem size from partition table
+    
+    Args:
+        env: SCons environment
+    """
     fs = None
     for p in _parse_partitions(env):
         if p["type"] == "data" and p["subtype"] in ("spiffs", "fat", "littlefs"):
@@ -220,6 +497,16 @@ def fetch_fs_size(env):
         env["FS_SIZE"] -= 4096
 
 def __fetch_fs_size(target, source, env):
+    """Wrapper function for fetch_fs_size
+    
+    Args:
+        target: SCons target
+        source: SCons source
+        env: SCons environment
+        
+    Returns:
+        tuple: (target, source)
+    """
     fetch_fs_size(env)
     return (target, source)
 
@@ -289,6 +576,11 @@ env.Replace(
 # Check if lib_archive is set in platformio.ini and set it to False
 # if not found. This makes weak defs in framework and libs possible.
 def check_lib_archive_exists():
+    """Check if lib_archive option exists in platformio.ini
+    
+    Returns:
+        bool: True if lib_archive option exists, False otherwise
+    """
     for section in projectconfig.sections():
         if "lib_archive" in projectconfig.options(section):
             #print(f"lib_archive in [{section}] found with value: {projectconfig.get(section, 'lib_archive')}")
@@ -348,6 +640,13 @@ if not env.get("PIOFRAMEWORK"):
 
 
 def firmware_metrics(target, source, env):
+    """Display firmware size metrics
+    
+    Args:
+        target: SCons target
+        source: SCons source
+        env: SCons environment
+    """
     if terminal_cp != "utf-8":
         print("Firmware metrics can not be shown. Set the terminal codepage to \"utf-8\"")
         return
@@ -386,7 +685,7 @@ if "nobuild" in COMMAND_LINE_TARGETS:
 else:
     target_elf = env.BuildProgram()
     silent_action = env.Action(firmware_metrics)
-    silent_action.strfunction = lambda target, source, env: '' # hack to silence scons command output
+    silent_action.strfunction = lambda target, source, env: ''  # hack to silence scons command output
     env.AddPostAction(target_elf, silent_action)
     if set(["buildfs", "uploadfs", "uploadfsota"]) & set(COMMAND_LINE_TARGETS):
         target_firm = env.DataToBin(
@@ -496,9 +795,10 @@ elif upload_protocol == "esptool":
             UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS $SOURCE',
         )
 
+    # Use progress bar wrapper for esptool upload actions
     upload_actions = [
         env.VerboseAction(BeforeUpload, "Looking for upload port..."),
-        env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")
+        env.VerboseAction(upload_wrapper_factory("$UPLOADCMD"), "🚀 Uploading $SOURCE")
     ]
 
 elif upload_protocol in debug_tools:
@@ -553,8 +853,7 @@ else:
 
 env.AddPlatformTarget("upload", target_firm, upload_actions, "Upload")
 env.AddPlatformTarget("uploadfs", target_firm, upload_actions, "Upload Filesystem Image")
-env.AddPlatformTarget(
-    "uploadfsota", target_firm, upload_actions, "Upload Filesystem Image OTA")
+env.AddPlatformTarget("uploadfsota", target_firm, upload_actions, "Upload Filesystem Image OTA")
 
 #
 # Target: Erase Flash and Upload
@@ -566,7 +865,7 @@ env.AddPlatformTarget(
     [
         env.VerboseAction(BeforeUpload, "Looking for upload port..."),
         env.VerboseAction("$ERASECMD", "Erasing..."),
-        env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")
+        env.VerboseAction(upload_wrapper_factory("$UPLOADCMD"), "🚀 Uploading $SOURCE")
     ],
     "Erase Flash and Upload",
 )
