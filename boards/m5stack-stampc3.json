@@ -2,38 +2,21 @@
   "build": {
     "arduino": {
       "ldscript": "esp32c3_out.ld",
-      "partitions": "default_4MB.csv"
+      "partitions": "min_spiffs.csv"
     },
     "core": "esp32",
-    "extra_flags": [
-      "-DARDUINO_M5STACK_STAMPC3",
-      "-DARDUINO_USB_MODE=1",
-      "-DARDUINO_RUNNING_CORE=0",
-      "-DARDUINO_EVENT_RUNNING_CORE=0"
-    ],
     "f_cpu": "160000000L",
     "f_flash": "80000000L",
     "flash_mode": "dio",
-    "hwids": [
-      [
-        "0x303A",
-        "0x1001"
-      ]
-    ],
+    "hwids": [["0x303A", "0x1001"]],
     "mcu": "esp32c3",
-    "variant": "m5stack_stamp_c3"
+    "variant": "esp32c3"
   },
-  "connectivity": [
-    "wifi",
-    "bluetooth"
-  ],
+  "connectivity": ["wifi", "bluetooth"],
   "debug": {
     "openocd_target": "esp32c3.cfg"
   },
-  "frameworks": [
-    "arduino",
-    "espidf"
-  ],
+  "frameworks": ["arduino", "espidf"],
   "name": "M5Stack StampC3",
   "upload": {
     "flash_size": "4MB",
