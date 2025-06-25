@@ -136,6 +136,7 @@ idf_variant = mcu.lower()
 flag_custom_sdkonfig = False
 flag_custom_component_add = False
 flag_custom_component_remove = False
+removed_components = set()
 
 IDF5 = (
     platform.get_package_version("framework-espidf")
@@ -166,6 +167,7 @@ if "arduino" in env.subst("$PIOFRAMEWORK"):
         os.rename(ARDUINO_FRAMEWORK_DIR, new_path)
         ARDUINO_FRAMEWORK_DIR = new_path
     assert ARDUINO_FRAMEWORK_DIR and os.path.isdir(ARDUINO_FRAMEWORK_DIR)
+    arduino_libs_mcu = join(ARDUINO_FRAMEWORK_DIR,"tools","esp32-arduino-libs",mcu)
 
 BUILD_DIR = env.subst("$BUILD_DIR")
 PROJECT_DIR = env.subst("$PROJECT_DIR")
@@ -190,177 +192,197 @@ if "espidf.custom_sdkconfig" in board:
     flag_custom_sdkonfig = True
 
 def HandleArduinoIDFsettings(env):
+    """
+    Handles Arduino IDF settings configuration with custom sdkconfig support.
+    """
+    
     def get_MD5_hash(phrase):
+        """Generate MD5 hash for checksum validation."""
         import hashlib
-        return hashlib.md5((phrase).encode('utf-8')).hexdigest()[:16]
+        return hashlib.md5(phrase.encode('utf-8')).hexdigest()[:16]
 
-    def custom_sdkconfig_file(string):
-        if not config.has_option("env:"+env["PIOENV"], "custom_sdkconfig"):
+    def load_custom_sdkconfig_file():
+        """Load custom sdkconfig from file or URL if specified."""
+        if not config.has_option("env:" + env["PIOENV"], "custom_sdkconfig"):
             return ""
-        sdkconfig_entrys = env.GetProjectOption("custom_sdkconfig").splitlines()
-        for file in sdkconfig_entrys:
-            if "http" in file and "://" in file:
-                response = requests.get(file.split(" ")[0])
-                if response.ok:
-                    target = str(response.content.decode('utf-8'))
-                else:
-                    print("Failed to download:", file)
+        
+        sdkconfig_entries = env.GetProjectOption("custom_sdkconfig").splitlines()
+        
+        for file_entry in sdkconfig_entries:
+            # Handle HTTP/HTTPS URLs
+            if "http" in file_entry and "://" in file_entry:
+                try:
+                    response = requests.get(file_entry.split(" ")[0])
+                    if response.ok:
+                        return response.content.decode('utf-8')
+                except requests.RequestException as e:
+                    print(f"Error downloading {file_entry}: {e}")
+                except UnicodeDecodeError as e:
+                    print(f"Error decoding response from {file_entry}: {e}")
                     return ""
-                return target
-            if "file://" in file:
-                file_path = join(PROJECT_DIR,file.lstrip("file://").split(os.path.sep)[-1])
+            
+            # Handle local files
+            if "file://" in file_entry:
+                file_ref = file_entry[7:] if file_entry.startswith("file://") else file_entry
+                filename = os.path.basename(file_ref)
+                file_path = join(PROJECT_DIR, filename)
                 if os.path.exists(file_path):
-                    with open(file_path, 'r') as file:
-                        target = file.read()
+                    try:
+                        with open(file_path, 'r') as f:
+                            return f.read()
+                    except IOError as e:
+                        print(f"Error reading file {file_path}: {e}")
+                        return ""
                 else:
-                    print("File not found:", file_path)
+                    print("File not found, check path:", file_path)
                     return ""
-                return target
+        
         return ""
 
+    def extract_flag_name(line):
+        """Extract flag name from sdkconfig line."""
+        line = line.strip()
+        if line.startswith("#") and "is not set" in line:
+            return line.split(" ")[1]
+        elif not line.startswith("#") and "=" in line:
+            return line.split("=")[0]
+        return None
 
-    custom_sdk_config_flags = ""
-    board_idf_config_flags = ""
-    sdkconfig_file_flags = ""
-    custom_sdkconfig_file_str = ""
+    def build_idf_config_flags():
+        """Build complete IDF configuration flags from all sources."""
+        flags = []
+        
+        # Add board-specific flags first
+        if "espidf.custom_sdkconfig" in board:
+            board_flags = board.get("espidf.custom_sdkconfig", [])
+            if board_flags:
+                flags.extend(board_flags)
+        
+        # Add custom sdkconfig file content
+        custom_file_content = load_custom_sdkconfig_file()
+        if custom_file_content:
+            flags.append(custom_file_content)
+        
+        # Add project-level custom sdkconfig
+        if config.has_option("env:" + env["PIOENV"], "custom_sdkconfig"):
+            custom_flags = env.GetProjectOption("custom_sdkconfig").rstrip("\n")
+            if custom_flags:
+                flags.append(custom_flags)
+        
+        return "\n".join(flags) + "\n" if flags else ""
 
-    if config.has_option("env:"+env["PIOENV"], "custom_sdkconfig"):
-        flag_custom_sdkonfig = True
-        custom_sdk_config_flags = (env.GetProjectOption("custom_sdkconfig").rstrip("\n")) + "\n"
-        custom_sdkconfig_file_str = custom_sdkconfig_file(sdkconfig_file_flags)
-
-    if "espidf.custom_sdkconfig" in board:
-        board_idf_config_flags = ('\n'.join([element for element in board.get("espidf.custom_sdkconfig", "")])).rstrip("\n") + "\n"
-        flag_custom_sdkonfig = True
-
-    if flag_custom_sdkonfig == True: # TDOO duplicated
-        print("*** Add \"custom_sdkconfig\" settings to IDF sdkconfig.defaults ***")
-        idf_config_flags = custom_sdk_config_flags
-        if custom_sdkconfig_file_str != "":
-            sdkconfig_file_flags = custom_sdkconfig_file_str + "\n"
-            idf_config_flags = sdkconfig_file_flags + idf_config_flags
-        idf_config_flags = board_idf_config_flags + idf_config_flags
+    def add_flash_configuration(config_flags):
+        """Add flash frequency and mode configuration."""
         if flash_frequency != "80m":
-            idf_config_flags = idf_config_flags + "# CONFIG_ESPTOOLPY_FLASHFREQ_80M is not set\n"
-            esptool_flashfreq_y = "CONFIG_ESPTOOLPY_FLASHFREQ_%s=y\n" % flash_frequency.upper()
-            esptool_flashfreq_M = "CONFIG_ESPTOOLPY_FLASHFREQ=\"%s\"\n" % flash_frequency
-            idf_config_flags = idf_config_flags + esptool_flashfreq_y + esptool_flashfreq_M
+            config_flags += "# CONFIG_ESPTOOLPY_FLASHFREQ_80M is not set\n"
+            config_flags += f"CONFIG_ESPTOOLPY_FLASHFREQ_{flash_frequency.upper()}=y\n"
+            config_flags += f"CONFIG_ESPTOOLPY_FLASHFREQ=\"{flash_frequency}\"\n"
+        
         if flash_mode != "qio":
-            idf_config_flags = idf_config_flags + "# CONFIG_ESPTOOLPY_FLASHMODE_QIO is not set\n"
-        esptool_flashmode = "CONFIG_ESPTOOLPY_FLASHMODE_%s=y\n" % flash_mode.upper()
-        if esptool_flashmode not in idf_config_flags:
-            idf_config_flags = idf_config_flags + esptool_flashmode
-        if mcu in ("esp32") and "CONFIG_FREERTOS_UNICORE=y" in idf_config_flags:
-            idf_config_flags = idf_config_flags + "# CONFIG_SPIRAM is not set\n"
+            config_flags += "# CONFIG_ESPTOOLPY_FLASHMODE_QIO is not set\n"
+        
+        flash_mode_flag = f"CONFIG_ESPTOOLPY_FLASHMODE_{flash_mode.upper()}=y\n"
+        if flash_mode_flag not in config_flags:
+            config_flags += flash_mode_flag
+        
+        # ESP32 specific SPIRAM configuration
+        if mcu == "esp32" and "CONFIG_FREERTOS_UNICORE=y" in config_flags:
+            config_flags += "# CONFIG_SPIRAM is not set\n"
+        
+        return config_flags
 
-        idf_config_flags = idf_config_flags.splitlines()
-        sdkconfig_src = join(ARDUINO_FRAMEWORK_DIR,"tools","esp32-arduino-libs",mcu,"sdkconfig")
-
-        def get_flag(line):
-            if line.startswith("#") and "is not set" in line:
-                return line.split(" ")[1]
-            elif not line.startswith("#") and len(line.split("=")) > 1:
-                return line.split("=")[0]
-            else:
-                return None
-
-        with open(sdkconfig_src) as src:
-            sdkconfig_dst = os.path.join(PROJECT_DIR, "sdkconfig.defaults")
-            dst = open(sdkconfig_dst,"w")
-            dst.write("# TASMOTA__"+ get_MD5_hash(''.join(custom_sdk_config_flags).strip() + mcu) +"\n")
-            while line := src.readline():
-                flag = get_flag(line)
-                if flag is None:
+    def write_sdkconfig_file(idf_config_flags, checksum_source):
+        """Write the final sdkconfig.defaults file with checksum."""
+        sdkconfig_src = join(ARDUINO_FRAMEWORK_DIR, "tools", "esp32-arduino-libs", mcu, "sdkconfig")
+        sdkconfig_dst = join(PROJECT_DIR, "sdkconfig.defaults")
+        
+        # Generate checksum for validation (maintains original logic)
+        checksum = get_MD5_hash(checksum_source.strip() + mcu)
+        
+        with open(sdkconfig_src, 'r') as src, open(sdkconfig_dst, 'w') as dst:
+            # Write checksum header (critical for compilation decision logic)
+            dst.write(f"# TASMOTA__{checksum}\n")
+            
+            processed_flags = set()
+            
+            # Process each line from source sdkconfig
+            for line in src:
+                flag_name = extract_flag_name(line)
+                
+                if flag_name is None:
                     dst.write(line)
-                else:
-                    no_match = True
-                    for item in idf_config_flags:
-                        if flag == get_flag(item.replace("\'", "")):
-                            dst.write(item.replace("\'", "")+"\n")
-                            no_match = False
-                            print("Replace:",line,"with:",item.replace("\'", ""))
-                            idf_config_flags.remove(item)
-                    if no_match:
-                        dst.write(line)
-            for item in idf_config_flags: # are there new flags?
-                print("Add:",item.replace("\'", ""))
-                dst.write(item.replace("\'", "")+"\n")
-            dst.close()
+                    continue
+                
+                # Check if we have a custom replacement for this flag
+                flag_replaced = False
+                for custom_flag in idf_config_flags[:]:  # Create copy for safe removal
+                    custom_flag_name = extract_flag_name(custom_flag.replace("'", ""))
+                    
+                    if flag_name == custom_flag_name:
+                        cleaned_flag = custom_flag.replace("'", "")
+                        dst.write(cleaned_flag + "\n")
+                        print(f"Replace: {line.strip()} with: {cleaned_flag}")
+                        idf_config_flags.remove(custom_flag)
+                        processed_flags.add(custom_flag_name)
+                        flag_replaced = True
+                        break
+                
+                if not flag_replaced:
+                    dst.write(line)
+            
+            # Add any remaining new flags
+            for remaining_flag in idf_config_flags:
+                cleaned_flag = remaining_flag.replace("'", "")
+                print(f"Add: {cleaned_flag}")
+                dst.write(cleaned_flag + "\n")
+
+    # Main execution logic
+    has_custom_config = (
+        config.has_option("env:" + env["PIOENV"], "custom_sdkconfig") or
+        "espidf.custom_sdkconfig" in board
+    )
+    
+    if not has_custom_config:
         return
-    else:
-        return
+    
+    print("*** Add \"custom_sdkconfig\" settings to IDF sdkconfig.defaults ***")
+    
+    # Build complete configuration
+    idf_config_flags = build_idf_config_flags()
+    idf_config_flags = add_flash_configuration(idf_config_flags)
+    
+    # Convert to list for processing
+    idf_config_list = [line for line in idf_config_flags.splitlines() if line.strip()]
+    
+    # Write final configuration file with checksum
+    custom_sdk_config_flags = ""
+    if config.has_option("env:" + env["PIOENV"], "custom_sdkconfig"):
+        custom_sdk_config_flags = env.GetProjectOption("custom_sdkconfig").rstrip("\n") + "\n"
+    
+    write_sdkconfig_file(idf_config_list, custom_sdk_config_flags)
+
+
 
 def HandleCOMPONENTsettings(env):
-    if flag_custom_component_add == True or flag_custom_component_remove == True: # todo remove duplicated
-        import yaml
-        from yaml import SafeLoader
-        print("*** \"custom_component\" is used to (de)select managed idf components ***")
-        if flag_custom_component_remove == True:
-            idf_custom_component_remove = env.GetProjectOption("custom_component_remove").splitlines()
-        else:
-            idf_custom_component_remove = ""
-        if flag_custom_component_add == True:
-            idf_custom_component_add = env.GetProjectOption("custom_component_add").splitlines()
-        else:
-            idf_custom_component_add = ""
+    from component_manager import ComponentManager
+    component_manager = ComponentManager(env)
 
-        # search "idf_component.yml" file
-        try: # 1.st in Arduino framework
-            idf_component_yml_src = os.path.join(ARDUINO_FRAMEWORK_DIR, "idf_component.yml")
-            shutil.copy(join(ARDUINO_FRAMEWORK_DIR,"idf_component.yml"),join(ARDUINO_FRAMEWORK_DIR,"idf_component.yml.orig"))
-            yml_file_dir = idf_component_yml_src
-        except: # 2.nd Project source
-            try:
-                idf_component_yml_src = os.path.join(PROJECT_SRC_DIR, "idf_component.yml")
-                shutil.copy(join(PROJECT_SRC_DIR,"idf_component.yml"),join(PROJECT_SRC_DIR,"idf_component.yml.orig"))
-                yml_file_dir = idf_component_yml_src
-            except: # no idf_component.yml in Project source -> create
-                idf_component_yml_src = os.path.join(PROJECT_SRC_DIR, "idf_component.yml")
-                yml_file_dir = idf_component_yml_src
-                idf_component_yml_str = """
-                    dependencies:
-                      idf: \">=5.1\"
-                """
-                idf_component_yml = yaml.safe_load(idf_component_yml_str)
-                with open(idf_component_yml_src, 'w',) as f :
-                    yaml.dump(idf_component_yml,f) 
+    if flag_custom_component_add or flag_custom_component_remove:
+        actions = [action for flag, action in [
+            (flag_custom_component_add, "select"),
+            (flag_custom_component_remove, "deselect")
+        ] if flag]
+        action_text = " and ".join(actions)
+        print(f"*** \"custom_component\" is used to {action_text} managed idf components ***")
 
-        yaml_file=open(idf_component_yml_src,"r")
-        idf_component=yaml.load(yaml_file, Loader=SafeLoader)
-        idf_component_str=json.dumps(idf_component)      # convert to json string
-        idf_component_json=json.loads(idf_component_str) # convert string to json dict
-
-        if idf_custom_component_remove != "":
-            for entry in idf_custom_component_remove:
-                # checking if the entry exists before removing
-                if entry in idf_component_json["dependencies"]:
-                    print("*** Removing component:",entry)
-                    del idf_component_json["dependencies"][entry]
-
-        if idf_custom_component_add != "":
-            for entry in idf_custom_component_add:
-                if len(str(entry)) > 4: # too short or empty entry
-                    # add new entrys to json
-                    if "@" in entry:
-                        idf_comp_entry = str(entry.split("@")[0]).replace(" ", "")
-                        idf_comp_vers = str(entry.split("@")[1]).replace(" ", "")
-                    else:
-                        idf_comp_entry = str(entry).replace(" ", "")
-                        idf_comp_vers = "*"
-                    if idf_comp_entry not in idf_component_json["dependencies"]:
-                        print("*** Adding component:", idf_comp_entry, idf_comp_vers)
-                        new_entry = {idf_comp_entry: {"version": idf_comp_vers}}
-                        idf_component_json["dependencies"].update(new_entry)
-
-        idf_component_yml_file = open(yml_file_dir,"w")
-        yaml.dump(idf_component_json, idf_component_yml_file)
-        idf_component_yml_file.close()
-        # print("JSON from modified idf_component.yml:")
-        # print(json.dumps(idf_component_json))
+        component_manager.handle_component_settings(
+            add_components=flag_custom_component_add,
+            remove_components=flag_custom_component_remove
+        )
         return
     return
 
-if flag_custom_component_add == True or flag_custom_component_remove == True:
+if "arduino" in env.subst("$PIOFRAMEWORK"):
     HandleCOMPONENTsettings(env)
 
 if flag_custom_sdkonfig == True and "arduino" in env.subst("$PIOFRAMEWORK") and "espidf" not in env.subst("$PIOFRAMEWORK"):
@@ -1794,13 +1816,11 @@ extra_cmake_args = [
     "-DSDKCONFIG=" + SDKCONFIG_PATH,
 ]
 
-if "CPPDEFINES" in env:
-    flatten_cppdefines = env.Flatten(env['CPPDEFINES'])
-    if "SHOW_METRICS" in flatten_cppdefines:
-        # This will add the linker flag for the map file
-        extra_cmake_args.append(
-            f'-DCMAKE_EXE_LINKER_FLAGS=-Wl,-Map={os.path.join(BUILD_DIR, env.subst("$PROGNAME") + ".map")}'
-        )
+
+# This will add the linker flag for the map file
+extra_cmake_args.append(
+    f'-DCMAKE_EXE_LINKER_FLAGS=-Wl,-Map={os.path.join(BUILD_DIR, env.subst("$PROGNAME") + ".map")}'
+)
 
 # Add any extra args from board config
 extra_cmake_args += click.parser.split_arg_string(board.get("build.cmake_extra_args", ""))
@@ -2168,7 +2188,13 @@ if ("arduino" in env.subst("$PIOFRAMEWORK")) and ("espidf" not in env.subst("$PI
                 print("*** Original Arduino \"idf_component.yml\" restored ***")
             except:
                 print("*** Original Arduino \"idf_component.yml\" couldnt be restored ***")
-    env.AddPostAction("checkprogsize", idf_lib_copy)
+            # Restore original pioarduino-build.py
+            from component_manager import ComponentManager
+            component_manager = ComponentManager(env)
+            component_manager.restore_pioarduino_build_py()
+    silent_action = env.Action(idf_lib_copy)
+    silent_action.strfunction = lambda target, source, env: '' # hack to silence scons command output
+    env.AddPostAction("checkprogsize", silent_action)
 
 if "espidf" in env.subst("$PIOFRAMEWORK") and (flag_custom_component_add == True or flag_custom_component_remove == True):
     def idf_custom_component(source, target, env):
@@ -2184,8 +2210,15 @@ if "espidf" in env.subst("$PIOFRAMEWORK") and (flag_custom_component_add == True
                     os.remove(join(PROJECT_SRC_DIR,"idf_component.yml"))
                     print("*** pioarduino generated \"idf_component.yml\" removed ***")
                 except:
-                    print("*** \"idf_component.yml\" couldnt be removed ***")
-    env.AddPostAction("checkprogsize", idf_custom_component)
+                    print("*** no custom \"idf_component.yml\" found for removing ***")
+        if "arduino" in env.subst("$PIOFRAMEWORK"):
+            # Restore original pioarduino-build.py, only used with Arduino
+            from component_manager import ComponentManager
+            component_manager = ComponentManager(env)
+            component_manager.restore_pioarduino_build_py()
+    silent_action = env.Action(idf_custom_component)
+    silent_action.strfunction = lambda target, source, env: '' # hack to silence scons command output
+    env.AddPostAction("checkprogsize", silent_action)
 #
 # Process OTA partition and image
 #
