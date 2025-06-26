@@ -90,6 +90,7 @@ def install_standard_python_deps():
         "rich-click": ">=1.8.6",
         "PyYAML": ">=6.0.2",
         "intelhex": ">=2.3.0",
+        "rich": ">=14.0.0",
         "esp-idf-size": ">=1.6.1"
     }
 
