@@ -48,6 +48,7 @@ python_deps = {
     "rich-click": ">=1.8.6",
     "zopfli": ">=0.2.2",
     "intelhex": ">=2.3.0",
+    "rich": ">=14.0.0",
     "esp-idf-size": ">=1.6.1"
 }
 
