@@ -35,9 +35,11 @@ DEFAULT_DEBUG_SPEED = "5000"
 DEFAULT_APP_OFFSET = "0x10000"
 
 # MCUs that support ESP-builtin debug
-ESP_BUILTIN_DEBUG_MCUS = frozenset(["esp32c3", "esp32c5", "esp32c6", "esp32s3", "esp32h2", "esp32p4"])
+ESP_BUILTIN_DEBUG_MCUS = frozenset([
+    "esp32c3", "esp32c5", "esp32c6", "esp32s3", "esp32h2", "esp32p4"
+])
 
-# MCU configuration
+# MCU configuration mapping
 MCU_TOOLCHAIN_CONFIG = {
     "xtensa": {
         "mcus": frozenset(["esp32", "esp32s2", "esp32s3"]),
@@ -45,7 +47,9 @@ MCU_TOOLCHAIN_CONFIG = {
         "debug_tools": ["tool-xtensa-esp-elf-gdb"]
     },
     "riscv": {
-        "mcus": frozenset(["esp32c2", "esp32c3", "esp32c5", "esp32c6", "esp32h2", "esp32p4"]),
+        "mcus": frozenset([
+            "esp32c2", "esp32c3", "esp32c5", "esp32c6", "esp32h2", "esp32p4"
+        ]),
         "toolchains": ["toolchain-riscv32-esp"],
         "debug_tools": ["tool-riscv32-esp-elf-gdb"]
     }
@@ -80,13 +84,8 @@ pm = ToolPackageManager()
 logger = logging.getLogger(__name__)
 
 
-class ToolInstallationError(Exception):
-    """Custom exception for tool installation errors"""
-    pass
-
-
 def safe_file_operation(operation_func):
-    """Decorator for safe filesystem operations"""
+    """Decorator for safe filesystem operations with error handling."""
     def wrapper(*args, **kwargs):
         try:
             return operation_func(*args, **kwargs)
@@ -101,7 +100,7 @@ def safe_file_operation(operation_func):
 
 @safe_file_operation
 def safe_remove_directory(path: str) -> bool:
-    """Safely remove directories"""
+    """Safely remove directories with error handling."""
     if os.path.exists(path) and os.path.isdir(path):
         shutil.rmtree(path)
         logger.debug(f"Directory removed: {path}")
@@ -110,7 +109,7 @@ def safe_remove_directory(path: str) -> bool:
 
 @safe_file_operation
 def safe_copy_file(src: str, dst: str) -> bool:
-    """Safely copy files"""
+    """Safely copy files with error handling."""
     os.makedirs(os.path.dirname(dst), exist_ok=True)
     shutil.copyfile(src, dst)
     logger.debug(f"File copied: {src} -> {dst}")
@@ -118,7 +117,10 @@ def safe_copy_file(src: str, dst: str) -> bool:
 
 
 class Espressif32Platform(PlatformBase):
+    """ESP32 platform implementation for PlatformIO with optimized toolchain management."""
+
     def __init__(self, *args, **kwargs):
+        """Initialize the ESP32 platform with caching mechanisms."""
         super().__init__(*args, **kwargs)
         self._packages_dir = None
         self._tools_cache = {}
@@ -126,13 +128,14 @@ class Espressif32Platform(PlatformBase):
 
     @property
     def packages_dir(self) -> str:
-        """Cached packages directory"""
+        """Get cached packages directory path."""
         if self._packages_dir is None:
-            self._packages_dir = ProjectConfig.get_instance().get("platformio", "packages_dir")
+            config = ProjectConfig.get_instance()
+            self._packages_dir = config.get("platformio", "packages_dir")
         return self._packages_dir
 
     def _get_tool_paths(self, tool_name: str) -> Dict[str, str]:
-        """Central path calculation for tools"""
+        """Get centralized path calculation for tools with caching."""
         if tool_name not in self._tools_cache:
             tool_path = os.path.join(self.packages_dir, tool_name)
             self._tools_cache[tool_name] = {
@@ -140,12 +143,14 @@ class Espressif32Platform(PlatformBase):
                 'package_path': os.path.join(tool_path, "package.json"),
                 'tools_json_path': os.path.join(tool_path, "tools.json"),
                 'piopm_path': os.path.join(tool_path, ".piopm"),
-                'idf_tools_path': os.path.join(self.packages_dir, "tl-install", "tools", "idf_tools.py")
+                'idf_tools_path': os.path.join(
+                    self.packages_dir, "tl-install", "tools", "idf_tools.py"
+                )
             }
         return self._tools_cache[tool_name]
 
     def _check_tool_status(self, tool_name: str) -> Dict[str, bool]:
-        """Check tool status"""
+        """Check the installation status of a tool."""
         paths = self._get_tool_paths(tool_name)
         return {
             'has_idf_tools': os.path.exists(paths['idf_tools_path']),
@@ -155,7 +160,7 @@ class Espressif32Platform(PlatformBase):
         }
 
     def _run_idf_tools_install(self, tools_json_path: str, idf_tools_path: str) -> bool:
-        """Execute idf_tools.py install"""
+        """Execute idf_tools.py install command with timeout and error handling."""
         cmd = [
             python_exe,
             idf_tools_path,
@@ -171,7 +176,8 @@ class Espressif32Platform(PlatformBase):
                 cmd,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
-                timeout=SUBPROCESS_TIMEOUT
+                timeout=SUBPROCESS_TIMEOUT,
+                check=False
             )
 
             if result.returncode != 0:
@@ -184,16 +190,16 @@ class Espressif32Platform(PlatformBase):
         except subprocess.TimeoutExpired:
             logger.error(f"Timeout in idf_tools.py after {SUBPROCESS_TIMEOUT}s")
             return False
-        except Exception as e:
+        except (subprocess.SubprocessError, OSError) as e:
             logger.error(f"Error in idf_tools.py: {e}")
             return False
 
     def _check_tool_version(self, tool_name: str) -> bool:
-        """Check tool version"""
+        """Check if the installed tool version matches the required version."""
         paths = self._get_tool_paths(tool_name)
 
         try:
-            with open(paths['package_path'], 'r') as f:
+            with open(paths['package_path'], 'r', encoding='utf-8') as f:
                 package_data = json.load(f)
 
             required_version = self.packages.get(tool_name, {}).get("package-version")
@@ -209,7 +215,10 @@ class Espressif32Platform(PlatformBase):
 
             version_match = required_version == installed_version
             if not version_match:
-                logger.info(f"Version mismatch for {tool_name}: {installed_version} != {required_version}")
+                logger.info(
+                    f"Version mismatch for {tool_name}: "
+                    f"{installed_version} != {required_version}"
+                )
 
             return version_match
 
@@ -218,9 +227,11 @@ class Espressif32Platform(PlatformBase):
             return False
 
     def install_tool(self, tool_name: str, retry_count: int = 0) -> bool:
-        """Optimized tool installation"""
+        """Install a tool with optimized retry mechanism."""
         if retry_count >= RETRY_LIMIT:
-            logger.error(f"Installation of {tool_name} failed after {RETRY_LIMIT} attempts")
+            logger.error(
+                f"Installation of {tool_name} failed after {RETRY_LIMIT} attempts"
+            )
             return False
 
         self.packages[tool_name]["optional"] = False
@@ -232,20 +243,27 @@ class Espressif32Platform(PlatformBase):
             return self._install_with_idf_tools(tool_name, paths)
 
         # Case 2: Tool already installed, version check
-        if status['has_idf_tools'] and status['has_piopm'] and not status['has_tools_json']:
+        if (status['has_idf_tools'] and status['has_piopm'] and
+                not status['has_tools_json']):
             return self._handle_existing_tool(tool_name, paths, retry_count)
 
         logger.debug(f"Tool {tool_name} already configured")
         return True
 
     def _install_with_idf_tools(self, tool_name: str, paths: Dict[str, str]) -> bool:
-        """Installation with idf_tools.py"""
-        if not self._run_idf_tools_install(paths['tools_json_path'], paths['idf_tools_path']):
+        """Install tool using idf_tools.py installation method."""
+        if not self._run_idf_tools_install(
+            paths['tools_json_path'], paths['idf_tools_path']
+        ):
             return False
 
         # Copy tool files
-        tools_path_default = os.path.join(os.path.expanduser("~"), ".platformio")
-        target_package_path = os.path.join(tools_path_default, "tools", tool_name, "package.json")
+        tools_path_default = os.path.join(
+            os.path.expanduser("~"), ".platformio"
+        )
+        target_package_path = os.path.join(
+            tools_path_default, "tools", tool_name, "package.json"
+        )
 
         if not safe_copy_file(paths['package_path'], target_package_path):
             return False
@@ -258,19 +276,21 @@ class Espressif32Platform(PlatformBase):
         logger.info(f"Tool {tool_name} successfully installed")
         return True
 
-    def _handle_existing_tool(self, tool_name: str, paths: Dict[str, str], retry_count: int) -> bool:
-        """Handle already installed tools"""
+    def _handle_existing_tool(
+        self, tool_name: str, paths: Dict[str, str], retry_count: int
+    ) -> bool:
+        """Handle already installed tools with version checking."""
         if self._check_tool_version(tool_name):
             # Version matches, use tool
             self.packages[tool_name]["version"] = paths['tool_path']
             self.packages[tool_name]["optional"] = False
             logger.debug(f"Tool {tool_name} found with correct version")
             return True
-        else:
-            # Wrong version, reinstall
-            logger.info(f"Reinstalling {tool_name} due to version mismatch")
-            safe_remove_directory(paths['tool_path'])
-            return self.install_tool(tool_name, retry_count + 1)
+
+        # Wrong version, reinstall
+        logger.info(f"Reinstalling {tool_name} due to version mismatch")
+        safe_remove_directory(paths['tool_path'])
+        return self.install_tool(tool_name, retry_count + 1)
 
     def _configure_arduino_framework(self, frameworks: List[str]) -> None:
         """Configure Arduino framework"""
@@ -279,18 +299,22 @@ class Espressif32Platform(PlatformBase):
 
         self.packages["framework-arduinoespressif32"]["optional"] = False
 
-    def _configure_espidf_framework(self, frameworks: List[str], variables: Dict, board_config: Dict, mcu: str) -> None:
-        """Configure ESP-IDF framework"""
+    def _configure_espidf_framework(
+        self, frameworks: List[str], variables: Dict, board_config: Dict, mcu: str
+    ) -> None:
+        """Configure ESP-IDF framework based on custom sdkconfig settings."""
         custom_sdkconfig = variables.get("custom_sdkconfig")
-        board_sdkconfig = variables.get("board_espidf.custom_sdkconfig",
-                                       board_config.get("espidf.custom_sdkconfig", ""))
+        board_sdkconfig = variables.get(
+            "board_espidf.custom_sdkconfig",
+            board_config.get("espidf.custom_sdkconfig", "")
+        )
 
         if custom_sdkconfig is not None or len(str(board_sdkconfig)) > 3:
             frameworks.append("espidf")
             self.packages["framework-espidf"]["optional"] = False
 
     def _get_mcu_config(self, mcu: str) -> Optional[Dict]:
-        """MCU configuration with optimized search"""
+        """Get MCU configuration with optimized caching and search."""
         if mcu in self._mcu_config_cache:
             return self._mcu_config_cache[mcu]
 
@@ -306,15 +330,17 @@ class Espressif32Platform(PlatformBase):
         return None
 
     def _needs_debug_tools(self, variables: Dict, targets: List[str]) -> bool:
-        """Check if debug tools are needed"""
+        """Check if debug tools are needed based on build configuration."""
         return bool(
             variables.get("build_type") or
             "debug" in targets or
             variables.get("upload_protocol")
         )
 
-    def _configure_mcu_toolchains(self, mcu: str, variables: Dict, targets: List[str]) -> None:
-        """Optimized MCU toolchain configuration"""
+    def _configure_mcu_toolchains(
+        self, mcu: str, variables: Dict, targets: List[str]
+    ) -> None:
+        """Configure MCU-specific toolchains with optimized installation."""
         mcu_config = self._get_mcu_config(mcu)
         if not mcu_config:
             logger.warning(f"Unknown MCU: {mcu}")
@@ -336,18 +362,20 @@ class Espressif32Platform(PlatformBase):
             self.install_tool("tool-openocd-esp32")
 
     def _configure_installer(self) -> None:
-        """Configure installer"""
-        installer_path = os.path.join(self.packages_dir, "tl-install", "tools", "idf_tools.py")
+        """Configure the ESP-IDF tools installer."""
+        installer_path = os.path.join(
+            self.packages_dir, "tl-install", "tools", "idf_tools.py"
+        )
         if os.path.exists(installer_path):
             self.packages["tl-install"]["optional"] = True
 
     def _install_common_idf_packages(self) -> None:
-        """Install common IDF packages"""
+        """Install common ESP-IDF packages required for all builds."""
         for package in COMMON_IDF_PACKAGES:
             self.install_tool(package)
 
     def _configure_check_tools(self, variables: Dict) -> None:
-        """Configure check tools"""
+        """Configure static analysis and check tools based on configuration."""
         check_tools = variables.get("check_tool", [])
         if not check_tools:
             return
@@ -357,12 +385,12 @@ class Espressif32Platform(PlatformBase):
                 self.install_tool(package)
 
     def _ensure_mklittlefs_version(self) -> None:
-        """Ensure correct mklittlefs version"""
+        """Ensure correct mklittlefs version is installed."""
         piopm_path = os.path.join(self.packages_dir, "tool-mklittlefs", ".piopm")
 
         if os.path.exists(piopm_path):
             try:
-                with open(piopm_path, 'r') as f:
+                with open(piopm_path, 'r', encoding='utf-8') as f:
                     package_data = json.load(f)
                 if package_data.get('version') != MKLITTLEFS_VERSION_320:
                     os.remove(piopm_path)
@@ -371,9 +399,11 @@ class Espressif32Platform(PlatformBase):
                 logger.error(f"Error reading mklittlefs package data: {e}")
 
     def _setup_mklittlefs_for_download(self) -> None:
-        """Setup mklittlefs for download functionality"""
+        """Setup mklittlefs for download functionality with version 4.0.0."""
         mklittlefs_dir = os.path.join(self.packages_dir, "tool-mklittlefs")
-        mklittlefs400_dir = os.path.join(self.packages_dir, "tool-mklittlefs-4.0.0")
+        mklittlefs400_dir = os.path.join(
+            self.packages_dir, "tool-mklittlefs-4.0.0"
+        )
 
         # Ensure mklittlefs 3.2.0 is installed
         if not os.path.exists(mklittlefs_dir):
@@ -396,7 +426,7 @@ class Espressif32Platform(PlatformBase):
             self.packages.pop("tool-mkfatfs", None)
 
     def _handle_littlefs_tool(self, for_download: bool) -> None:
-        """Special handling for LittleFS tools"""
+        """Handle LittleFS tool installation with special download configuration."""
         if for_download:
             self._setup_mklittlefs_for_download()
         else:
@@ -404,7 +434,7 @@ class Espressif32Platform(PlatformBase):
             self.install_tool("tool-mklittlefs")
 
     def _install_filesystem_tool(self, filesystem: str, for_download: bool = False) -> None:
-        """Install filesystem tools"""
+        """Install filesystem-specific tools based on the filesystem type."""
         tool_mapping = {
             "default": lambda: self._handle_littlefs_tool(for_download),
             "fatfs": lambda: self.install_tool("tool-mkfatfs")
@@ -414,7 +444,7 @@ class Espressif32Platform(PlatformBase):
         handler()
 
     def _configure_filesystem_tools(self, variables: Dict, targets: List[str]) -> None:
-        """Optimized filesystem tool configuration"""
+        """Configure filesystem tools based on build targets and filesystem type."""
         filesystem = variables.get("board_build.filesystem", "littlefs")
 
         if any(target in targets for target in ["buildfs", "uploadfs"]):
@@ -424,7 +454,7 @@ class Espressif32Platform(PlatformBase):
             self._install_filesystem_tool(filesystem, for_download=True)
 
     def configure_default_packages(self, variables: Dict, targets: List[str]) -> Any:
-        """Optimized main configuration method"""
+        """Main configuration method with optimized package management."""
         if not variables.get("board"):
             return super().configure_default_packages(variables, targets)
 
@@ -455,7 +485,7 @@ class Espressif32Platform(PlatformBase):
         return super().configure_default_packages(variables, targets)
 
     def get_boards(self, id_=None):
-        """Get board configuration"""
+        """Get board configuration with dynamic options."""
         result = super().get_boards(id_)
         if not result:
             return result
@@ -467,7 +497,7 @@ class Espressif32Platform(PlatformBase):
         return result
 
     def _add_dynamic_options(self, board):
-        """Add dynamic board options"""
+        """Add dynamic board options for upload protocols and debug tools."""
         # Upload protocols
         if not board.get("upload.protocols", []):
             board.manifest["upload"]["protocols"] = ["esptool", "espota"]
@@ -548,23 +578,21 @@ class Espressif32Platform(PlatformBase):
         return board
 
     def _get_openocd_interface(self, link: str, board) -> str:
-        """Determine OpenOCD interface for debug link"""
+        """Determine OpenOCD interface configuration for debug link."""
         if link in ("jlink", "cmsis-dap"):
             return link
-        elif link in ("esp-prog", "ftdi"):
+        if link in ("esp-prog", "ftdi"):
             if board.id == "esp32-s2-kaluga-1":
                 return "ftdi/esp32s2_kaluga_v1"
-            else:
-                return "ftdi/esp32_devkitj_v1"
-        elif link == "esp-bridge":
+            return "ftdi/esp32_devkitj_v1"
+        if link == "esp-bridge":
             return "esp_usb_bridge"
-        elif link == "esp-builtin":
+        if link == "esp-builtin":
             return "esp_usb_jtag"
-        else:
-            return f"ftdi/{link}"
+        return f"ftdi/{link}"
 
     def _get_debug_server_args(self, openocd_interface: str, debug: Dict) -> List[str]:
-        """Generate debug server arguments"""
+        """Generate debug server arguments for OpenOCD configuration."""
         if 'openocd_target' in debug:
             config_type = 'target'
             config_name = debug.get('openocd_target')
@@ -578,14 +606,14 @@ class Espressif32Platform(PlatformBase):
         ]
 
     def configure_debug_session(self, debug_config):
-        """Configure debug session"""
+        """Configure debug session with flash image loading."""
         build_extra_data = debug_config.build_data.get("extra", {})
         flash_images = build_extra_data.get("flash_images", [])
 
         if "openocd" in (debug_config.server or {}).get("executable", ""):
-            debug_config.server["arguments"].extend(
-                ["-c", f"adapter speed {debug_config.speed or DEFAULT_DEBUG_SPEED}"]
-            )
+            debug_config.server["arguments"].extend([
+                "-c", f"adapter speed {debug_config.speed or DEFAULT_DEBUG_SPEED}"
+            ])
 
         ignore_conds = [
             debug_config.load_cmds != ["load"],
@@ -597,12 +625,13 @@ class Espressif32Platform(PlatformBase):
             return
 
         load_cmds = [
-            f'monitor program_esp "{to_unix_path(item["path"])}" {item["offset"]} verify'
+            f'monitor program_esp "{to_unix_path(item["path"])}" '
+            f'{item["offset"]} verify'
             for item in flash_images
         ]
         load_cmds.append(
-            f'monitor program_esp "{to_unix_path(debug_config.build_data["prog_path"][:-4])}.bin" '
+            f'monitor program_esp '
+            f'"{to_unix_path(debug_config.build_data["prog_path"][:-4])}.bin" '
             f'{build_extra_data.get("application_offset", DEFAULT_APP_OFFSET)} verify'
         )
         debug_config.load_cmds = load_cmds
-
