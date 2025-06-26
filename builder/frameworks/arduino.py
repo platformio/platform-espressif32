@@ -91,7 +91,7 @@ _PATH_SHORTENING_MESSAGES = {
 
 def get_platform_default_threshold(mcu):
     """
-    Platform-specific bleeding edge default values for 
+    Platform-specific max performance default values for 
     INCLUDE_PATH_LENGTH_THRESHOLD
     These values push the limits for maximum performance and minimal path 
     shortening
@@ -100,9 +100,9 @@ def get_platform_default_threshold(mcu):
         mcu: MCU type (esp32, esp32s2, esp32s3, etc.)
 
     Returns:
-        int: Platform-specific bleeding edge default threshold
+        int: Platform-specific default threshold
     """
-    # Bleeding edge values - pushing Windows command line limits
+    # Max. performance values - pushing Windows command line limits
     # Windows CMD has ~32768 character limit, we use aggressive values close
     # to this
     platform_defaults = {
@@ -121,7 +121,7 @@ def get_platform_default_threshold(mcu):
     # Debug output only in verbose mode
     if logging.getLogger().isEnabledFor(logging.DEBUG):
         logging.debug(
-            f"Bleeding edge platform default threshold for {mcu}: "
+            f"Max. possible platform default threshold for {mcu}: "
             f"{default_value}")
 
     return default_value
@@ -129,7 +129,7 @@ def get_platform_default_threshold(mcu):
 
 def validate_threshold(threshold, mcu):
     """
-    Validates threshold value with bleeding edge limits
+    Validates threshold value with max. performance limits
     Uses aggressive boundaries for maximum performance
 
     Args:
@@ -139,24 +139,24 @@ def validate_threshold(threshold, mcu):
     Returns:
         int: Validated threshold value
     """
-    # Bleeding edge absolute limits - pushing boundaries
-    min_threshold = 25000   # Minimum reasonable value for complex projects
+    # Absolute limits - pushing boundaries
+    min_threshold = 20000   # Minimum reasonable value for complex projects
     # Maximum aggressive value (beyond Windows CMD limit for testing)
-    max_threshold = 55000
+    max_threshold = 32767
 
-    # MCU-specific bleeding edge adjustments - all values are aggressive
+    # MCU-specific adjustments - all values are aggressive
     mcu_adjustments = {
-        "esp32c2": {"min": 30000, "max": 40000},
-        "esp32c3": {"min": 30000, "max": 45000},
-        "esp32": {"min": 30000, "max": 50000},
-        "esp32s2": {"min": 30000, "max": 50000},
-        "esp32s3": {"min": 30000, "max": 50000},
-        "esp32p4": {"min": 30000, "max": 55000},
-        "esp32c6": {"min": 30000, "max": 50000},
-        "esp32h2": {"min": 30000, "max": 40000},
+        "esp32c2": {"min": 30000, "max": 32767},
+        "esp32c3": {"min": 30000, "max": 32767},
+        "esp32": {"min": 30000, "max": 32767},
+        "esp32s2": {"min": 30000, "max": 32767},
+        "esp32s3": {"min": 30000, "max": 32767},
+        "esp32p4": {"min": 30000, "max": 32767},
+        "esp32c6": {"min": 30000, "max": 32767},
+        "esp32h2": {"min": 30000, "max": 32767},
     }
 
-    # Apply MCU-specific bleeding edge limits
+    # Apply MCU-specific max. limits
     if mcu in mcu_adjustments:
         min_threshold = max(min_threshold, mcu_adjustments[mcu]["min"])
         max_threshold = min(max_threshold, mcu_adjustments[mcu]["max"])
@@ -165,25 +165,25 @@ def validate_threshold(threshold, mcu):
 
     if threshold < min_threshold:
         print(f"*** Warning: Include path threshold {threshold} too "
-              f"conservative for {mcu}, using bleeding edge minimum "
+              f"conservative for {mcu}, using safe minimum "
               f"{min_threshold} ***")
         threshold = min_threshold
     elif threshold > max_threshold:
         print(f"*** Warning: Include path threshold {threshold} exceeds "
-              f"bleeding edge maximum for {mcu}, using {max_threshold} ***")
+              f"possible maximum for {mcu}, using {max_threshold} ***")
         threshold = max_threshold
 
     # Warning for conservative values (opposite of original - warn if too low)
     platform_default = get_platform_default_threshold(mcu)
-    if threshold < platform_default * 0.7:  # More than 30% below bleeding edge default
+    if threshold < platform_default * 0.7:  # More than 30% below max. default
         print(f"*** Info: Include path threshold {threshold} is conservative "
-              f"compared to bleeding edge default {platform_default} for "
+              f"compared to maximum default {platform_default} for "
               f"{mcu} ***")
         print("*** Consider using higher values for maximum performance ***")
 
     if original_threshold != threshold:
         logging.warning(f"Threshold adjusted from {original_threshold} to "
-                        f"bleeding edge value {threshold} for {mcu}")
+                        f"max. possible value {threshold} for {mcu}")
 
     return threshold
 
@@ -191,14 +191,14 @@ def validate_threshold(threshold, mcu):
 def get_include_path_threshold(env, config, current_env_section):
     """
     Determines Windows INCLUDE_PATH_LENGTH_THRESHOLD from various sources
-    with priority order and bleeding edge validation
+    with priority order and max. possible  validation
 
     Priority order:
     1. Environment variable PLATFORMIO_INCLUDE_PATH_THRESHOLD
     2. Environment-specific setting in platformio.ini
     3. Global setting in [env] section
     4. Setting in [platformio] section
-    5. MCU-specific bleeding edge default value
+    5. MCU-specific max. possible default value
 
     Args:
         env: PlatformIO Environment
@@ -206,7 +206,7 @@ def get_include_path_threshold(env, config, current_env_section):
         current_env_section: Current environment section
 
     Returns:
-        int: Validated bleeding edge threshold value
+        int: Validated max. threshold value
     """
     mcu = env.BoardConfig().get("build.mcu", "esp32")
     default_threshold = get_platform_default_threshold(mcu)
@@ -219,7 +219,7 @@ def get_include_path_threshold(env, config, current_env_section):
             try:
                 threshold = int(env_var)
                 threshold = validate_threshold(threshold, mcu)
-                print(f"*** Using environment variable bleeding edge include "
+                print(f"*** Using environment variable max. possible include "
                       f"path threshold: {threshold} (MCU: {mcu}) ***")
                 return threshold
             except ValueError:
@@ -231,7 +231,7 @@ def get_include_path_threshold(env, config, current_env_section):
         if config.has_option(current_env_section, setting_name):
             threshold = config.getint(current_env_section, setting_name)
             threshold = validate_threshold(threshold, mcu)
-            print(f"*** Using environment-specific bleeding edge include "
+            print(f"*** Using environment-specific max. possible include "
                   f"path threshold: {threshold} (MCU: {mcu}) ***")
             return threshold
 
@@ -239,7 +239,7 @@ def get_include_path_threshold(env, config, current_env_section):
         if config.has_option("env", setting_name):
             threshold = config.getint("env", setting_name)
             threshold = validate_threshold(threshold, mcu)
-            print(f"*** Using global [env] bleeding edge include path "
+            print(f"*** Using global [env] max. possible include path "
                   f"threshold: {threshold} (MCU: {mcu}) ***")
             return threshold
 
@@ -247,28 +247,28 @@ def get_include_path_threshold(env, config, current_env_section):
         if config.has_option("platformio", setting_name):
             threshold = config.getint("platformio", setting_name)
             threshold = validate_threshold(threshold, mcu)
-            print(f"*** Using [platformio] section bleeding edge include "
+            print(f"*** Using [platformio] section max. possible include "
                   f"path threshold: {threshold} (MCU: {mcu}) ***")
             return threshold
 
-        # 5. Use MCU-specific bleeding edge default value
+        # 5. Use MCU-specific max. possible default value
         threshold = validate_threshold(default_threshold, mcu)
         if env.get("VERBOSE"):
-            print(f"*** Using platform-specific bleeding edge default "
+            print(f"*** Using platform-specific max. possible default "
                   f"include path threshold: {threshold} (MCU: {mcu}) ***")
 
         return threshold
 
     except (ValueError, TypeError) as e:
         print(f"*** Warning: Invalid include path threshold value, using "
-              f"bleeding edge platform default {default_threshold} for "
+              f"max. possible platform default {default_threshold} for "
               f"{mcu}: {e} ***")
         return validate_threshold(default_threshold, mcu)
 
 
 def get_threshold_info(env, config, current_env_section):
     """
-    Helper function for debug information about bleeding edge threshold 
+    Helper function for debug information about max. possible threshold 
     configuration
 
     Args:
@@ -899,7 +899,7 @@ def apply_include_shortening(env, node, includes, total_length):
 
 def smart_include_length_shorten(env, node):
     """
-    Include path shortening based on bleeding edge configurable threshold 
+    Include path shortening based on max. performance configurable threshold 
     with enhanced MCU support
     Uses aggressive thresholds for maximum performance
     """
@@ -923,14 +923,14 @@ def smart_include_length_shorten(env, node):
     if env.get("VERBOSE"):
         debug_framework_paths(env, include_count, total_path_length)
 
-        # Extended debug information about bleeding edge threshold 
+        # Extended debug information about maximum edge threshold 
         # configuration
         threshold_info = get_threshold_info(env, config, current_env_section)
-        print("*** Bleeding Edge Threshold Configuration Debug ***")
+        print("*** Maximum Threshold Configuration Debug ***")
         print(f"***   MCU: {threshold_info['mcu']} ***")
-        print(f"***   Bleeding Edge Platform Default: "
+        print(f"***   Maximum Platform Default: "
               f"{threshold_info['platform_default']} ***")
-        print(f"***   Final Bleeding Edge Threshold: "
+        print(f"***   Final maximum Threshold: "
               f"{threshold_info['final_threshold']} ***")
         print(f"***   Source: {threshold_info['source']} ***")
         print("***   Performance Mode: Maximum Aggressive ***")
