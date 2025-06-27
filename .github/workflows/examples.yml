@@ -31,6 +31,13 @@ jobs:
           - "examples/espidf-ulp"
           - "examples/espidf-ulp-riscv"
           - "examples/tasmota"
+        exclude:
+          - os: windows-latest
+            example: "examples/espidf-ulp"
+          - os: windows-latest
+            example: "examples/espidf-ulp-riscv"
+          - os: windows-latest
+            example: "examples/tasmota"
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -46,7 +53,7 @@ jobs:
           pip install -U https://github.com/Jason2866/platformio-core/archive/pioarduino.zip
           pio pkg install --global --platform file://.
       - name: git clone Tasmota and add to examples
-        if: "matrix.example == 'examples/tasmota' && matrix.os != 'windows-latest'"
+        if: "matrix.example == 'examples/tasmota'"
         run: |
           git clone -b development --depth 1 https://github.com/arendst/Tasmota.git examples/tasmota
           cp examples/tasmota_platformio_override.ini examples/tasmota/platformio_override.ini
@@ -54,6 +61,5 @@ jobs:
         env:
           PYTHONIOENCODING: utf-8
           PYTHONUTF8: '1'
-        if: "matrix.example != 'examples/tasmota' || matrix.os != 'windows-latest'"
         run: |
           pio run -d ${{ matrix.example }} --disable-auto-clean
