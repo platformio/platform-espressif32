@@ -28,7 +28,6 @@ import os
 import sys
 import shutil
 import hashlib
-import logging
 import threading
 from contextlib import suppress
 from os.path import join, exists, isabs, splitdrive, commonpath, relpath
@@ -51,28 +50,6 @@ python_deps = {
     "rich": ">=14.0.0",
     "esp-idf-size": ">=1.6.1"
 }
-
-
-def setup_logging():
-    """Setup logging with optional file output"""
-    handlers = [logging.StreamHandler()]
-
-    # Only add file handler if writable and not disabled
-    log_file = os.environ.get('ARDUINO_FRAMEWORK_LOG_FILE')
-    if log_file:
-        with suppress(OSError, PermissionError):
-            handlers.append(logging.FileHandler(log_file))
-
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        handlers=handlers
-    )
-
-
-# Only setup logging if enabled via environment variable
-if os.environ.get('ARDUINO_FRAMEWORK_ENABLE_LOGGING'):
-    setup_logging()
 
 # Constants for better performance
 UNICORE_FLAGS = {
@@ -117,12 +94,6 @@ def get_platform_default_threshold(mcu):
     }
 
     default_value = platform_defaults.get(mcu, 31600)
-
-    # Debug output only in verbose mode
-    if logging.getLogger().isEnabledFor(logging.DEBUG):
-        logging.debug(
-            f"Max. possible platform default threshold for {mcu}: "
-            f"{default_value}")
 
     return default_value
 
@@ -182,7 +153,7 @@ def validate_threshold(threshold, mcu):
         print("*** Consider using higher values for maximum performance ***")
 
     if original_threshold != threshold:
-        logging.warning(f"Threshold adjusted from {original_threshold} to "
+        print(f"Threshold adjusted from {original_threshold} to "
                         f"max. possible value {threshold} for {mcu}")
 
     return threshold
@@ -410,7 +381,6 @@ def safe_delete_file(file_path: Union[str, Path],
     try:
         # Check existence
         if not file_path.exists():
-            logging.warning(f"File does not exist: {file_path}")
             return False
 
         # Remove write protection if necessary
@@ -419,14 +389,11 @@ def safe_delete_file(file_path: Union[str, Path],
 
         # Delete file
         file_path.unlink()
-        logging.info(f"File deleted: {file_path}")
         return True
 
     except PermissionError:
-        logging.error(f"No permission to delete: {file_path}")
         return False
     except Exception as e:
-        logging.error(f"Error deleting {file_path}: {e}")
         return False
 
 
@@ -438,15 +405,12 @@ def safe_delete_directory(dir_path: Union[str, Path]) -> bool:
 
     try:
         if not dir_path.exists():
-            logging.warning(f"Directory does not exist: {dir_path}")
             return False
 
         shutil.rmtree(dir_path)
-        logging.info(f"Directory deleted: {dir_path}")
         return True
 
     except Exception as e:
-        logging.error(f"Error deleting {dir_path}: {e}")
         return False
 
 
@@ -480,7 +444,6 @@ def validate_platformio_path(path: Union[str, Path]) -> bool:
         return not any(critical in path_str for critical in critical_paths)
 
     except Exception as e:
-        logging.error(f"Path validation error: {e}")
         return False
 
 
@@ -515,22 +478,14 @@ def validate_deletion_path(path: Union[str, Path],
             normalized_critical = critical.resolve()
             if (normalized_path == normalized_critical or
                     normalized_critical in normalized_path.parents):
-                logging.error(f"Critical system path detected: {path}")
                 return False
         except (OSError, ValueError):
             # Path comparison failed, reject for safety
-            logging.error(f"Path comparison failed for: {path}")
             return False
 
     # Check against allowed patterns
     path_str = str(path)
     is_allowed = any(pattern in path_str for pattern in allowed_patterns)
-
-    if not is_allowed:
-        logging.error(f"Path does not match allowed patterns: {path}")
-        logging.error(f"Allowed patterns: {allowed_patterns}")
-    else:
-        logging.info(f"Path validation successful: {path}")
 
     return is_allowed
 
@@ -541,22 +496,10 @@ def safe_framework_cleanup():
 
     # Framework directory cleanup
     if exists(FRAMEWORK_DIR):
-        logging.info(f"Attempting to validate framework path: "
-                     f"{FRAMEWORK_DIR}")
-
         if validate_platformio_path(FRAMEWORK_DIR):
-            logging.info(f"Framework path validated successfully: "
-                         f"{FRAMEWORK_DIR}")
-
-            if safe_delete_directory(FRAMEWORK_DIR):
-                print("Framework successfully removed")
-            else:
+            if not safe_delete_directory(FRAMEWORK_DIR):
                 print("Error removing framework")
                 success = False
-        else:
-            logging.error(f"PlatformIO path validation failed: "
-                          f"{FRAMEWORK_DIR}")
-            success = False
 
     return success
 
@@ -982,7 +925,7 @@ if check_reinstall_frwrk():
             call_compile_libs()
             flag_custom_sdkconfig = False
     else:
-        logging.error("Framework cleanup failed - installation aborted")
+        print("Framework cleanup failed - installation aborted")
         sys.exit(1)
 
 if flag_custom_sdkconfig and not flag_any_custom_sdkconfig:
