@@ -40,18 +40,13 @@ from SCons.Script import (
     DefaultEnvironment,
 )
 
-from platformio import fs, __version__
+from platformio import fs
 from platformio.compat import IS_WINDOWS
 from platformio.proc import exec_command
 from platformio.builder.tools.piolib import ProjectAsLibBuilder
 from platformio.project.config import ProjectConfig
 from platformio.package.version import get_original_version, pepver_to_semver
 
-# Added to avoid conflicts between installed Python packages from
-# the IDF virtual environment and PlatformIO Core
-# Note: This workaround can be safely deleted when PlatformIO 6.1.7 is released
-if os.environ.get("PYTHONPATH"):
-    del os.environ["PYTHONPATH"]
 
 env = DefaultEnvironment()
 env.SConscript("_embed_files.py", exports="env")
@@ -137,7 +132,6 @@ idf_variant = mcu.lower()
 flag_custom_sdkonfig = False
 flag_custom_component_add = False
 flag_custom_component_remove = False
-removed_components = set()
 
 IDF5 = (
     platform.get_package_version("framework-espidf")
@@ -156,6 +150,11 @@ TOOLCHAIN_DIR = platform.get_package_dir(
 assert os.path.isdir(FRAMEWORK_DIR)
 assert os.path.isdir(TOOLCHAIN_DIR)
 
+def create_silent_action(action_func):
+    """Create a silent SCons action that suppresses output"""
+    silent_action = env.Action(action_func)
+    silent_action.strfunction = lambda target, source, env: ''
+    return silent_action
 
 if "arduino" in env.subst("$PIOFRAMEWORK"):
     ARDUINO_FRAMEWORK_DIR = platform.get_package_dir("framework-arduinoespressif32")
@@ -178,6 +177,18 @@ SDKCONFIG_PATH = os.path.expandvars(board.get(
         "build.esp-idf.sdkconfig_path",
         os.path.join(PROJECT_DIR, "sdkconfig.%s" % env.subst("$PIOENV")),
 ))
+
+def contains_path_traversal(url):
+    """Check for Path Traversal patterns"""
+    dangerous_patterns = [
+        '../', '..\\',  # Standard Path Traversal
+        '%2e%2e%2f', '%2e%2e%5c',  # URL-encoded
+        '..%2f', '..%5c',  # Mixed
+        '%252e%252e%252f',  # Double encoded
+    ]
+    
+    url_lower = url.lower()
+    return any(pattern in url_lower for pattern in dangerous_patterns)
 
 #
 # generate modified Arduino IDF sdkconfig, applying settings from "custom_sdkconfig"
@@ -212,15 +223,20 @@ def HandleArduinoIDFsettings(env):
         for file_entry in sdkconfig_entries:
             # Handle HTTP/HTTPS URLs
             if "http" in file_entry and "://" in file_entry:
-                try:
-                    response = requests.get(file_entry.split(" ")[0])
-                    if response.ok:
-                        return response.content.decode('utf-8')
-                except requests.RequestException as e:
-                    print(f"Error downloading {file_entry}: {e}")
-                except UnicodeDecodeError as e:
-                    print(f"Error decoding response from {file_entry}: {e}")
-                    return ""
+                url = file_entry.split(" ")[0]
+                # Path Traversal protection
+                if contains_path_traversal(url):
+                    print(f"Path Traversal detected: {url} check your URL path")
+                else:
+                    try:
+                        response = requests.get(file_entry.split(" ")[0], timeout=10)
+                        if response.ok:
+                            return response.content.decode('utf-8')
+                    except requests.RequestException as e:
+                        print(f"Error downloading {file_entry}: {e}")
+                    except UnicodeDecodeError as e:
+                        print(f"Error decoding response from {file_entry}: {e}")
+                        return ""
             
             # Handle local files
             if "file://" in file_entry:
@@ -293,6 +309,9 @@ def HandleArduinoIDFsettings(env):
         return config_flags
 
     def write_sdkconfig_file(idf_config_flags, checksum_source):
+        if "arduino" not in env.subst("$PIOFRAMEWORK"):
+            print("Error: Arduino framework required for sdkconfig processing")
+            return
         """Write the final sdkconfig.defaults file with checksum."""
         sdkconfig_src = join(ARDUINO_FRAMEWORK_DIR, "tools", "esp32-arduino-libs", mcu, "sdkconfig")
         sdkconfig_dst = join(PROJECT_DIR, "sdkconfig.defaults")
@@ -300,7 +319,7 @@ def HandleArduinoIDFsettings(env):
         # Generate checksum for validation (maintains original logic)
         checksum = get_MD5_hash(checksum_source.strip() + mcu)
         
-        with open(sdkconfig_src, 'r') as src, open(sdkconfig_dst, 'w') as dst:
+        with open(sdkconfig_src, 'r', encoding='utf-8') as src, open(sdkconfig_dst, 'w', encoding='utf-8') as dst:
             # Write checksum header (critical for compilation decision logic)
             dst.write(f"# TASMOTA__{checksum}\n")
             
@@ -1809,14 +1828,22 @@ if "arduino" in env.subst("$PIOFRAMEWORK"):
         LIBSOURCE_DIRS=[os.path.join(ARDUINO_FRAMEWORK_DIR, "libraries")]
     )
 
+# Set ESP-IDF version environment variables (needed for proper Kconfig processing)
+framework_version = get_framework_version()
+major_version = framework_version.split('.')[0] + '.' + framework_version.split('.')[1]
+os.environ["ESP_IDF_VERSION"] = major_version
+
+# Configure CMake arguments with ESP-IDF version
 extra_cmake_args = [
     "-DIDF_TARGET=" + idf_variant,
     "-DPYTHON_DEPS_CHECKED=1",
     "-DEXTRA_COMPONENT_DIRS:PATH=" + ";".join(extra_components),
     "-DPYTHON=" + get_python_exe(),
     "-DSDKCONFIG=" + SDKCONFIG_PATH,
+    f"-DESP_IDF_VERSION={major_version}",
+    f"-DESP_IDF_VERSION_MAJOR={framework_version.split('.')[0]}",
+    f"-DESP_IDF_VERSION_MINOR={framework_version.split('.')[1]}",
 ]
-
 
 # This will add the linker flag for the map file
 extra_cmake_args.append(
@@ -2193,8 +2220,7 @@ if ("arduino" in env.subst("$PIOFRAMEWORK")) and ("espidf" not in env.subst("$PI
             from component_manager import ComponentManager
             component_manager = ComponentManager(env)
             component_manager.restore_pioarduino_build_py()
-    silent_action = env.Action(idf_lib_copy)
-    silent_action.strfunction = lambda target, source, env: '' # hack to silence scons command output
+    silent_action = create_silent_action(idf_lib_copy)
     env.AddPostAction("checkprogsize", silent_action)
 
 if "espidf" in env.subst("$PIOFRAMEWORK") and (flag_custom_component_add == True or flag_custom_component_remove == True):
@@ -2217,8 +2243,7 @@ if "espidf" in env.subst("$PIOFRAMEWORK") and (flag_custom_component_add == True
             from component_manager import ComponentManager
             component_manager = ComponentManager(env)
             component_manager.restore_pioarduino_build_py()
-    silent_action = env.Action(idf_custom_component)
-    silent_action.strfunction = lambda target, source, env: '' # hack to silence scons command output
+    silent_action = create_silent_action(idf_custom_component)
     env.AddPostAction("checkprogsize", silent_action)
 #
 # Process OTA partition and image
