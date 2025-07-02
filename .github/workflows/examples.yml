@@ -49,8 +49,8 @@ jobs:
           python-version: "3.13"
       - name: Install dependencies
         run: |
-          pip install wheel
-          pip install -U https://github.com/Jason2866/platformio-core/archive/pioarduino.zip
+          pip install uv
+          uv pip install --system -U https://github.com/Jason2866/platformio-core/archive/pioarduino.zip
           pio pkg install --global --platform file://.
       - name: git clone Tasmota and add to examples
         if: "matrix.example == 'examples/tasmota'"
