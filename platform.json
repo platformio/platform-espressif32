@@ -80,7 +80,7 @@
       "type": "uploader",
       "optional": false,
       "owner": "tasmota",
-      "version": "https://github.com/Jason2866/esptool/releases/download/v5.0.0-dev1/esptool.zip"
+      "version": "https://github.com/Jason2866/esptool/releases/download/v5.0.0/esptool.zip"
     },
     "tl-install": {
       "type": "tool",
