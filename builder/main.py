@@ -17,7 +17,8 @@ import os
 import re
 import subprocess
 import sys
-from os.path import isfile, join
+import shlex
+from os.path  isfile, join
 
 from SCons.Script import (
     ARGUMENTS,
@@ -474,11 +475,7 @@ def firmware_metrics(target, source, env):
         print("Make sure the project is built first with 'pio run'")
         return
 
-    try:
-        import subprocess
-        import sys
-        import shlex
-        
+    try:        
         cmd = [env.subst("$PYTHONEXE"), "-m", "esp_idf_size", "--ng"]
         
         # Parameters from platformio.ini
