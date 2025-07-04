@@ -18,7 +18,7 @@ import re
 import subprocess
 import sys
 import shlex
-from os.path  isfile, join
+from os.path import isfile, join
 
 from SCons.Script import (
     ARGUMENTS,
