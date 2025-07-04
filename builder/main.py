@@ -15,7 +15,6 @@
 import locale
 import os
 import re
-import shlex
 import subprocess
 import sys
 from os.path import isfile, join
@@ -40,6 +39,29 @@ terminal_cp = locale.getpreferredencoding().lower()
 
 # Framework directory path
 FRAMEWORK_DIR = platform.get_package_dir("framework-arduinoespressif32")
+
+
+def _install_esptool(env):
+    """Install esptool from package folder if not already installed"""
+    try:
+        subprocess.check_call([env.subst("$PYTHONEXE"), "-c", "import esptool"], 
+                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return True
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        pass
+    
+    esptool_repo_path = env.subst(platform.get_package_dir("tool-esptoolpy") or "")
+    if esptool_repo_path and os.path.isdir(esptool_repo_path):
+        try:
+            subprocess.check_call([
+                env.subst("$PYTHONEXE"), "-m", "pip", "install", "-qqq", "-e", esptool_repo_path
+            ])
+            return True
+        except subprocess.CalledProcessError as e:
+            print(f"Warning: Failed to install esptool: {e}")
+            return False
+    
+    return False
 
 
 def BeforeUpload(target, source, env):
@@ -317,6 +339,9 @@ if mcu in ("esp32c2", "esp32c3", "esp32c5", "esp32c6", "esp32h2", "esp32p4"):
 if "INTEGRATION_EXTRA_DATA" not in env:
     env["INTEGRATION_EXTRA_DATA"] = {}
 
+# Install esptool if needed
+_install_esptool(env)
+
 # Configure build tools and environment variables
 env.Replace(
     __get_board_boot_mode=_get_board_boot_mode,
@@ -346,7 +371,7 @@ env.Replace(
         "bin",
         "%s-elf-gdb" % toolchain_arch,
     ),
-    OBJCOPY=join(platform.get_package_dir("tool-esptoolpy") or "", "esptool.py"),
+    OBJCOPY='esptool',
     RANLIB="%s-elf-gcc-ranlib" % toolchain_arch,
     SIZETOOL="%s-elf-size" % toolchain_arch,
     ARFLAGS=["rc"],
@@ -356,7 +381,7 @@ env.Replace(
     SIZECHECKCMD="$SIZETOOL -A -d $SOURCES",
     SIZEPRINTCMD="$SIZETOOL -B -d $SOURCES",
     ERASEFLAGS=["--chip", mcu, "--port", '"$UPLOAD_PORT"'],
-    ERASECMD='"$PYTHONEXE" "$OBJCOPY" $ERASEFLAGS erase-flash',
+    ERASECMD='"$OBJCOPY" $ERASEFLAGS erase-flash',
     MKFSTOOL="mk%s" % filesystem,
 
     ESP32_FS_IMAGE_NAME=env.get(
@@ -387,7 +412,7 @@ env.Append(
             action=env.VerboseAction(
                 " ".join(
                     [
-                        '"$PYTHONEXE" "$OBJCOPY"',
+                        "$OBJCOPY",
                         "--chip",
                         mcu,
                         "elf2image",
@@ -590,9 +615,7 @@ if upload_protocol == "espota":
 # Configure upload protocol: esptool
 elif upload_protocol == "esptool":
     env.Replace(
-        UPLOADER=join(
-            platform.get_package_dir("tool-esptoolpy") or "", "esptool.py"
-        ),
+        UPLOADER="esptool",
         UPLOADERFLAGS=[
             "--chip",
             mcu,
@@ -613,8 +636,7 @@ elif upload_protocol == "esptool":
             "--flash-size",
             "detect",
         ],
-        UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS '
-        "$ESP32_APP_OFFSET $SOURCE",
+        UPLOADCMD='$UPLOADER $UPLOADERFLAGS $ESP32_APP_OFFSET $SOURCE'
     )
     for image in env.get("FLASH_EXTRA_IMAGES", []):
         env.Append(UPLOADERFLAGS=[image[0], env.subst(image[1])])
@@ -642,7 +664,7 @@ elif upload_protocol == "esptool":
                 "detect",
                 "$FS_START",
             ],
-            UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS $SOURCE',
+            UPLOADCMD='"$UPLOADER" $UPLOADERFLAGS $SOURCE',
         )
 
     upload_actions = [
