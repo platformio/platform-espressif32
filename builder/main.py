@@ -15,9 +15,9 @@
 import locale
 import os
 import re
+import shlex
 import subprocess
 import sys
-import shlex
 from os.path import isfile, join
 
 from SCons.Script import (
@@ -340,7 +340,6 @@ if mcu in ("esp32c2", "esp32c3", "esp32c5", "esp32c6", "esp32h2", "esp32p4"):
 if "INTEGRATION_EXTRA_DATA" not in env:
     env["INTEGRATION_EXTRA_DATA"] = {}
 
-# Install esptool if needed
 _install_esptool(env)
 
 # Configure build tools and environment variables
