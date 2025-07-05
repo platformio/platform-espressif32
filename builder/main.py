@@ -13,8 +13,10 @@
 # limitations under the License.
 
 import locale
+import json
 import os
 import re
+import semantic_version
 import shlex
 import subprocess
 import sys
@@ -30,7 +32,9 @@ from SCons.Script import (
 )
 
 from platformio.project.helpers import get_project_dir
+from platformio.package.version import pepver_to_semver
 from platformio.util import get_serial_ports
+
 
 # Initialize environment and configuration
 env = DefaultEnvironment()
@@ -41,21 +45,153 @@ terminal_cp = locale.getpreferredencoding().lower()
 # Framework directory path
 FRAMEWORK_DIR = platform.get_package_dir("framework-arduinoespressif32")
 
+python_deps = {
+    "uv": ">=0.1.0",
+    "pyyaml": ">=6.0.2",
+    "rich-click": ">=1.8.6",
+    "zopfli": ">=0.2.2",
+    "intelhex": ">=2.3.0",
+    "rich": ">=14.0.0",
+    "esp-idf-size": ">=1.6.1"
+}
 
-def _install_esptool(env):
-    """Install esptool from package folder if not already installed"""
+
+def get_packages_to_install(deps, installed_packages):
+    """Generator for Python packages to install"""
+    for package, spec in deps.items():
+        if package not in installed_packages:
+            yield package
+        else:
+            version_spec = semantic_version.Spec(spec)
+            if not version_spec.match(installed_packages[package]):
+                yield package
+
+
+def install_python_deps():
+    """Ensure uv package manager is available, install with pip if not"""
+    try:
+        result = subprocess.run(
+            ["uv", "--version"],
+            capture_output=True,
+            text=True,
+            timeout=3
+        )
+        uv_available = result.returncode == 0
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        uv_available = False
+    
+    if not uv_available:
+        try:
+            result = subprocess.run(
+                [env.subst("$PYTHONEXE"), "-m", "pip", "install", "uv>=0.1.0", "-q", "-q", "-q"],
+                capture_output=True,
+                text=True,
+                timeout=30  # 30 second timeout
+            )
+            if result.returncode != 0:
+                if result.stderr:
+                    print(f"Error output: {result.stderr.strip()}")
+                return False
+        except subprocess.TimeoutExpired:
+            print("Error: uv installation timed out")
+            return False
+        except FileNotFoundError:
+            print("Error: Python executable not found")
+            return False
+        except Exception as e:
+            print(f"Error installing uv package manager: {e}")
+            return False
+
+    
+    def _get_installed_uv_packages():
+        result = {}
+        try:
+            cmd = ["uv", "pip", "list", "--format=json"]
+            result_obj = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                encoding='utf-8',
+                timeout=30  # 30 second timeout
+            )
+            
+            if result_obj.returncode == 0:
+                content = result_obj.stdout.strip()
+                if content:
+                    packages = json.loads(content)
+                    for p in packages:
+                        result[p["name"]] = pepver_to_semver(p["version"])
+            else:
+                print(f"Warning: pip list failed with exit code {result_obj.returncode}")
+                if result_obj.stderr:
+                    print(f"Error output: {result_obj.stderr.strip()}")
+                
+        except subprocess.TimeoutExpired:
+            print("Warning: uv pip list command timed out")
+        except (json.JSONDecodeError, KeyError) as e:
+            print(f"Warning: Could not parse package list: {e}")
+        except FileNotFoundError:
+            print("Warning: uv command not found")
+        except Exception as e:
+            print(f"Warning! Couldn't extract the list of installed Python packages: {e}")
+
+        return result
+
+    installed_packages = _get_installed_uv_packages()
+    packages_to_install = list(get_packages_to_install(python_deps, installed_packages))
+    
+    if packages_to_install:
+        packages_list = [f"{p}{python_deps[p]}" for p in packages_to_install]
+        
+        cmd = [
+            "uv", "pip", "install",
+            f"--python={env.subst('$PYTHONEXE')}",
+            "--quiet", "--upgrade"
+        ] + packages_list
+        
+        try:
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=30  # 30 second timeout for package installation
+            )
+            
+            if result.returncode != 0:
+                print(f"Error: Failed to install Python dependencies (exit code: {result.returncode})")
+                if result.stderr:
+                    print(f"Error output: {result.stderr.strip()}")
+                return False
+                
+        except subprocess.TimeoutExpired:
+            print("Error: Python dependencies installation timed out")
+            return False
+        except FileNotFoundError:
+            print("Error: uv command not found")
+            return False
+        except Exception as e:
+            print(f"Error installing Python dependencies: {e}")
+            return False
+    
+    return True
+
+
+def install_esptool(env):
+    """Install esptool from package folder "tool-esptoolpy" using uv package manager"""
     try:
         subprocess.check_call([env.subst("$PYTHONEXE"), "-c", "import esptool"], 
                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
         pass
-    
+
     esptool_repo_path = env.subst(platform.get_package_dir("tool-esptoolpy") or "")
     if esptool_repo_path and os.path.isdir(esptool_repo_path):
         try:
             subprocess.check_call([
-                env.subst("$PYTHONEXE"), "-m", "pip", "install", "-qqq", "-e", esptool_repo_path
+                "uv", "pip", "install", "--quiet",
+                f"--python={env.subst("$PYTHONEXE")}", 
+                "-e", esptool_repo_path
             ])
             return True
         except subprocess.CalledProcessError as e:
@@ -63,6 +199,10 @@ def _install_esptool(env):
             return False
     
     return False
+
+
+install_python_deps()
+install_esptool(env)
 
 
 def BeforeUpload(target, source, env):
@@ -340,8 +480,6 @@ if mcu in ("esp32c2", "esp32c3", "esp32c5", "esp32c6", "esp32h2", "esp32p4"):
 if "INTEGRATION_EXTRA_DATA" not in env:
     env["INTEGRATION_EXTRA_DATA"] = {}
 
-_install_esptool(env)
-
 # Configure build tools and environment variables
 env.Replace(
     __get_board_boot_mode=_get_board_boot_mode,
@@ -455,6 +593,7 @@ env.Append(
 if not env.get("PIOFRAMEWORK"):
     env.SConscript("frameworks/_bare.py", exports="env")
 
+
 def firmware_metrics(target, source, env):
     """
     Custom target to run esp-idf-size with support for command line parameters
@@ -516,6 +655,7 @@ def firmware_metrics(target, source, env):
     except Exception as e:
         print(f"Error: Failed to run firmware metrics: {e}")
         print("Make sure esp-idf-size is installed: pip install esp-idf-size")
+
 
 #
 # Target: Build executable and linkable firmware or FS image

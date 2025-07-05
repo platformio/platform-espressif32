@@ -22,8 +22,6 @@ kinds of creative coding, interactive objects, spaces or physical experiences.
 http://arduino.cc/en/Reference/HomePage
 """
 
-import subprocess
-import json
 import os
 import sys
 import shutil
@@ -34,22 +32,11 @@ from os.path import join, exists, isabs, splitdrive, commonpath, relpath
 from pathlib import Path
 from typing import Union, List
 
-import semantic_version
 from SCons.Script import DefaultEnvironment, SConscript
 from platformio import fs
-from platformio.package.version import pepver_to_semver
 from platformio.package.manager.tool import ToolPackageManager
 
 IS_WINDOWS = sys.platform.startswith("win")
-
-python_deps = {
-    "wheel": ">=0.35.1",
-    "rich-click": ">=1.8.6",
-    "zopfli": ">=0.2.2",
-    "intelhex": ">=2.3.0",
-    "rich": ">=14.0.0",
-    "esp-idf-size": ">=1.6.1"
-}
 
 # Constants for better performance
 UNICORE_FLAGS = {
@@ -586,53 +573,6 @@ if flag_custom_sdkconfig and has_unicore_flags():
     env.Replace(BUILD_UNFLAGS=new_build_unflags)
 
 
-def get_packages_to_install(deps, installed_packages):
-    """Generator for packages to install"""
-    for package, spec in deps.items():
-        if package not in installed_packages:
-            yield package
-        else:
-            version_spec = semantic_version.Spec(spec)
-            if not version_spec.match(installed_packages[package]):
-                yield package
-
-
-def install_python_deps():
-    def _get_installed_pip_packages():
-        result = {}
-        try:
-            pip_output = subprocess.check_output([
-                env.subst("$PYTHONEXE"),
-                "-m", "pip", "list", "--format=json",
-                "--disable-pip-version-check"
-            ])
-            packages = json.loads(pip_output)
-            for p in packages:
-                result[p["name"]] = pepver_to_semver(p["version"])
-        except Exception:
-            print("Warning! Couldn't extract the list of installed Python "
-                  "packages.")
-
-        return result
-
-    installed_packages = _get_installed_pip_packages()
-    packages_to_install = list(get_packages_to_install(python_deps,
-                                                       installed_packages))
-
-    if packages_to_install:
-        packages_str = " ".join(f'"{p}{python_deps[p]}"'
-                                for p in packages_to_install)
-        env.Execute(
-            env.VerboseAction(
-                f'"$PYTHONEXE" -m pip install -U -q -q -q {packages_str}',
-                "Installing Arduino Python dependencies",
-            )
-        )
-
-
-install_python_deps()
-
-
 def get_MD5_hash(phrase):
     return hashlib.md5(phrase.encode('utf-8')).hexdigest()[:16]
 
@@ -937,6 +877,7 @@ arduino_lib_compile_flag = env.subst("$ARDUINO_LIB_COMPILE_FLAG")
 
 if ("arduino" in pioframework and "espidf" not in pioframework and
         arduino_lib_compile_flag in ("Inactive", "True")):
+
     # try to remove not needed include path if an lib_ignore entry exists
     from component_manager import ComponentManager
     component_manager = ComponentManager(env)
@@ -947,8 +888,6 @@ if ("arduino" in pioframework and "espidf" not in pioframework and
     env.AddPostAction("checkprogsize", silent_action)
 
     if IS_WINDOWS:
-        # Smart include path optimization based on bleeding edge configurable 
-        # threshold
         env.AddBuildMiddleware(smart_include_length_shorten)
 
     build_script_path = join(FRAMEWORK_DIR, "tools", "pioarduino-build.py")
