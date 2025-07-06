@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import fnmatch
 import os
 import contextlib
 import json
@@ -108,6 +109,20 @@ def safe_remove_directory(path: str) -> bool:
 
 
 @safe_file_operation
+def safe_remove_directory_pattern(base_path: str, pattern: str) -> bool:
+    """Safely remove directories matching a pattern with error handling."""
+    if not os.path.exists(base_path):
+        return True
+    # Find all directories matching the pattern in the base directory
+    for item in os.listdir(base_path):
+        item_path = os.path.join(base_path, item)
+        if os.path.isdir(item_path) and fnmatch.fnmatch(item, pattern):
+            shutil.rmtree(item_path)
+            logger.debug(f"Directory removed: {item_path}")
+    return True
+
+
+@safe_file_operation
 def safe_copy_file(src: str, dst: str) -> bool:
     """Safely copy files with error handling."""
     os.makedirs(os.path.dirname(dst), exist_ok=True)
@@ -138,6 +153,17 @@ class Espressif32Platform(PlatformBase):
         """Get centralized path calculation for tools with caching."""
         if tool_name not in self._tools_cache:
             tool_path = os.path.join(self.packages_dir, tool_name)
+            # Remove all directories containing '@' in their name
+            try:
+                for item in os.listdir(self.packages_dir):
+                    if '@' in item and item.startswith(tool_name):
+                        item_path = os.path.join(self.packages_dir, item)
+                        if os.path.isdir(item_path):
+                            safe_remove_directory(item_path)
+                            logger.debug(f"Removed directory with '@' in name: {item_path}")
+            except OSError as e:
+                logger.error(f"Error scanning packages directory for '@' directories: {e}")
+            
             self._tools_cache[tool_name] = {
                 'tool_path': tool_path,
                 'package_path': os.path.join(tool_path, "package.json"),
@@ -287,8 +313,17 @@ class Espressif32Platform(PlatformBase):
             logger.debug(f"Tool {tool_name} found with correct version")
             return True
 
-        # Wrong version, reinstall
+        # Wrong version, reinstall - remove similar paths too
         logger.info(f"Reinstalling {tool_name} due to version mismatch")
+    
+        tool_base_name = os.path.basename(paths['tool_path'])
+        packages_dir = os.path.dirname(paths['tool_path'])
+    
+        # Remove similar directories with version suffixes FIRST (e.g., xtensa@src, xtensa.12232)
+        safe_remove_directory_pattern(packages_dir, f"{tool_base_name}@*")
+        safe_remove_directory_pattern(packages_dir, f"{tool_base_name}.*")
+    
+        # Then remove the main tool directory (if it still exists)
         safe_remove_directory(paths['tool_path'])
         return self.install_tool(tool_name, retry_count + 1)
 
