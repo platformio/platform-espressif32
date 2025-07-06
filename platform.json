@@ -88,6 +88,12 @@
       "owner": "pioarduino",
       "version": "https://github.com/pioarduino/esp_install/releases/download/v5.0.0/esp_install-v5.0.0.zip"
     },
+      "contrib-piohome": {
+      "optional": true,
+      "owner": "pioarduino",
+      "package-version": "3.4.4",
+      "version": "https://github.com/pioarduino/registry/releases/download/0.0.1/contrib-piohome-3.4.4.tar.gz"
+    },
     "tool-openocd-esp32": {
       "type": "debugger",
       "optional": true,
