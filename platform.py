@@ -14,7 +14,6 @@
 
 import fnmatch
 import os
-import contextlib
 import json
 import subprocess
 import sys
@@ -412,6 +411,7 @@ class Espressif32Platform(PlatformBase):
     def _configure_check_tools(self, variables: Dict) -> None:
         """Configure static analysis and check tools based on configuration."""
         check_tools = variables.get("check_tool", [])
+        self.install_tool("contrib-piohome")
         if not check_tools:
             return
 
