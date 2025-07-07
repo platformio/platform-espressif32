@@ -154,12 +154,14 @@ class Espressif32Platform(PlatformBase):
             tool_path = os.path.join(self.packages_dir, tool_name)
             # Remove all directories containing '@' in their name
             try:
-                for item in os.listdir(self.packages_dir):
-                    if '@' in item and item.startswith(tool_name):
-                        item_path = os.path.join(self.packages_dir, item)
-                        if os.path.isdir(item_path):
-                            safe_remove_directory(item_path)
-                            logger.debug(f"Removed directory with '@' in name: {item_path}")
+                if os.path.exists(self.packages_dir) and os.path.isdir(self.packages_dir):
+                    for item in os.listdir(self.packages_dir):
+                        if '@' in item and item.startswith(tool_name):
+                            item_path = os.path.join(self.packages_dir, item)
+                            if os.path.isdir(item_path):
+                                safe_remove_directory(item_path)
+                                logger.debug(f"Removed directory with '@' in name: {item_path}")
+
             except OSError as e:
                 logger.error(f"Error scanning packages directory for '@' directories: {e}")
             
