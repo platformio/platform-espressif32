@@ -190,7 +190,7 @@ def install_esptool(env):
         try:
             subprocess.check_call([
                 "uv", "pip", "install", "--quiet",
-                f"--python={env.subst("$PYTHONEXE")}", 
+                f"--python={env.subst('$PYTHONEXE')}", 
                 "-e", esptool_repo_path
             ])
             return True
