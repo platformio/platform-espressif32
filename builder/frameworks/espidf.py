@@ -1779,7 +1779,7 @@ extra_cmake_args = [
 
 # This will add the linker flag for the map file
 extra_cmake_args.append(
-    f'-DCMAKE_EXE_LINKER_FLAGS=-Wl,-Map={os.path.join(BUILD_DIR, env.subst("$PROGNAME") + ".map")}'
+    f'-DCMAKE_EXE_LINKER_FLAGS=-Wl,-Map={fs.to_unix_path(os.path.join(BUILD_DIR, env.subst("$PROGNAME") + ".map"))}'
 )
 
 # Add any extra args from board config
