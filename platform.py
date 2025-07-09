@@ -405,6 +405,10 @@ class Espressif32Platform(PlatformBase):
         if os.path.exists(installer_path):
             self.packages["tl-install"]["optional"] = True
 
+    def _install_esptool_package(self) -> None:
+        """Install esptool package required for all builds."""
+        self.install_tool("tool-esptoolpy")
+
     def _install_common_idf_packages(self) -> None:
         """Install common ESP-IDF packages required for all builds."""
         for package in COMMON_IDF_PACKAGES:
@@ -503,6 +507,7 @@ class Espressif32Platform(PlatformBase):
         try:
             # Configuration steps
             self._configure_installer()
+            self._install_esptool_package()
             self._configure_arduino_framework(frameworks)
             self._configure_espidf_framework(frameworks, variables, board_config, mcu)
             self._configure_mcu_toolchains(mcu, variables, targets)
