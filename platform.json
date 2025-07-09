@@ -162,8 +162,8 @@
       "type": "tool",
       "optional": true,
       "owner": "pioarduino",
-      "package-version": "1.10.2",
-      "version": "https://github.com/pioarduino/registry/releases/download/0.0.1/ninja-1.10.2.zip"
+      "package-version": "1.13.0",
+      "version": "https://github.com/pioarduino/registry/releases/download/0.0.1/ninja-1.13.0.zip"
     },
     "tool-scons": {
       "type": "tool",
