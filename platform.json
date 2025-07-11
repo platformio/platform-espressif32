@@ -94,7 +94,7 @@
     "tool-esptoolpy": {
       "type": "uploader",
       "owner": "platformio",
-      "version": "~1.40501.0"
+      "version": "~2.40900.0"
     },
     "tool-dfuutil-arduino": {
       "type": "uploader",
