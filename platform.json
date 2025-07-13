@@ -107,14 +107,14 @@
       "optional": true,
       "owner": "pioarduino",
       "package-version": "3.2.0",
-      "version": "https://github.com/pioarduino/registry/releases/download/0.0.1/mklittlefs-3.2.0.zip"
+      "version": "https://github.com/pioarduino/registry/releases/download/0.0.1/mklittlefs-3.2.0-new.zip"
     },
-    "tool-mklittlefs-4.0.0": {
+    "tool-mklittlefs4": {
       "type": "uploader",
       "optional": true,
       "owner": "pioarduino",
-      "package-version": "4.0.0",
-      "version": "https://github.com/pioarduino/registry/releases/download/0.0.1/mklittlefs-4.0.0.zip"
+      "package-version": "4.0.2",
+      "version": "https://github.com/pioarduino/registry/releases/download/0.0.1/mklittlefs-4.0.2.zip"
     },
     "tool-mkfatfs": {
       "type": "uploader",
