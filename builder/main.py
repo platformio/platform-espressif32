@@ -645,6 +645,22 @@ def check_lib_archive_exists():
     return False
 
 
+def switch_off_ldf():
+    """
+    Disables LDF (Library Dependency Finder) for uploadfs, uploadfsota, and buildfs targets.
+
+    This optimization prevents unnecessary library dependency scanning and compilation
+    when only filesystem operations are performed.
+    """
+    fs_targets = {"uploadfs", "uploadfsota", "buildfs"}
+    if fs_targets & set(COMMAND_LINE_TARGETS):
+        # Disable LDF by modifying project configuration directly
+        env_section = "env:" + env["PIOENV"]
+        if not projectconfig.has_section(env_section):
+            projectconfig.add_section(env_section)
+        projectconfig.set(env_section, "lib_ldf_mode", "off")
+
+
 # Initialize board configuration and MCU settings
 board = env.BoardConfig()
 mcu = board.get("build.mcu", "esp32")
@@ -771,6 +787,10 @@ env.Append(
 # Load framework-specific configuration
 if not env.get("PIOFRAMEWORK"):
     env.SConscript("frameworks/_bare.py", exports="env")
+
+
+# Disable LDF for filesystem operations
+switch_off_ldf()
 
 
 def firmware_metrics(target, source, env):
