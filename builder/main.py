@@ -284,7 +284,7 @@ def install_esptool(env):
             scripts_dir = os.path.join(python_dir, "Scripts")
             esptool_exe = os.path.join(scripts_dir, "esptool.exe")
         else:
-            scripts_dir = os.path.join(python_dir, "bin")
+            scripts_dir = os.path.join(python_dir) # with env it is in bin directory!
             esptool_exe = os.path.join(scripts_dir, "esptool")
 
         if os.path.isfile(esptool_exe):
@@ -715,7 +715,6 @@ objcopy_value = (
     if ' ' in esptool_binary_path 
     else esptool_binary_path
 )
-
 # Configure build tools and environment variables
 env.Replace(
     __get_board_boot_mode=_get_board_boot_mode,
