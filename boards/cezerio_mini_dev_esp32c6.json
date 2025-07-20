@@ -6,7 +6,7 @@
     "flash_mode": "qio",
     "hwids": [
       [
-        "0X303a",
+        "0x303a",
         "0x1001"
       ]
     ],
