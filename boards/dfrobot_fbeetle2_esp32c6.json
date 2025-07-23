@@ -1,0 +1,33 @@
+{
+  "build": {
+    "arduino":{
+      "ldscript": "esp32c6_out.ld"
+    },
+    "core": "esp32",
+    "f_cpu": "160000000L",
+    "f_flash": "40000000L",
+    "flash_mode": "qio",
+    "mcu": "esp32c6",
+    "variant": "dfrobot_firebeetle2_esp32c6"
+  },
+  "connectivity": [
+    "wifi"
+  ],
+  "debug": {
+    "openocd_target": "esp32c6.cfg"
+  },
+  "frameworks": [
+    "arduino",
+    "espidf"
+  ],
+  "name": "DFRobot Beetle 2 ESP32-C6",
+  "upload": {
+    "flash_size": "4MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 4194304,
+    "require_upload_port": true,
+    "speed": 460800
+  },
+  "url": "https://www.dfrobot.com/product-2778.html",
+  "vendor": "DFRobot"
+}

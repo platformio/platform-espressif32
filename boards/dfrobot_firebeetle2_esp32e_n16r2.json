@@ -1,16 +1,18 @@
 {
   "build": {
     "arduino": {
-      "ldscript": "esp32_out.ld"
+      "ldscript": "esp32_out.ld",
+      "partitions": "default_16MB.csv"
     },
     "core": "esp32",
     "extra_flags": [
       "-DARDUINO_DFROBOT_FIREBEETLE_2_ESP32E",
+      "-DBOARD_HAS_PSRAM",
       "-DARDUINO_RUNNING_CORE=1",
       "-DARDUINO_EVENT_RUNNING_CORE=1"
     ],
     "f_cpu": "240000000L",
-    "f_flash": "40000000L",
+    "f_flash": "160000000L",
     "flash_mode": "qio",
     "mcu": "esp32",
     "variant": "dfrobot_firebeetle2_esp32e"
@@ -26,14 +28,14 @@
     "arduino",
     "espidf"
   ],
-  "name": "DFRobot Firebeetle 2 ESP32-E",
+  "name": "DFRobot Firebeetle 2 ESP32-E(N16R2)",
   "upload": {
-    "flash_size": "4MB",
+    "flash_size": "16MB",
     "maximum_ram_size": 327680,
-    "maximum_size": 4194304,
+    "maximum_size": 16777216,
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://www.dfrobot.com/product-2195.html",
+  "url": "https://www.dfrobot.com/product-2837.html",
   "vendor": "DFRobot"
 }
