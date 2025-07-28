@@ -74,6 +74,9 @@ IS_WINDOWS = sys.platform.startswith("win")
 if IS_WINDOWS:
     os.environ["PLATFORMIO_SYSTEM_TYPE"] = "windows_amd64"
 
+# Clear IDF_TOOLS_PATH, if set tools may be installed in the wrong place
+os.environ["IDF_TOOLS_PATH"] = ""
+
 # Global variables
 python_exe = get_pythonexe_path()
 pm = ToolPackageManager()
