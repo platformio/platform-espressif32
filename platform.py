@@ -31,6 +31,7 @@ RETRY_LIMIT = 3
 SUBPROCESS_TIMEOUT = 300
 DEFAULT_DEBUG_SPEED = "5000"
 DEFAULT_APP_OFFSET = "0x10000"
+tl_install_name = "tool-esp_install"
 
 # MCUs that support ESP-builtin debug
 ESP_BUILTIN_DEBUG_MCUS = frozenset([
@@ -149,6 +150,144 @@ class Espressif32Platform(PlatformBase):
             self._packages_dir = config.get("platformio", "packages_dir")
         return self._packages_dir
 
+    def _check_tl_install_version(self) -> bool:
+        """
+        Check if tool-esp_install is installed in the correct version.
+        Install the correct version only if version differs.
+        
+        Returns:
+            bool: True if correct version is available, False on error
+        """
+        
+        # Get required version from platform.json
+        required_version = self.packages.get(tl_install_name, {}).get("version")
+        if not required_version:
+            logger.debug(f"No version check required for {tl_install_name}")
+            return True
+        
+        # Check if tool is already installed
+        tl_install_path = os.path.join(self.packages_dir, tl_install_name)
+        package_json_path = os.path.join(tl_install_path, "package.json")
+        
+        if not os.path.exists(package_json_path):
+            logger.info(f"{tl_install_name} not installed, installing version {required_version}")
+            return self._install_tl_install(required_version)
+        
+        # Read installed version
+        try:
+            with open(package_json_path, 'r', encoding='utf-8') as f:
+                package_data = json.load(f)
+            
+            installed_version = package_data.get("version")
+            if not installed_version:
+                logger.warning(f"Installed version for {tl_install_name} unknown, installing {required_version}")
+                return self._install_tl_install(required_version)
+            
+            # IMPORTANT: Compare versions correctly
+            if self._compare_tl_install_versions(installed_version, required_version):
+                logger.debug(f"{tl_install_name} version {installed_version} is already correctly installed")
+                # IMPORTANT: Set package as available, but do NOT reinstall
+                self.packages[tl_install_name]["optional"] = True
+                return True
+            else:
+                logger.info(
+                    f"Version mismatch for {tl_install_name}: "
+                    f"installed={installed_version}, required={required_version}, installing correct version"
+                )
+                return self._install_tl_install(required_version)
+            
+        except (json.JSONDecodeError, FileNotFoundError) as e:
+            logger.error(f"Error reading package data for {tl_install_name}: {e}")
+            return self._install_tl_install(required_version)
+
+    def _compare_tl_install_versions(self, installed: str, required: str) -> bool:
+        """
+        Compare installed and required version of tool-esp_install.
+        
+        Args:
+            installed: Currently installed version string
+            required: Required version string from platform.json
+            
+        Returns:
+            bool: True if versions match, False otherwise
+        """
+        # For URL-based versions: Extract version string from URL
+        installed_clean = self._extract_version_from_url(installed)
+        required_clean = self._extract_version_from_url(required)
+        
+        logger.debug(f"Version comparison: installed='{installed_clean}' vs required='{required_clean}'")
+        
+        return installed_clean == required_clean
+
+    def _extract_version_from_url(self, version_string: str) -> str:
+        """
+        Extract version information from URL or return version directly.
+        
+        Args:
+            version_string: Version string or URL containing version
+            
+        Returns:
+            str: Extracted version string
+        """
+        if version_string.startswith(('http://', 'https://')):
+            # Extract version from URL like: .../v5.1.0/esp_install-v5.1.0.zip
+            import re
+            version_match = re.search(r'v(\d+\.\d+\.\d+)', version_string)
+            if version_match:
+                return version_match.group(1)  # Returns "5.1.0"
+            else:
+                # Fallback: Use entire URL
+                return version_string
+        else:
+            # Direct version number
+            return version_string.strip()
+
+    def _install_tl_install(self, version: str) -> bool:
+        """
+        Install tool-esp_install ONLY when necessary.
+        
+        Args:
+            version: Version string or URL to install
+            
+        Returns:
+            bool: True if installation successful, False otherwise
+        """
+        tl_install_path = os.path.join(self.packages_dir, tl_install_name)
+        
+        try:
+            # Remove old installation completely
+            if os.path.exists(tl_install_path):
+                logger.info(f"Removing old {tl_install_name} installation")
+                safe_remove_directory(tl_install_path)
+
+            # Remove maybe old existing version of tl-install too
+            old_tl_install_path = os.path.join(self.packages_dir, "tl-install")
+            if os.path.exists(old_tl_install_path):
+                safe_remove_directory(old_tl_install_path)
+
+            # Install new version
+            logger.info(f"Installing {tl_install_name} version {version}")
+
+            # Set package configuration
+            self.packages[tl_install_name]["optional"] = False
+            self.packages[tl_install_name]["version"] = version
+
+            # Install via package manager
+            pm.install(version)
+
+            # Verify installation
+            if os.path.exists(os.path.join(tl_install_path, "package.json")):
+                logger.info(f"{tl_install_name} successfully installed and verified")
+                self.packages[tl_install_name]["optional"] = True
+                return True
+            else:
+                logger.error(f"{tl_install_name} installation failed - package.json not found")
+                return False
+            
+        except Exception as e:
+            logger.error(f"Error installing {tl_install_name}: {e}")
+            return False
+
     def _get_tool_paths(self, tool_name: str) -> Dict[str, str]:
         """Get centralized path calculation for tools with caching."""
         if tool_name not in self._tools_cache:
@@ -172,7 +311,7 @@ class Espressif32Platform(PlatformBase):
                 'tools_json_path': os.path.join(tool_path, "tools.json"),
                 'piopm_path': os.path.join(tool_path, ".piopm"),
                 'idf_tools_path': os.path.join(
-                    self.packages_dir, "tl-install", "tools", "idf_tools.py"
+                    self.packages_dir, tl_install_name, "tools", "idf_tools.py"
                 )
             }
         return self._tools_cache[tool_name]
@@ -327,10 +466,11 @@ class Espressif32Platform(PlatformBase):
     
         # Then remove the main tool directory (if it still exists)
         safe_remove_directory(paths['tool_path'])
+
         return self.install_tool(tool_name, retry_count + 1)
 
     def _configure_arduino_framework(self, frameworks: List[str]) -> None:
-        """Configure Arduino framework"""
+        """Configure Arduino framework dependencies."""
         if "arduino" not in frameworks:
             return
 
@@ -399,12 +539,23 @@ class Espressif32Platform(PlatformBase):
             self.install_tool("tool-openocd-esp32")
 
     def _configure_installer(self) -> None:
-        """Configure the ESP-IDF tools installer."""
+        """Configure the ESP-IDF tools installer with proper version checking."""
+        
+        # Check version - installs only when needed
+        if not self._check_tl_install_version():
+            logger.error("Error during tool-esp_install version check / installation")
+            return
+
+        # Check if idf_tools.py is available
         installer_path = os.path.join(
-            self.packages_dir, "tl-install", "tools", "idf_tools.py"
+            self.packages_dir, tl_install_name, "tools", "idf_tools.py"
         )
+        
         if os.path.exists(installer_path):
-            self.packages["tl-install"]["optional"] = True
+            logger.debug(f"{tl_install_name} is available and ready")
+            self.packages[tl_install_name]["optional"] = True
+        else:
+            logger.warning(f"idf_tools.py not found in {installer_path}")
 
     def _install_esptool_package(self) -> None:
         """Install esptool package required for all builds."""
@@ -439,7 +590,7 @@ class Espressif32Platform(PlatformBase):
                     os.remove(piopm_path)
                     logger.info(f"Incompatible mklittlefs version {version} removed (required: 3.x)")
             except (json.JSONDecodeError, KeyError) as e:
-                logger.error(f"Error reading mklittlefs package data: {e}")
+                logger.error(f"Error reading mklittlefs package  {e}")
 
     def _setup_mklittlefs_for_download(self) -> None:
         """Setup mklittlefs for download functionality with version 4.x."""

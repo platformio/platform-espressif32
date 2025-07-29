@@ -83,10 +83,11 @@
       "package-version": "5.0.1",
       "version": "https://github.com/pioarduino/registry/releases/download/0.0.1/esptoolpy-v5.0.1.zip"
     },
-    "tl-install": {
+    "tool-esp_install": {
       "type": "tool",
       "optional": false,
       "owner": "pioarduino",
+      "package-version": "5.1.0",
       "version": "https://github.com/pioarduino/esp_install/releases/download/v5.1.0/esp_install-v5.1.0.zip"
     },
       "contrib-piohome": {
