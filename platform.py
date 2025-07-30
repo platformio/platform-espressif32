@@ -101,6 +101,15 @@ def safe_file_operation(operation_func):
 
 
 @safe_file_operation
+def safe_remove_file(path: str) -> bool:
+    """Safely remove a file with error handling."""
+    if os.path.exists(path) and os.path.isfile(path):
+        os.remove(path)
+        logger.debug(f"File removed: {path}")
+    return True
+
+
+@safe_file_operation
 def safe_remove_directory(path: str) -> bool:
     """Safely remove directories with error handling."""
     if os.path.exists(path) and os.path.isdir(path):
@@ -129,6 +138,15 @@ def safe_copy_file(src: str, dst: str) -> bool:
     os.makedirs(os.path.dirname(dst), exist_ok=True)
     shutil.copyfile(src, dst)
     logger.debug(f"File copied: {src} -> {dst}")
+    return True
+
+
+@safe_file_operation
+def safe_copy_directory(src: str, dst: str) -> bool:
+    """Safely copy directories with error handling."""
+    os.makedirs(os.path.dirname(dst), exist_ok=True)
+    shutil.copytree(src, dst, dirs_exist_ok=True)
+    logger.debug(f"Directory copied: {src} -> {dst}")
     return True
 
 
@@ -244,46 +262,52 @@ class Espressif32Platform(PlatformBase):
 
     def _install_tl_install(self, version: str) -> bool:
         """
-        Install tool-esp_install ONLY when necessary.
-        
+        Install tool-esp_install ONLY when necessary
+        and handles backwards compability for tl-install.
+
         Args:
             version: Version string or URL to install
-            
+   
         Returns:
             bool: True if installation successful, False otherwise
         """
         tl_install_path = os.path.join(self.packages_dir, tl_install_name)
-        
+        old_tl_install_path = os.path.join(self.packages_dir, "tl-install")
+
         try:
-            # Remove old installation completely
+            old_tl_install_exists = os.path.exists(old_tl_install_path)
+            if old_tl_install_exists:
+                # remove outdated tl-install
+                safe_remove_directory(old_tl_install_path)
+
             if os.path.exists(tl_install_path):
                 logger.info(f"Removing old {tl_install_name} installation")
                 safe_remove_directory(tl_install_path)
 
-            # Remove maybe old existing version of tl-install too
-            old_tl_install_path = os.path.join(self.packages_dir, "tl-install")
-            if os.path.exists(old_tl_install_path):
-                safe_remove_directory(old_tl_install_path)
-
-            # Install new version
             logger.info(f"Installing {tl_install_name} version {version}")
-
-            # Set package configuration
             self.packages[tl_install_name]["optional"] = False
             self.packages[tl_install_name]["version"] = version
-
-            # Install via package manager
             pm.install(version)
+            # Ensure backward compability by removing pio install status indicator
+            tl_piopm_path = os.path.join(tl_install_path, ".piopm")
+            safe_remove_file(tl_piopm_path)
 
-            # Verify installation
             if os.path.exists(os.path.join(tl_install_path, "package.json")):
                 logger.info(f"{tl_install_name} successfully installed and verified")
                 self.packages[tl_install_name]["optional"] = True
+            
+                # Handle old tl-install to keep backwards compability
+                if old_tl_install_exists:
+                    # Copy tool-esp_install content to tl-install location
+                    if safe_copy_directory(tl_install_path, old_tl_install_path):
+                        logger.info(f"Content copied from {tl_install_name} to old tl-install location")
+                    else:
+                        logger.warning(f"Failed to copy content to old tl-install location")
                 return True
             else:
                 logger.error(f"{tl_install_name} installation failed - package.json not found")
                 return False
-            
+        
         except Exception as e:
             logger.error(f"Error installing {tl_install_name}: {e}")
             return False
@@ -546,6 +570,11 @@ class Espressif32Platform(PlatformBase):
             logger.error("Error during tool-esp_install version check / installation")
             return
 
+        # Remove pio install marker to avoid issues when switching versions
+        old_tl_piopm_path = os.path.join(self.packages_dir, "tl-install", ".piopm")
+        if os.path.exists(old_tl_piopm_path):
+            safe_remove_file(old_tl_piopm_path)
+        
         # Check if idf_tools.py is available
         installer_path = os.path.join(
             self.packages_dir, tl_install_name, "tools", "idf_tools.py"
