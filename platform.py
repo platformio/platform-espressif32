@@ -263,7 +263,7 @@ class Espressif32Platform(PlatformBase):
     def _install_tl_install(self, version: str) -> bool:
         """
         Install tool-esp_install ONLY when necessary
-        and handles backwards compability for tl-install.
+        and handles backwards compatibility for tl-install.
 
         Args:
             version: Version string or URL to install
@@ -288,7 +288,7 @@ class Espressif32Platform(PlatformBase):
             self.packages[tl_install_name]["optional"] = False
             self.packages[tl_install_name]["version"] = version
             pm.install(version)
-            # Ensure backward compability by removing pio install status indicator
+            # Ensure backward compatibility by removing pio install status indicator
             tl_piopm_path = os.path.join(tl_install_path, ".piopm")
             safe_remove_file(tl_piopm_path)
 
@@ -296,13 +296,13 @@ class Espressif32Platform(PlatformBase):
                 logger.info(f"{tl_install_name} successfully installed and verified")
                 self.packages[tl_install_name]["optional"] = True
             
-                # Handle old tl-install to keep backwards compability
+                # Handle old tl-install to keep backwards compatibility
                 if old_tl_install_exists:
                     # Copy tool-esp_install content to tl-install location
                     if safe_copy_directory(tl_install_path, old_tl_install_path):
                         logger.info(f"Content copied from {tl_install_name} to old tl-install location")
                     else:
-                        logger.warning(f"Failed to copy content to old tl-install location")
+                        logger.warning("Failed to copy content to old tl-install location")
                 return True
             else:
                 logger.error(f"{tl_install_name} installation failed - package.json not found")
@@ -312,22 +312,39 @@ class Espressif32Platform(PlatformBase):
             logger.error(f"Error installing {tl_install_name}: {e}")
             return False
 
+    def _cleanup_versioned_tool_directories(self, tool_name: str) -> None:
+        """
+        Clean up versioned tool directories containing '@' or version suffixes.
+        This function should be called during every tool version check.
+        
+        Args:
+            tool_name: Name of the tool to clean up
+        """
+        if not os.path.exists(self.packages_dir) or not os.path.isdir(self.packages_dir):
+            return
+            
+        try:
+            # Remove directories with '@' in their name (e.g., tool-name@version, tool-name@src)
+            safe_remove_directory_pattern(self.packages_dir, f"{tool_name}@*")
+            
+            # Remove directories with version suffixes (e.g., tool-name.12345)
+            safe_remove_directory_pattern(self.packages_dir, f"{tool_name}.*")
+            
+            # Also check for any directory that starts with tool_name and contains '@'
+            for item in os.listdir(self.packages_dir):
+                if item.startswith(tool_name) and '@' in item:
+                    item_path = os.path.join(self.packages_dir, item)
+                    if os.path.isdir(item_path):
+                        safe_remove_directory(item_path)
+                        logger.debug(f"Removed versioned directory: {item_path}")
+                        
+        except OSError as e:
+            logger.error(f"Error cleaning up versioned directories for {tool_name}: {e}")
+
     def _get_tool_paths(self, tool_name: str) -> Dict[str, str]:
         """Get centralized path calculation for tools with caching."""
         if tool_name not in self._tools_cache:
             tool_path = os.path.join(self.packages_dir, tool_name)
-            # Remove all directories containing '@' in their name
-            try:
-                if os.path.exists(self.packages_dir) and os.path.isdir(self.packages_dir):
-                    for item in os.listdir(self.packages_dir):
-                        if '@' in item and item.startswith(tool_name):
-                            item_path = os.path.join(self.packages_dir, item)
-                            if os.path.isdir(item_path):
-                                safe_remove_directory(item_path)
-                                logger.debug(f"Removed directory with '@' in name: {item_path}")
-
-            except OSError as e:
-                logger.error(f"Error scanning packages directory for '@' directories: {e}")
             
             self._tools_cache[tool_name] = {
                 'tool_path': tool_path,
@@ -387,6 +404,9 @@ class Espressif32Platform(PlatformBase):
 
     def _check_tool_version(self, tool_name: str) -> bool:
         """Check if the installed tool version matches the required version."""
+        # Clean up versioned directories FIRST, before any version checks
+        self._cleanup_versioned_tool_directories(tool_name)
+        
         paths = self._get_tool_paths(tool_name)
 
         try:
@@ -478,17 +498,10 @@ class Espressif32Platform(PlatformBase):
             logger.debug(f"Tool {tool_name} found with correct version")
             return True
 
-        # Wrong version, reinstall - remove similar paths too
+        # Wrong version, reinstall - cleanup is already done in _check_tool_version
         logger.info(f"Reinstalling {tool_name} due to version mismatch")
-    
-        tool_base_name = os.path.basename(paths['tool_path'])
-        packages_dir = os.path.dirname(paths['tool_path'])
-    
-        # Remove similar directories with version suffixes FIRST (e.g., xtensa@src, xtensa.12232)
-        safe_remove_directory_pattern(packages_dir, f"{tool_base_name}@*")
-        safe_remove_directory_pattern(packages_dir, f"{tool_base_name}.*")
-    
-        # Then remove the main tool directory (if it still exists)
+
+        # Remove the main tool directory (if it still exists after cleanup)
         safe_remove_directory(paths['tool_path'])
 
         return self.install_tool(tool_name, retry_count + 1)
