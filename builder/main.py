@@ -36,6 +36,15 @@ from platformio.package.version import pepver_to_semver
 from platformio.util import get_serial_ports
 from platformio.compat import IS_WINDOWS
 
+# Check Python version requirement
+if sys.version_info < (3, 10):
+    sys.stderr.write(
+        f"Error: Python 3.10 or higher is required. "
+        f"Current version: {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}\n"
+        f"Please update your Python installation.\n"
+    )
+    sys.exit(1)
+
 # Python dependencies required for the build process
 python_deps = {
     "uv": ">=0.1.0",
