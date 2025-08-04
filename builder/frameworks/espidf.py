@@ -34,6 +34,7 @@ import semantic_version
 
 from SCons.Script import (
     ARGUMENTS,
+    Builder,
     COMMAND_LINE_TARGETS,
     DefaultEnvironment,
 )
@@ -881,7 +882,7 @@ def find_lib_deps(components_map, elf_config, link_args, ignore_components=None)
     return result
 
 
-def build_bootloader(sdk_config):
+def build_bootloader(sdk_config, bootloader_offset):
     bootloader_src_dir = os.path.join(
         FRAMEWORK_DIR, "components", "bootloader", "subproject"
     )
@@ -922,6 +923,20 @@ def build_bootloader(sdk_config):
         target_configs, ["STATIC_LIBRARY", "OBJECT_LIBRARY"]
     )
 
+    if env.get("PIO_ESP32_SECURE_BOOT_ENABLED"):
+        if not env.get(
+            "PIO_ESP32_SECURE_BOOT_BUILD_SIGNED_BINARIES", False
+        ) and sdk_config.get("SECURE_BOOT_V2_ENABLED"):
+            # When CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES is disabled,
+            # the bootloader will use the --pad-to-size option in elf2image
+            # command of esptool for sector padding, with a size of
+            # 4 KB per sector.
+            action = copy.deepcopy(env["BUILDERS"]["ElfToBin"].action)
+            action.cmd_list = env["BUILDERS"][
+                "ElfToBin"
+            ].action.cmd_list.replace("-o", "--pad-to-size 4KB" + " -o")
+            env["BUILDERS"]["ElfToBin"].action = action
+
     # Note: By default the size of bootloader is limited to 0x2000 bytes,
     # in debug mode the footprint size can be easily grow beyond this limit
     build_components(
@@ -929,7 +944,8 @@ def build_bootloader(sdk_config):
         components_map,
         bootloader_src_dir,
         "bootloader",
-        debug_allowed=sdk_config.get("BOOTLOADER_COMPILER_OPTIMIZATION_DEBUG", False),
+        debug_allowed=sdk_config.get(
+            "BOOTLOADER_COMPILER_OPTIMIZATION_DEBUG", False),
     )
     link_args = extract_link_args(elf_config)
     extra_flags = filter_args(link_args["LINKFLAGS"], ["-T", "-u"])
@@ -946,12 +962,34 @@ def build_bootloader(sdk_config):
         CPPDEFINES=["__BOOTLOADER_BUILD"], _LIBDIRFLAGS=" -Wl,--end-group"
     )
 
-    return bootloader_env.ElfToBin(
-        os.path.join("$BUILD_DIR", "bootloader"),
+    bootloader_image_name = "bootloader"
+    bootloader_binary = bootloader_env.ElfToBin(
+        os.path.join("$BUILD_DIR", bootloader_image_name),
         bootloader_env.Program(
             os.path.join("$BUILD_DIR", "bootloader.elf"), bootloader_libs
         ),
     )
+
+    if env.get("PIO_ESP32_SIGNATURE_REQUIRED", False) or env.get(
+        "PIO_ESP32_SECURE_BOOT_BUILD_SIGNED_BINARIES", False
+    ):
+        bootloader_image_name = "bootloader-signed"
+        bootloader_binary = env.SignBin(
+            os.path.join("$BUILD_DIR", bootloader_image_name), bootloader_binary
+        )
+
+    if env.get("PIO_ESP32_ENCRYPTION_REQUIRED", False) and env.get(
+        "PIO_ESP32_SECURE_FLASH_ENCRYPTION_ENABLED"
+    ):
+        bootloader_image_name = "bootloader-encrypted"
+        bootloader_binary = env.Clone(
+            FLASH_IMAGE_OFFSET=bootloader_offset
+        ).EncryptBin(
+            os.path.join("$BUILD_DIR", bootloader_image_name), bootloader_binary
+        )
+
+    env["ESP32_BOOTLOADER_IMAGE_NAME"] = bootloader_image_name
+    return bootloader_binary[0]
 
 
 def get_targets_by_type(target_configs, target_types, ignore_targets=None):
@@ -1281,7 +1319,7 @@ def install_python_deps():
         # https://github.com/platformio/platform-espressif32/issues/635
         "cryptography": "~=44.0.0" if IDF5 else ">=2.1.4,<35.0.0",
         "pyparsing": ">=3.1.0,<4" if IDF5 else ">=2.0.3,<2.4.0",
-        "idf-component-manager": "~=1.5.2" if IDF5 else "~=1.0",
+        "idf-component-manager": "~=2.2" if IDF5 else "~=1.0",
         "esp-idf-kconfig": "~=2.5.0"
     }
 
@@ -1442,11 +1480,185 @@ def get_python_exe():
     return python_exe_path
 
 
+def disable_after_reset_hook(source, target, env):
+    upload_flags = env["UPLOADERFLAGS"]
+    upload_protocol = env.subst("$UPLOAD_PROTOCOL")
+    if upload_protocol == "esptool":
+        try:
+            reset_after_index = upload_flags.index("--after")
+            modified_upload_flags = upload_flags.copy()
+            modified_upload_flags[reset_after_index + 1] = "no_reset"
+            env.Replace(UPLOADERFLAGS=modified_upload_flags)
+            print(
+                "Warning! The target won't be reset after uploading the "
+                "binary in the Secure Boot mode!"
+            )
+        except ValueError:
+            print(
+                "Warning! Failed patch the reset method in the upload "
+                "command!"
+            )
+
+
+def secure_boot_sanity_checks(sdk_config):
+    if sdk_config.get("SECURE_SIGNED_APPS", False):
+        if sdk_config.get("SECURE_BOOT_V1_ENABLED", False):
+            sys.stderr.write("Error: Secure Boot v1 is not supported\n")
+            env.Exit(1)
+
+        if sdk_config.get("SECURE_SIGNED_APPS_ECDSA_SCHEME", False):
+            sys.stderr.write("Error: ECDSA scheme is not supported!\n")
+            env.Exit(1)
+
+        if (
+            sdk_config.get("IDF_TARGET", "") == "esp32"
+            and sdk_config.get("ESP32_REV_MIN_FULL", 0) < 300
+        ):
+            sys.stderr.write(
+                "ESP32 chip revision >3.0 is required for Secure Boot v2!\n"
+            )
+            env.Exit(1)
+
+
+def generate_partition_table(partition_table_offset):
+    fwpartitions_dir = os.path.join(
+        FRAMEWORK_DIR, "components", "partition_table"
+    )
+    partitions_csv = board.get("build.partitions", "partitions_singleapp.csv")
+
+    env.Replace(
+        PARTITIONS_TABLE_CSV=os.path.abspath(
+            os.path.join(fwpartitions_dir, partitions_csv)
+            if os.path.isfile(os.path.join(fwpartitions_dir, partitions_csv))
+            else partitions_csv
+        )
+    )
+
+    partition_table = env.Command(
+        os.path.join("$BUILD_DIR", "partitions.bin"),
+        "$PARTITIONS_TABLE_CSV",
+        env.VerboseAction(
+            '"$ESPIDF_PYTHONEXE" "%s" -q --offset "%s" %s --flash-size "%s" $SOURCE $TARGET'
+            % (
+                os.path.join(
+                    FRAMEWORK_DIR,
+                    "components",
+                    "partition_table",
+                    "gen_esp32part.py",
+                ),
+                partition_table_offset,
+                "--secure v2" if env.get(
+                    "PIO_ESP32_SECURE_BOOT_ENABLED") else "",
+                board.get("upload.flash_size", "4MB"),
+            ),
+            "Generating partitions $TARGET",
+        ),
+    )
+
+    if env.get("PIO_ESP32_SIGNATURE_REQUIRED", False) or env.get(
+        "PIO_ESP32_SECURE_BOOT_BUILD_SIGNED_BINARIES", False
+    ):
+        partition_table = env.SignBin(
+            os.path.join("$BUILD_DIR", "partitions-signed.bin"),
+            partition_table
+        )
+
+    if env.get("PIO_ESP32_ENCRYPTION_REQUIRED", False):
+        partition_table = env.Clone(
+            FLASH_IMAGE_OFFSET=partition_table_offset
+        ).EncryptBin(
+            os.path.join("$BUILD_DIR", "partitions-encrypted.bin"),
+            partition_table,
+        )
+
+    return partition_table
+
+#
+# Add extra builders and variables for signing and encrypting binaries
+#
+
+
+env.Append(
+    BUILDERS=dict(
+        SignBin=Builder(
+            action=env.VerboseAction(
+                " ".join(
+                    [
+                        "$PYTHONEXE",
+                        os.path.join(
+                            platform.get_package_dir("tool-esptoolpy") or "",
+                            "espsecure.py",
+                        ),
+                        "sign_data",
+                        "--version",
+                        "$PIO_ESP32_SECURE_BOOT_VERSION",
+                        "--keyfile",
+                        "$PIO_ESP32_SECURE_BOOT_SIGNING_KEY",
+                        "-o",
+                        "$TARGET",
+                        "$SOURCE",
+                    ]
+                ),
+                "Generating signed image $TARGET from $SOURCE",
+            ),
+            suffix=".bin",
+        ),
+        EncryptBin=Builder(
+            action=env.VerboseAction(
+                " ".join(
+                    [
+                        "$PYTHONEXE",
+                        os.path.join(
+                            platform.get_package_dir("tool-esptoolpy") or "",
+                            "espsecure.py",
+                        ),
+                        "encrypt_flash_data",
+                        "--aes_xts" if idf_variant != "esp32" else "",
+                        "--keyfile",
+                        board.get("build.encryption_key", ""),
+                        "--address",
+                        "$FLASH_IMAGE_OFFSET",
+                        "--output",
+                        "$TARGET",
+                        "$SOURCE",
+                    ]
+                ),
+                "Generating encrypted image $TARGET from $SOURCE",
+            ),
+            suffix=".bin",
+        ),
+    ),
+    PIO_ESP32_SINGLE_BOOTLOADER_TARGET=(
+        "bootloader" in COMMAND_LINE_TARGETS
+        or any(
+            t.startswith("__") and t.endswith("-bootloader")
+            for t in COMMAND_LINE_TARGETS
+        )
+    ),
+
+    PIO_ESP32_SINGLE_APP_TARGET=(
+        "app" in COMMAND_LINE_TARGETS or any(
+            t.startswith("__") and t.endswith("-app")
+            for t in COMMAND_LINE_TARGETS
+        )
+    ),
+
+    PIO_ESP32_SIGNATURE_REQUIRED="sign" in COMMAND_LINE_TARGETS or any(
+        t.startswith("__") and "signed" in t for t in COMMAND_LINE_TARGETS
+    ),
+
+    PIO_ESP32_ENCRYPTION_REQUIRED="encrypt" in COMMAND_LINE_TARGETS or any(
+        t.startswith("__") and "encrypted" in t for t in COMMAND_LINE_TARGETS
+    )
+)
+
 #
 # Ensure Python environment contains everything required for IDF
 #
 
 ensure_python_venv_available()
+
+env.Append(ESPIDF_PYTHONEXE=get_python_exe())
 
 # ESP-IDF package doesn't contain .git folder, instead package version is specified
 # in a special file "version.h" in the root folder of the package
@@ -1530,7 +1742,7 @@ if os.path.isfile(os.path.join(PROJECT_SRC_DIR, "sdkconfig.h")):
     )
 
 #
-# Initial targets loading
+# Extracting build information from CMake
 #
 
 # By default 'main' folder is used to store source files. In case when a user has
@@ -1573,11 +1785,78 @@ if not project_codemodel:
     sys.stderr.write("Error: Couldn't find code model generated by CMake\n")
     env.Exit(1)
 
+#
+# Global SDK configuration
+#
+
+sdk_config = get_sdk_configuration()
+
+#
+# Secure Boot and Flash Encryption
+#
+
+if sdk_config.get("SECURE_BOOT"):
+    env["PIO_ESP32_SECURE_BOOT_ENABLED"] = True
+
+    env["PIO_ESP32_SECURE_BOOT_VERSION"] = (
+        "2" if sdk_config.get("SECURE_BOOT_V2_ENABLED", False) else "1"
+    )
+
+    if sdk_config.get("SECURE_BOOT_BUILD_SIGNED_BINARIES"):
+        env["PIO_ESP32_SECURE_BOOT_BUILD_SIGNED_BINARIES"] = True
+
+    if "PIO_ESP32_SECURE_BOOT_SIGNING_KEY" not in env:
+        env["PIO_ESP32_SECURE_BOOT_SIGNING_KEY"] = board.get(
+            "build.secure_boot_signing_key",
+            sdk_config.get("SECURE_BOOT_SIGNING_KEY", ""),
+        )
+
+    secure_boot_sanity_checks(sdk_config)
+
+if env.get("PIO_ESP32_SIGNATURE_REQUIRED", False) or env.get(
+    "PIO_ESP32_SECURE_BOOT_BUILD_SIGNED_BINARIES", False
+):
+    signing_key = env.get("PIO_ESP32_SECURE_BOOT_SIGNING_KEY", "")
+    if not signing_key:
+        print(
+            "\nWarning: The signing key is not set!\n"
+        )
+    elif not os.path.isfile(signing_key):
+        print(
+            "\nWarning: The signing key `%s` doesn't exist!\n" % signing_key
+        )
+
+if sdk_config.get("SECURE_FLASH_ENC_ENABLED", False):
+    env["PIO_ESP32_SECURE_FLASH_ENCRYPTION_ENABLED"] = True
+
+if env.get("PIO_ESP32_ENCRYPTION_REQUIRED", False) and not env.get(
+    "PIO_ESP32_SECURE_FLASH_ENCRYPTION_ENABLED", False
+):
+    sys.stderr.write(
+        "\nError: Flash Encryption is not enabled in project configuration!\n"
+    )
+    env.Exit(1)
+
+encryption_key = board.get("build.encryption_key", "")
+if env.get(
+    "PIO_ESP32_SECURE_FLASH_ENCRYPTION_ENABLED", False
+) and not os.path.isfile(encryption_key):
+    if not encryption_key:
+        print(
+            "\nWarning: The Flash Encryption key is not set!\n"
+        )
+    elif not os.path.isfile(signing_key):
+        print(
+            "\nWarning: The Flash Encryption key `%s` doesn't exist!\n" % signing_key
+        )
+
+#
+# Initial targets loading
+#
+
 target_configs = load_target_configurations(
     project_codemodel, os.path.join(BUILD_DIR, CMAKE_API_REPLY_PATH)
 )
-
-sdk_config = get_sdk_configuration()
 
 project_target_name = "__idf_%s" % os.path.basename(PROJECT_SRC_DIR)
 if project_target_name not in target_configs:
@@ -1627,10 +1906,19 @@ app_includes = get_app_includes(elf_config)
 # Compile bootloader
 #
 
-env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", build_bootloader(sdk_config))
+bootloader_offset = board.get(
+    "upload.bootloader_offset",
+    sdk_config.get(
+        "BOOTLOADER_OFFSET_IN_FLASH",
+        ("0x0" if mcu in ("esp32c3", "esp32c6", "esp32s3") else "0x1000"),
+    ),
+)
+
+bootloader = build_bootloader(sdk_config, bootloader_offset)
+env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", bootloader)
 
 #
-# Target: ESP-IDF menuconfig
+# Target: ESP-IDF specific targets
 #
 
 env.AddPlatformTarget(
@@ -1690,34 +1978,8 @@ env.AddBuildMiddleware(_skip_prj_source_files)
 # Generate partition table
 #
 
-fwpartitions_dir = os.path.join(FRAMEWORK_DIR, "components", "partition_table")
-partitions_csv = board.get("build.partitions", "partitions_singleapp.csv")
 partition_table_offset = sdk_config.get("PARTITION_TABLE_OFFSET", 0x8000)
-
-env.Replace(
-    PARTITIONS_TABLE_CSV=os.path.abspath(
-        os.path.join(fwpartitions_dir, partitions_csv)
-        if os.path.isfile(os.path.join(fwpartitions_dir, partitions_csv))
-        else partitions_csv
-    )
-)
-
-partition_table = env.Command(
-    os.path.join("$BUILD_DIR", "partitions.bin"),
-    "$PARTITIONS_TABLE_CSV",
-    env.VerboseAction(
-        '"$ESPIDF_PYTHONEXE" "%s" -q --offset "%s" --flash-size "%s" $SOURCE $TARGET'
-        % (
-            os.path.join(
-                FRAMEWORK_DIR, "components", "partition_table", "gen_esp32part.py"
-            ),
-            partition_table_offset,
-            board.get("upload.flash_size", "4MB"),
-        ),
-        "Generating partitions $TARGET",
-    ),
-)
-
+partition_table = generate_partition_table(partition_table_offset)
 env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", partition_table)
 
 #
@@ -1729,23 +1991,50 @@ env.MergeFlags(project_flags)
 env.Prepend(
     CPPPATH=app_includes["plain_includes"],
     CPPDEFINES=project_defines,
-    ESPIDF_PYTHONEXE=get_python_exe(),
     LINKFLAGS=extra_flags,
     LIBS=libs,
-    FLASH_EXTRA_IMAGES=[
-        (
-            board.get(
-                "upload.bootloader_offset",
-                "0x0" if mcu in ("esp32c3", "esp32c6", "esp32s3") else "0x1000",
-            ),
-            os.path.join("$BUILD_DIR", "bootloader.bin"),
-        ),
-        (
-            board.get("upload.partition_table_offset", hex(partition_table_offset)),
-            os.path.join("$BUILD_DIR", "partitions.bin"),
-        ),
-    ],
 )
+
+# In Secure Boot the bootloader image is only uploaded if
+# a corresponding option is enabled
+if not env.get("PIO_ESP32_SECURE_BOOT_ENABLED") or sdk_config.get(
+    "SECURE_BOOT_FLASH_BOOTLOADER_DEFAULT", False
+) or env.get("PIO_ESP32_SINGLE_APP_TARGET", False):
+    env.Append(
+        FLASH_EXTRA_IMAGES=[
+            (
+                bootloader_offset,
+                bootloader.get_abspath(),
+            ),
+        ],
+    )
+elif (
+    env.get("PIO_ESP32_SECURE_BOOT_ENABLED", False)
+    and not sdk_config.get("SECURE_BOOT_FLASH_BOOTLOADER_DEFAULT", False)
+    and not env.get("PIO_ESP32_SINGLE_BOOTLOADER_TARGET", False)
+):
+    print(
+        "Warning! The bootloader image is not uploaded by default "
+        "in Secure Boot mode"
+    )
+
+if env.get("PIO_ESP32_SINGLE_BOOTLOADER_TARGET", False) or env.get(
+    "PIO_ESP32_SINGLE_APP_TARGET", False
+):
+    # Extra images are not added if a special target
+    # (bootloader or app) is selected
+    env.Replace(FLASH_EXTRA_IMAGES=[])
+else:
+    env.Append(
+        FLASH_EXTRA_IMAGES=[
+            (
+                board.get(
+                    "upload.partition_table_offset", hex(partition_table_offset)
+                ),
+                partition_table[0].get_abspath(),
+            ),
+        ],
+    )
 
 #
 # Propagate Arduino defines to the main build environment
@@ -1835,8 +2124,13 @@ if sdk_config.get("SOC_MMU_PAGE_SIZE_CONFIGURABLE", False):
 if mmu_page_size != "64KB":
     extra_elf2bin_flags += " --flash-mmu-page-size %s" % mmu_page_size
 
-action = copy.deepcopy(env["BUILDERS"]["ElfToBin"].action)
+if env.get("PIO_ESP32_SECURE_BOOT_ENABLED", False) and sdk_config.get(
+    "SECURE_SIGNED_APPS_RSA_SCHEME",
+    sdk_config.get("SECURE_SIGNED_APPS_ECDSA_V2_SCHEME", False),
+):
+    extra_elf2bin_flags += " --secure-pad-v2"
 
+action = copy.deepcopy(env["BUILDERS"]["ElfToBin"].action)
 action.cmd_list = env["BUILDERS"]["ElfToBin"].action.cmd_list.replace(
     "-o", extra_elf2bin_flags + " -o"
 )
@@ -1865,13 +2159,16 @@ ota_partition_params = get_partition_info(
 if ota_partition_params["size"] and ota_partition_params["offset"]:
     # Generate an empty image if OTA is enabled in partition table
     ota_partition_image = os.path.join("$BUILD_DIR", "ota_data_initial.bin")
-    generate_empty_partition_image(ota_partition_image, ota_partition_params["size"])
+    generate_empty_partition_image(
+        ota_partition_image, ota_partition_params["size"]
+    )
 
     env.Append(
         FLASH_EXTRA_IMAGES=[
             (
                 board.get(
-                    "upload.ota_partition_offset", ota_partition_params["offset"]
+                    "upload.ota_partition_offset",
+                    ota_partition_params["offset"],
                 ),
                 ota_partition_image,
             )
@@ -1882,13 +2179,36 @@ if ota_partition_params["size"] and ota_partition_params["offset"]:
 # Configure application partition offset
 #
 
-env.Replace(
-    ESP32_APP_OFFSET=get_app_partition_offset(
-        env.subst("$PARTITIONS_TABLE_CSV"), partition_table_offset
-    )
+app_offset = get_app_partition_offset(
+    env.subst("$PARTITIONS_TABLE_CSV"),
+    partition_table_offset
 )
+
+# Use the bootloader offset if bootloader is the target
+if env.get("PIO_ESP32_SINGLE_BOOTLOADER_TARGET", False):
+    app_offset = bootloader_offset
+
+env.Replace(ESP32_APP_OFFSET=app_offset)
+
 
 # Propagate application offset to debug configurations
 env["INTEGRATION_EXTRA_DATA"].update(
     {"application_offset": env.subst("$ESP32_APP_OFFSET")}
 )
+
+#
+# Extra actions required for Secure Features
+#
+
+# The upload command is patched if Secure Boot or Flash Encryption are enabled
+if (
+    env.get("PIO_ESP32_SECURE_BOOT_ENABLED", False)
+    or env.get("PIO_ESP32_SECURE_FLASH_ENCRYPTION_ENABLED", False)
+):
+    env.AddPreAction("upload", disable_after_reset_hook)
+    for target_name in ("app", "bootloader"):
+        for action_name in ("", "-signed", "-encrypted", "-signed-encrypted"):
+            env.AddPreAction(
+                "upload%s-%s" % (action_name, target_name),
+                disable_after_reset_hook,
+            )
