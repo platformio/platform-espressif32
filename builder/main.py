@@ -57,7 +57,7 @@ python_deps = {
     "cryptography": ">=45.0.3",
     "ecdsa": ">=0.19.1",
     "bitstring": ">=4.3.1",
-    "reedsolo": ">=1.7.0",
+    "reedsolo": ">=1.5.3,<1.8",
     "esp-idf-size": ">=1.6.1"
 }
 
