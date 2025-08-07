@@ -840,7 +840,7 @@ class Espressif32Platform(PlatformBase):
         return [
             "-s", "$PACKAGE_DIR/share/openocd/scripts",
             "-f", f"interface/{openocd_interface}.cfg",
-            "-f", f"{config_type}/{config_name}.cfg"
+            "-f", f"{config_type}/{config_name}"
         ]
 
     def configure_debug_session(self, debug_config):
