@@ -1343,7 +1343,7 @@ def get_partition_info(pt_path, pt_offset, pt_params):
         "offset",
     ]
 
-    if pt_params["name"] == "boot":
+    if pt_params.get("name") == "boot":
         cmd.append("--partition-boot-default")
     else:
         cmd.extend(
@@ -1374,8 +1374,11 @@ def get_partition_info(pt_path, pt_offset, pt_params):
 
 def get_app_partition_offset(pt_table, pt_offset):
     # Get the default boot partition offset
-    app_params = get_partition_info(pt_table, pt_offset, {"name": "boot"})
-    return app_params.get("offset", "0x10000")
+    ota_app_params = get_partition_info(pt_table, pt_offset, {"type": "app", "subtype": "ota_0"})
+    if ota_app_params.get("offset"):
+        return ota_app_params["offset"]
+    factory_app_params = get_partition_info(pt_table, pt_offset, {"type": "app", "subtype": "factory"})
+    return factory_app_params.get("offset", "0x10000")
 
 
 def preprocess_linker_file(src_ld_script, target_ld_script):
@@ -2228,33 +2231,12 @@ def _parse_size(value):
 # Configure application partition offset
 #
 
-partitions_csv = env.subst("$PARTITIONS_TABLE_CSV")
-result = []
-next_offset = 0
-bound = 0x10000
-with open(partitions_csv) as fp:
-    for line in fp.readlines():
-        line = line.strip()
-        if not line or line.startswith("#"):
-            continue
-        tokens = [t.strip() for t in line.split(",")]
-        if len(tokens) < 5:
-            continue
-        partition = {
-            "name": tokens[0],
-            "type": tokens[1],
-            "subtype": tokens[2],
-            "offset": tokens[3] or next_offset,
-            "size": tokens[4],
-            "flags": tokens[5] if len(tokens) > 5 else None
-        }
-        result.append(partition)
-        next_offset = _parse_size(partition["offset"])
-        if (partition["subtype"] == "ota_0"):
-            bound = next_offset
-        next_offset = (next_offset + bound - 1) & ~(bound - 1)
+app_offset = get_app_partition_offset(
+    env.subst("$PARTITIONS_TABLE_CSV"),
+    partition_table_offset
+)
 
-env.Replace(ESP32_APP_OFFSET=str(hex(bound)))
+env.Replace(ESP32_APP_OFFSET=app_offset)
 
 #
 # Propagate application offset to debug configurations
