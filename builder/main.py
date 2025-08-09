@@ -151,8 +151,16 @@ def get_packages_to_install(deps, installed_packages):
         if package not in installed_packages:
             yield package
         elif package == "platformio":
-            # Check if we have ANY version of platformio
-            continue
+            # Enforce the version from the direct URL if it looks like one.
+            # If version can't be parsed, fall back to accepting any installed version.
+            m = re.search(r'/v?(\d+\.\d+\.\d+(?:\.\d+)?)(?:\.(?:zip|tar\.gz|tar\.bz2))?$', spec)
+            if m:
+                expected_ver = semantic_version.Version(m.group(1))
+                if installed_packages.get(package) != expected_ver:
+                    # Reinstall to align with the pinned URL version
+                    yield package
+            else:
+                continue
         else:
             version_spec = semantic_version.Spec(spec)
             if not version_spec.match(installed_packages[package]):
