@@ -49,6 +49,7 @@ if sys.version_info < (3, 10):
 # Python dependencies required for the build process
 python_deps = {
     "uv": ">=0.1.0",
+    "platformio": ">=6.1.18",
     "pyyaml": ">=6.0.2",
     "rich-click": ">=1.8.6",
     "zopfli": ">=0.2.2",
@@ -179,8 +180,7 @@ def install_python_deps():
                 [PYTHON_EXE, "-m", "pip", "install", "uv>=0.1.0", "-q", "-q", "-q"],
                 capture_output=True,
                 text=True,
-                timeout=30,  # 30 second timeout
-                env=os.environ  # Use modified environment with venv Python
+                timeout=30  # 30 second timeout
             )
             if result.returncode != 0:
                 if result.stderr:
@@ -200,21 +200,20 @@ def install_python_deps():
     
     def _get_installed_uv_packages():
         """
-        Get list of installed packages using uv.
+        Get list of installed packages in virtual env 'penv' using uv.
         
         Returns:
             dict: Dictionary of installed packages with versions
         """
         result = {}
         try:
-            cmd = [uv_executable, "pip", "list", "--format=json"]
+            cmd = [uv_executable, "pip", "list", f"--python={PYTHON_EXE}", "--format=json"]
             result_obj = subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
                 encoding='utf-8',
-                timeout=30,  # 30 second timeout
-                env=os.environ  # Use modified environment with venv Python
+                timeout=30  # 30 second timeout
             )
             
             if result_obj.returncode == 0:
@@ -256,8 +255,7 @@ def install_python_deps():
                 cmd,
                 capture_output=True,
                 text=True,
-                timeout=30,  # 30 second timeout for package installation
-                env=os.environ  # Use modified environment with venv Python
+                timeout=30  # 30 second timeout for package installation
             )
             
             if result.returncode != 0:
@@ -290,8 +288,7 @@ def install_esptool():
         subprocess.check_call(
             [PYTHON_EXE, "-c", "import esptool"], 
             stdout=subprocess.DEVNULL, 
-            stderr=subprocess.DEVNULL,
-            env=os.environ
+            stderr=subprocess.DEVNULL
         )
         return
     except (subprocess.CalledProcessError, FileNotFoundError):
@@ -307,10 +304,10 @@ def install_esptool():
             uv_executable, "pip", "install", "--quiet",
             f"--python={PYTHON_EXE}",
             "-e", esptool_repo_path
-        ], env=os.environ)
-        
+        ])
+
         return
-        
+
     except subprocess.CalledProcessError as e:
         print(f"Error: Failed to install esptool: {e}")
         sys.exit(1)
