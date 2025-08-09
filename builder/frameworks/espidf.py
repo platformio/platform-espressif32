@@ -1483,11 +1483,13 @@ def generate_mbedtls_bundle(sdk_config):
 
 
 def install_python_deps():
+    PYTHON_EXE = env.subst("$PYTHONEXE")
+    UV_EXE = os.path.join(os.path.dirname(PYTHON_EXE), "uv" + (".exe" if IS_WINDOWS else ""))
     def _get_installed_uv_packages(python_exe_path):
         result = {}
         try:
             uv_output = subprocess.check_output([
-                "uv", "pip", "list", "--python", python_exe_path, "--format=json"
+                UV_EXE, "pip", "list", "--python", python_exe_path, "--format=json"
             ])
             packages = json.loads(uv_output)
         except (subprocess.CalledProcessError, json.JSONDecodeError, OSError) as e:
@@ -1534,7 +1536,7 @@ def install_python_deps():
         # Use uv to install packages in the specific Python environment
         env.Execute(
             env.VerboseAction(
-                f'uv pip install --python "{python_exe_path}" {packages_str}',
+                f'"{UV_EXE}" pip install --python "{python_exe_path}" {packages_str}',
                 "Installing ESP-IDF's Python dependencies with uv",
             )
         )
@@ -1543,7 +1545,7 @@ def install_python_deps():
         # Install windows-curses in the IDF Python environment
         env.Execute(
             env.VerboseAction(
-                f'uv pip install --python "{python_exe_path}" windows-curses',
+                f'"{UV_EXE}" pip install --python "{python_exe_path}" windows-curses',
                 "Installing windows-curses package with uv",
             )
         )
