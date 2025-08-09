@@ -2136,7 +2136,8 @@ if ("arduino" in env.subst("$PIOFRAMEWORK")) and ("espidf" not in env.subst("$PI
             pass
         print("*** Copied compiled %s IDF libraries to Arduino framework ***" % idf_variant)
 
-        pio_exe_path = shutil.which("platformio"+(".exe" if IS_WINDOWS else ""))
+        PYTHON_EXE = env.subst("$PYTHONEXE")
+        pio_exe_path = os.path.join(os.path.dirname(PYTHON_EXE), "pio" + (".exe" if IS_WINDOWS else ""))
         pio_cmd = env["PIOENV"]
         env.Execute(
             env.VerboseAction(
