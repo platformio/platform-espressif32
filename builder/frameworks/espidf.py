@@ -2136,15 +2136,9 @@ if ("arduino" in env.subst("$PIOFRAMEWORK")) and ("espidf" not in env.subst("$PI
             pass
         print("*** Copied compiled %s IDF libraries to Arduino framework ***" % idf_variant)
 
-        pio_cmd = env["PIOENV"]
         PYTHON_EXE = env.subst("$PYTHONEXE")
-        pio_exe_dir = os.path.dirname(PYTHON_EXE)
-        pio_exe_path = os.path.join(pio_exe_dir, "platformio" + (".exe" if IS_WINDOWS else ""))
-        if not os.path.isfile(pio_exe_path):
-            pio_exe_path = shutil.which("platformio"+(".exe" if IS_WINDOWS else ""))
-            if not os.path.isfile(pio_exe_path):
-                print(f"Error: Could not locate PlatformIO CLI near venv {PYTHON_EXE} or in PATH")
-                env.Exit(1)
+        pio_exe_path = os.path.join(os.path.dirname(PYTHON_EXE), "pio" + (".exe" if IS_WINDOWS else ""))
+        pio_cmd = env["PIOENV"]
         env.Execute(
             env.VerboseAction(
                 (
