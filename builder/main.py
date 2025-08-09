@@ -49,7 +49,7 @@ if sys.version_info < (3, 10):
 # Python dependencies required for the build process
 python_deps = {
     "uv": ">=0.1.0",
-    "platformio": ">=6.1.18",
+    "platformio": "https://github.com/pioarduino/platformio-core/archive/refs/tags/v6.1.18.zip",
     "pyyaml": ">=6.0.2",
     "rich-click": ">=1.8.6",
     "zopfli": ">=0.2.2",
@@ -150,6 +150,9 @@ def get_packages_to_install(deps, installed_packages):
     for package, spec in deps.items():
         if package not in installed_packages:
             yield package
+        elif package == "platformio":
+            # Check if we have ANY version of platformio
+            continue
         else:
             version_spec = semantic_version.Spec(spec)
             if not version_spec.match(installed_packages[package]):
@@ -242,7 +245,13 @@ def install_python_deps():
     packages_to_install = list(get_packages_to_install(python_deps, installed_packages))
     
     if packages_to_install:
-        packages_list = [f"{p}{python_deps[p]}" for p in packages_to_install]
+        packages_list = []
+        for p in packages_to_install:
+            spec = python_deps[p]
+            if spec.startswith(('http://', 'https://', 'git+', 'file://')):
+                packages_list.append(spec)
+            else:
+                packages_list.append(f"{p}{spec}")
         
         cmd = [
             uv_executable, "pip", "install",
