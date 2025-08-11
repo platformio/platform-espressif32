@@ -21,6 +21,8 @@ from SCons.Script import Builder
 Import("env")
 
 board = env.BoardConfig()
+mcu = board.get("build.mcu", "esp32")
+is_xtensa = mcu in ("esp32", "esp32s2", "esp32s3")
 
 #
 # Embedded files helpers
@@ -101,8 +103,7 @@ def transform_to_asm(target, source, env):
     files = [join("$BUILD_DIR", s.name + ".S") for s in source]
     return files, source
 
-
-mcu = board.get("build.mcu", "esp32")
+    
 env.Append(
     BUILDERS=dict(
         TxtToBin=Builder(
@@ -110,14 +111,14 @@ env.Append(
                 " ".join(
                     [
                         "riscv32-esp-elf-objcopy"
-                        if mcu in ("esp32c2","esp32c3","esp32c5","esp32c6","esp32h2","esp32p4")
-                        else "xtensa-%s-elf-objcopy" % mcu,
+                        if not is_xtensa
+                        else f"xtensa-{mcu}-elf-objcopy",
                         "--input-target",
                         "binary",
                         "--output-target",
-                        "elf32-littleriscv" if mcu in ("esp32c2","esp32c3","esp32c5","esp32c6","esp32h2","esp32p4") else "elf32-xtensa-le",
+                        "elf32-littleriscv" if not is_xtensa else "elf32-xtensa-le",
                         "--binary-architecture",
-                        "riscv" if mcu in ("esp32c2","esp32c3","esp32c5","esp32c6","esp32h2","esp32p4") else "xtensa",
+                        "riscv" if not is_xtensa else "xtensa",
                         "--rename-section",
                         ".data=.rodata.embedded",
                         "$SOURCE",
