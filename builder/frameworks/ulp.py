@@ -17,7 +17,7 @@ import sys
 
 from platformio import fs
 from platformio.util import get_systype
-from platformio.proc import where_is_program, exec_command
+from platformio.proc import exec_command
 
 from SCons.Script import Import
 
@@ -48,13 +48,11 @@ def prepare_ulp_env_vars(env):
         else None
     )
 
-    python_dir = os.path.dirname(ulp_env.subst("$PYTHONEXE")) or ""
     additional_packages = [
         toolchain_path,
         toolchain_path_ulp,
         platform.get_package_dir("tool-ninja"),
         os.path.join(platform.get_package_dir("tool-cmake"), "bin"),
-        python_dir,
     ]
 
     for package in additional_packages:
