@@ -18,7 +18,7 @@
     "type": "git",
     "url": "https://github.com/tasmota/platform-espressif32.git"
   },
-  "version": "2025.07.30",
+  "version": "2025.08.30",
   "frameworks": {
     "arduino": {
       "script": "builder/frameworks/arduino.py"
@@ -87,8 +87,8 @@
       "type": "tool",
       "optional": false,
       "owner": "pioarduino",
-      "package-version": "5.2.0",
-      "version": "https://github.com/pioarduino/esp_install/releases/download/v5.2.0/esp_install-v5.2.0.zip"
+      "package-version": "5.3.0",
+      "version": "https://github.com/pioarduino/esp_install/releases/download/v5.3.0/esp_install-v5.3.0.zip"
     },
       "contrib-piohome": {
       "optional": true,
