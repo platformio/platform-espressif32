@@ -19,6 +19,7 @@ import site
 import semantic_version
 import subprocess
 import sys
+import socket
 
 from platformio.package.version import pepver_to_semver
 from platformio.compat import IS_WINDOWS
@@ -43,6 +44,19 @@ python_deps = {
     "reedsolo": ">=1.5.3,<1.8",
     "esp-idf-size": ">=1.6.1"
 }
+
+
+def has_internet_connection(host="8.8.8.8", port=53, timeout=2):
+    """
+    Checks if an internet connection is available (default: Google DNS server).
+    Returns True if a connection is possible, otherwise False.
+    """
+    try:
+        socket.setdefaulttimeout(timeout)
+        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
+        return True
+    except Exception:
+        return False
 
 
 def get_executable_path(penv_dir, executable_name):
@@ -350,12 +364,16 @@ def setup_python_environment(env, platform, platformio_dir):
     # Set executable paths from tools
     esptool_binary_path = get_executable_path(penv_dir, "esptool")
     uv_executable = get_executable_path(penv_dir, "uv")
-    
+
     # Install espressif32 Python dependencies
-    if not install_python_deps(penv_python, uv_executable):
-        sys.stderr.write("Error: Failed to install Python dependencies into penv\n")
-        sys.exit(1)
+    if has_internet_connection():
+        if not install_python_deps(penv_python, uv_executable):
+            sys.stderr.write("Error: Failed to install Python dependencies into penv\n")
+            sys.exit(1)
+    else:
+        print("Warning: No internet connection detected, Python dependency check will be skipped.")
+
     # Install esptool after dependencies
     install_esptool(env, platform, penv_python, uv_executable)
-    
+
     return penv_python, esptool_binary_path
