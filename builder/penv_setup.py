@@ -46,9 +46,9 @@ python_deps = {
 }
 
 
-def has_internet_connection(host="8.8.8.8", port=53, timeout=2):
+def has_internet_connection(host="1.1.1.1", port=53, timeout=2):
     """
-    Checks if an internet connection is available (default: Google DNS server).
+    Checks if an internet connection is available (default: Cloudflare DNS server).
     Returns True if a connection is possible, otherwise False.
     """
     try:
