@@ -24,6 +24,8 @@ import socket
 from platformio.package.version import pepver_to_semver
 from platformio.compat import IS_WINDOWS
 
+github_actions = os.getenv('GITHUB_ACTIONS')
+
 PLATFORMIO_URL_VERSION_RE = re.compile(
     r'/v?(\d+\.\d+\.\d+(?:[.-]\w+)?(?:\.\d+)?)(?:\.(?:zip|tar\.gz|tar\.bz2))?$',
     re.IGNORECASE,
@@ -366,7 +368,7 @@ def setup_python_environment(env, platform, platformio_dir):
     uv_executable = get_executable_path(penv_dir, "uv")
 
     # Install espressif32 Python dependencies
-    if has_internet_connection():
+    if has_internet_connection() or github_actions:
         if not install_python_deps(penv_python, uv_executable):
             sys.stderr.write("Error: Failed to install Python dependencies into penv\n")
             sys.exit(1)
