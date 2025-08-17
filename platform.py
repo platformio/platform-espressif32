@@ -21,6 +21,7 @@ import shutil
 import logging
 from typing import Optional, Dict, List, Any
 
+from platformio.compat import IS_WINDOWS
 from platformio.public import PlatformBase, to_unix_path
 from platformio.proc import get_pythonexe_path
 from platformio.project.config import ProjectConfig
@@ -68,10 +69,8 @@ CHECK_PACKAGES = [
 ]
 
 # System-specific configuration
-IS_WINDOWS = sys.platform.startswith("win")
 # Set Platformio env var to use windows_amd64 for all windows architectures
 # only windows_amd64 native espressif toolchains are available
-# needs platformio/pioarduino core >= 6.1.17
 if IS_WINDOWS:
     os.environ["PLATFORMIO_SYSTEM_TYPE"] = "windows_amd64"
 
