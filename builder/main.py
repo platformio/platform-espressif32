@@ -662,7 +662,7 @@ target_size = env.AddPlatformTarget(
 )
 
 # Target: Upload firmware or FS image
-upload_protocol = env.subst("$UPLOAD_PROTOCOL")
+upload_protocol = env.subst("$UPLOAD_PROTOCOL") or "esptool"
 debug_tools = board.get("debug.tools", {})
 upload_actions = []
 
