@@ -66,4 +66,4 @@ jobs:
           PYTHONIOENCODING: utf-8
           PYTHONUTF8: '1'
         run: |
-          pio run -d ${{ matrix.example }} --disable-auto-clean
+          pio run -d ${{ matrix.example }}
