@@ -4,17 +4,12 @@
       "ldscript": "esp32_out.ld"
     },
     "core": "esp32",
-    "extra_flags": [
-      "-DARDUINO_uPesy_WROVER",
-      "-DBOARD_HAS_PSRAM",
-      "-mfix-esp32-psram-cache-issue",
-      "-mfix-esp32-psram-cache-strategy=memw"
-    ],
+    "extra_flags": "-DARDUINO_uPesy_edu_esp32",
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
     "flash_mode": "qio",
     "mcu": "esp32",
-    "variant": "uPesy_esp32_wrover_devkit"
+    "variant": "uPesy_edu_esp32"
   },
   "connectivity": [
     "wifi",
@@ -23,20 +18,20 @@
     "can"
   ],
   "debug": {
-    "openocd_board": "esp32-wrover.cfg"
+    "openocd_board": "esp-wroom-32.cfg"
   },
   "frameworks": [
     "arduino",
     "espidf"
   ],
-  "name": "uPesy ESP32 Wrover DevKit",
+  "name": "uPesy EDU ESP32",
   "upload": {
-    "flash_size": "16MB",
+    "flash_size": "4MB",
     "maximum_ram_size": 327680,
-    "maximum_size": 16777216,
+    "maximum_size": 4194304,
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://www.upesy.com/products/upesy-esp32-wrover-devkit-board",
+  "url": "https://www.upesy.com/products/esp32-arduino-uno-format",
   "vendor": "uPesy"
 }
