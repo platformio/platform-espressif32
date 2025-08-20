@@ -87,8 +87,8 @@
       "type": "tool",
       "optional": false,
       "owner": "pioarduino",
-      "package-version": "5.3.0",
-      "version": "https://github.com/pioarduino/esp_install/releases/download/v5.3.0/esp_install-v5.3.0.zip"
+      "package-version": "5.3.1",
+      "version": "https://github.com/pioarduino/esp_install/releases/download/v5.3.1/esp_install-v5.3.1.zip"
     },
       "contrib-piohome": {
       "optional": true,
