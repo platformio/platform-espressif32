@@ -69,7 +69,7 @@ IDF_ENV_VERSION = "1.0.0"
 FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
 TOOLCHAIN_DIR = platform.get_package_dir(
     "toolchain-riscv32-esp"
-    if mcu in ("esp32c3", "esp32c6")
+    if mcu in ("esp32c3", "esp32c5", "esp32c6")
     else (
         (
             "toolchain-xtensa-esp-elf"
@@ -262,7 +262,7 @@ def populate_idf_env_vars(idf_env):
         os.path.join(platform.get_package_dir("tool-cmake"), "bin"),
         os.path.dirname(get_python_exe()),
     ]
-
+    
     if mcu not in ("esp32c3", "esp32c6"):
         additional_packages.append(
             os.path.join(platform.get_package_dir("toolchain-esp32ulp"), "bin"),
@@ -531,7 +531,7 @@ def extract_linker_script_fragments_backup(framework_components_dir, sdk_config)
         sys.stderr.write("Error: Failed to extract paths to linker script fragments\n")
         env.Exit(1)
 
-    if mcu in ("esp32c3", "esp32c6"):
+    if mcu in ("esp32c3", "esp32c5", "esp32c6", "esp32h2"):
         result.append(os.path.join(framework_components_dir, "riscv", "linker.lf"))
 
     # Add extra linker fragments
@@ -1905,12 +1905,21 @@ app_includes = get_app_includes(elf_config)
 #
 # Compile bootloader
 #
+default_boot_offsets = {
+    "esp32":   "0x1000",
+    "esp32s2": "0x1000",
+    "esp32s3": "0x0",
+    "esp32c3": "0x0",
+    "esp32c5": "0x2000",
+    "esp32c6": "0x0",
+    "esp32h2": "0x0",
+}
 
 bootloader_offset = board.get(
     "upload.bootloader_offset",
     sdk_config.get(
         "BOOTLOADER_OFFSET_IN_FLASH",
-        ("0x0" if mcu in ("esp32c3", "esp32c6", "esp32s3") else "0x1000"),
+        default_boot_offsets.get(mcu, "0x1000"),
     ),
 )
 

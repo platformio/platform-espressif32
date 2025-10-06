@@ -1,0 +1,32 @@
+{
+  "build": {
+    "core": "esp32",
+	"f_cpu": "240000000L",
+	"f_flash": "40000000L",
+	"flash_mode": "qio",
+    "mcu": "esp32c5",
+	"variant": "esp32c5"
+  },
+  "connectivity": [
+	"wifi", 
+	"bluetooth", 
+	"ieee802154"
+  ],
+  "debug": {
+    "openocd_board": "esp32c5-builtin.cfg"
+  },
+  "frameworks": [
+	"espidf", 
+	"arduino"
+  ],
+  "name": "Espressif ESP32-C5-DevKitC-1",
+  "upload": {
+    "flash_size": "8MB",
+    "maximum_ram_size": 393216,
+    "maximum_size": 8388608,
+    "require_upload_port": true,
+    "speed": 460800
+  },
+  "url": "https://www.espressif.com/en/products/socs/esp32-c5",
+  "vendor": "Espressif"
+}
