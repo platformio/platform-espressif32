@@ -362,6 +362,8 @@ if "nobuild" in COMMAND_LINE_TARGETS:
     if set(["uploadfs", "uploadfsota"]) & set(COMMAND_LINE_TARGETS):
         fetch_fs_size(env)
         target_firm = join("$BUILD_DIR", "${ESP32_FS_IMAGE_NAME}.bin")
+    if env.get("PIO_ESP32_SINGLE_BOOTLOADER_TARGET", False):
+        target_firm = join("$BUILD_DIR", "${ESP32_BOOTLOADER_IMAGE_NAME}.bin")
     else:
         target_firm = join("$BUILD_DIR", "${PROGNAME}.bin")
 else:
@@ -372,9 +374,25 @@ else:
         )
         env.NoCache(target_firm)
         AlwaysBuild(target_firm)
+    elif env.get("PIO_ESP32_SINGLE_BOOTLOADER_TARGET", False):
+        target_firm = join("$BUILD_DIR", "${ESP32_BOOTLOADER_IMAGE_NAME}.bin")
     else:
         target_firm = env.ElfToBin(
-            join("$BUILD_DIR", "${PROGNAME}"), target_elf)
+            join("$BUILD_DIR", "${PROGNAME}"), target_elf
+        )
+        if env.get("PIO_ESP32_SIGNATURE_REQUIRED", False) or env.get(
+            "PIO_ESP32_SECURE_BOOT_BUILD_SIGNED_BINARIES", False
+        ):
+            target_firm = env.SignBin(
+                join("$BUILD_DIR", "${PROGNAME}-signed"), target_firm
+            )
+        if env.get("PIO_ESP32_ENCRYPTION_REQUIRED", False):
+            target_firm = env.Clone(
+                FLASH_IMAGE_OFFSET="$ESP32_APP_OFFSET"
+            ).EncryptBin(
+                join("$BUILD_DIR", "${PROGNAME}-encrypted"), target_firm
+            )
+
         env.Depends(target_firm, "checkprogsize")
 
 env.AddPlatformTarget("buildfs", target_firm, target_firm, "Build Filesystem Image")
@@ -561,6 +579,54 @@ env.AddPlatformTarget("upload", target_firm, upload_actions, "Upload")
 env.AddPlatformTarget("uploadfs", target_firm, upload_actions, "Upload Filesystem Image")
 env.AddPlatformTarget(
     "uploadfsota", target_firm, upload_actions, "Upload Filesystem Image OTA")
+
+if "espidf" in env.get("PIOFRAMEWORK"):
+
+    env.AddPlatformTarget(
+        "encrypt",
+        target_firm,
+        None,
+        "Encrypt Application Images"
+    )
+
+    env.AddPlatformTarget(
+        "sign",
+        target_firm,
+        None,
+        "Sign Application Images"
+    )
+
+    env.AddPlatformTarget(
+        "app",
+        target_firm,
+        None,
+        "Build Application"
+    )
+
+    env.AddPlatformTarget(
+        "bootloader",
+        target_firm,
+        None,
+        "Build Bootloader"
+    )
+
+    # Helper targets for better UX in IDE
+    configured_targets = []
+    for target_name in ("", "-app", "-bootloader"):
+        for action_name in ("", "-signed", "-encrypted", "-signed-encrypted"):
+            if not target_name and not action_name:
+                continue
+            env.AddPlatformTarget(
+                "__upload%s%s" % (action_name, target_name),
+                target_firm,
+                upload_actions,
+                "Upload%s %s"
+                % (
+                    action_name.replace("-", " ").title(),
+                    target_name.replace("-", "").title(),
+                ),
+            )
+
 
 #
 # Target: Erase Flash

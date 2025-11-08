@@ -22,6 +22,7 @@ jobs:
           - "examples/espidf-http-request"
           - "examples/espidf-peripherals-uart"
           - "examples/espidf-peripherals-usb"
+          - "examples/espidf-security-secureboot"
           - "examples/espidf-storage-sdcard"
           - "examples/espidf-storage-spiffs"
           - "examples/espidf-ulp-adc"
