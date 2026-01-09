@@ -225,19 +225,19 @@ def fetch_fs_size(env):
                 break
         if not fs:
             sys.stderr.write(
-                "Could not find the filesystem section %s in partition "
+                "Could not find partition \"%s\" in the partition "
                 "table %s\n" % (label, env.subst("$PARTITIONS_TABLE_CSV"))
             )
     else:
         # Search for any filesystem partition with compatible types.
         # Last match wins! Non-obvious!
         for p in partitions:
-            if p["type"] == "data" and p["subtype"] in ("spiffs", "fat", "littlefs"):
+            if p["type"] == "data" and p["subtype"] in fstypes:
                 fs = p
 
         if not fs:
             sys.stderr.write(
-                "Could not find any suitable filesystem section in partition "
+                "Could not find a suitable partition in the partition "
                 "table %s\n" % env.subst("$PARTITIONS_TABLE_CSV")
             )
 
