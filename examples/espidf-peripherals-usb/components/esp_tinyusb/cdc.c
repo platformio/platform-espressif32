@@ -89,7 +89,6 @@ esp_err_t tinyusb_cdc_init(int itf, const tinyusb_config_cdc_t *cfg)
         ESP_RETURN_ON_ERROR(tusb_cdc_data_init(itf), TAG, "tusb_cdc_data_init failed");
         cdc_obj[itf]->cdc_subclass.data_subclass = cfg->cdc_subclass.data_subclass;
     }
-    cdc_obj[itf]->usb_dev = cfg->usb_dev;
     return ESP_OK;
 }
 

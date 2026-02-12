@@ -1320,7 +1320,8 @@ def install_python_deps():
         "cryptography": "~=44.0.0" if IDF5 else ">=2.1.4,<35.0.0",
         "pyparsing": ">=3.1.0,<4" if IDF5 else ">=2.0.3,<2.4.0",
         "idf-component-manager": "~=2.2" if IDF5 else "~=1.0",
-        "esp-idf-kconfig": "~=2.5.0"
+        "esp-idf-kconfig": "~=2.5.0",
+        "pydantic": "<2.12.0"
     }
 
     if not IDF5:

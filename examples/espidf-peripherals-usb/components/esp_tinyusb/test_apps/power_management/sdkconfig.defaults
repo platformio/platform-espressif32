@@ -1,0 +1,15 @@
+# Configure TinyUSB, it will be used to mock USB devices
+CONFIG_TINYUSB_MSC_ENABLED=n
+CONFIG_TINYUSB_CDC_ENABLED=y
+CONFIG_TINYUSB_CDC_COUNT=1
+CONFIG_TINYUSB_HID_COUNT=0
+
+# Register tinyusb suspend/resume callbacks in esp_tinyusb
+CONFIG_TINYUSB_SUSPEND_CALLBACK=y
+CONFIG_TINYUSB_RESUME_CALLBACK=y
+
+# Disable watchdogs, they'd get triggered during unity interactive menu
+# CONFIG_ESP_TASK_WDT_INIT is not set
+
+CONFIG_UNITY_ENABLE_BACKTRACE_ON_FAIL=y
+CONFIG_COMPILER_CXX_EXCEPTIONS=y

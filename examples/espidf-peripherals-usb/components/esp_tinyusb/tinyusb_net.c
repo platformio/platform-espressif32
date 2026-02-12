@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -118,10 +118,8 @@ esp_err_t tinyusb_net_send_sync(void *buffer, uint16_t len, void *buff_free_arg,
     return ESP_ERR_TIMEOUT;
 }
 
-esp_err_t tinyusb_net_init(tinyusb_usbdev_t usb_dev, const tinyusb_net_config_t *cfg)
+esp_err_t tinyusb_net_init(const tinyusb_net_config_t *cfg)
 {
-    (void) usb_dev;
-
     ESP_RETURN_ON_FALSE(s_net_obj.initialized == false, ESP_ERR_INVALID_STATE, TAG, "TinyUSB Net class is already initialized");
 
     // the semaphore and event flags are initialized only if needed
@@ -135,11 +133,30 @@ esp_err_t tinyusb_net_init(tinyusb_usbdev_t usb_dev, const tinyusb_net_config_t 
              mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     uint8_t mac_id = tusb_get_mac_string_id();
     // Pass it to Descriptor control module
-    tinyusb_set_str_descriptor(s_net_obj.mac_str, mac_id);
+    tinyusb_descriptors_set_string(s_net_obj.mac_str, mac_id);
 
     s_net_obj.initialized = true;
 
     return ESP_OK;
+}
+
+void tinyusb_net_deinit(void)
+{
+    if (s_net_obj.buffer_sema) {
+        vSemaphoreDelete(s_net_obj.buffer_sema);
+        s_net_obj.buffer_sema = NULL;
+    }
+    if (s_net_obj.tx_flags) {
+        vEventGroupDelete(s_net_obj.tx_flags);
+        s_net_obj.tx_flags = NULL;
+    }
+    s_net_obj.initialized = false;
+    s_net_obj.rx_cb = NULL;
+    s_net_obj.init_cb = NULL;
+    s_net_obj.tx_buff_free_cb = NULL;
+    s_net_obj.ctx = NULL;
+    s_net_obj.packet_to_send = NULL;
+    memset(s_net_obj.mac_str, 0, sizeof(s_net_obj.mac_str));
 }
 
 //--------------------------------------------------------------------+

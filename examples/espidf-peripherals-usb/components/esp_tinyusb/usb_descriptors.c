@@ -6,7 +6,7 @@
 
 #include "usb_descriptors.h"
 #include "sdkconfig.h"
-#include "tinyusb_types.h"
+#include "tinyusb.h"
 
 /*
  * A combination of interfaces must have a unique product id, since PC will save device driver after the first plug.
@@ -17,7 +17,7 @@
  */
 #define _PID_MAP(itf, n) ((CFG_TUD_##itf) << (n))
 #define USB_TUSB_PID (0x4000 | _PID_MAP(CDC, 0) | _PID_MAP(MSC, 1) | _PID_MAP(HID, 2) | \
-    _PID_MAP(MIDI, 3) ) //| _PID_MAP(AUDIO, 4) | _PID_MAP(VENDOR, 5) )
+    _PID_MAP(MIDI, 3) | _PID_MAP(AUDIO, 4) | _PID_MAP(VENDOR, 5) )
 
 /**** Kconfig driven Descriptor ****/
 
@@ -42,7 +42,7 @@ const tusb_desc_device_t descriptor_dev_default = {
     .bMaxPacketSize0 = CFG_TUD_ENDPOINT0_SIZE,
 
 #if CONFIG_TINYUSB_DESC_USE_ESPRESSIF_VID
-    .idVendor = USB_ESPRESSIF_VID,
+    .idVendor = TINYUSB_ESPRESSIF_VID,
 #else
     .idVendor = CONFIG_TINYUSB_DESC_CUSTOM_VID,
 #endif
@@ -96,19 +96,19 @@ const char *descriptor_str_default[] = {
 
 #if CONFIG_TINYUSB_CDC_ENABLED
     CONFIG_TINYUSB_DESC_CDC_STRING,          // 4: CDC Interface
-#else
-    "",
 #endif
 
 #if CONFIG_TINYUSB_MSC_ENABLED
     CONFIG_TINYUSB_DESC_MSC_STRING,          // 5: MSC Interface
-#else
-    "",
 #endif
 
 #if CONFIG_TINYUSB_NET_MODE_ECM_RNDIS || CONFIG_TINYUSB_NET_MODE_NCM
     "USB net",                               // 6. NET Interface
     "",                                      // 7. MAC
+#endif
+
+#if CFG_TUD_VENDOR
+    "Vendor specific",                       // 8. Vendor specific
 #endif
     NULL                                     // NULL: Must be last. Indicates end of array
 };
@@ -134,6 +134,14 @@ enum {
     ITF_NUM_NET_DATA,
 #endif
 
+#if CFG_TUD_VENDOR
+    ITF_VENDOR,
+#endif
+
+#if CFG_TUD_VENDOR > 1
+    ITF_VENDOR1,
+#endif
+
     ITF_NUM_TOTAL
 };
 
@@ -141,7 +149,8 @@ enum {
     TUSB_DESC_TOTAL_LEN = TUD_CONFIG_DESC_LEN +
                           CFG_TUD_CDC * TUD_CDC_DESC_LEN +
                           CFG_TUD_MSC * TUD_MSC_DESC_LEN +
-                          CFG_TUD_NCM * TUD_CDC_NCM_DESC_LEN
+                          CFG_TUD_NCM * TUD_CDC_NCM_DESC_LEN +
+                          CFG_TUD_VENDOR * TUD_VENDOR_DESC_LEN
 };
 
 //------------- USB Endpoint numbers -------------//
@@ -166,6 +175,14 @@ enum {
     EPNUM_NET_NOTIF,
     EPNUM_NET_DATA,
 #endif
+
+#if CFG_TUD_VENDOR
+    EPNUM_0_VENDOR,
+#endif
+
+#if CFG_TUD_VENDOR > 1
+    EPNUM_1_VENDOR
+#endif
 };
 
 //------------- STRID -------------//
@@ -187,6 +204,9 @@ enum {
     STRID_MAC,
 #endif
 
+#if CFG_TUD_VENDOR
+    STRID_VENDOR_INTERFACE,
+#endif
 };
 
 //------------- Configuration Descriptor -------------//
@@ -213,6 +233,16 @@ uint8_t const descriptor_fs_cfg_default[] = {
     // Interface number, description string index, MAC address string index, EP notification address and size, EP data address (out, in), and size, max segment size.
     TUD_CDC_NCM_DESCRIPTOR(ITF_NUM_NET, STRID_NET_INTERFACE, STRID_MAC, (0x80 | EPNUM_NET_NOTIF), 64, EPNUM_NET_DATA, (0x80 | EPNUM_NET_DATA), 64, CFG_TUD_NET_MTU),
 #endif
+
+#if CFG_TUD_VENDOR
+    // Interface number, string index, EP Out & IN address, EP size
+    TUD_VENDOR_DESCRIPTOR(ITF_VENDOR, STRID_VENDOR_INTERFACE, EPNUM_0_VENDOR, 0x80 | EPNUM_0_VENDOR, 64),
+#endif
+
+#if CFG_TUD_VENDOR > 1
+    // Interface number, string index, EP Out & IN address, EP size
+    TUD_VENDOR_DESCRIPTOR(ITF_VENDOR1, STRID_VENDOR_INTERFACE, EPNUM_1_VENDOR, 0x80 | EPNUM_1_VENDOR, 64),
+#endif
 };
 
 #if (TUD_OPT_HIGH_SPEED)
@@ -238,6 +268,16 @@ uint8_t const descriptor_hs_cfg_default[] = {
 #if CFG_TUD_NCM
     // Interface number, description string index, MAC address string index, EP notification address and size, EP data address (out, in), and size, max segment size.
     TUD_CDC_NCM_DESCRIPTOR(ITF_NUM_NET, STRID_NET_INTERFACE, STRID_MAC, (0x80 | EPNUM_NET_NOTIF), 64, EPNUM_NET_DATA, (0x80 | EPNUM_NET_DATA), 512, CFG_TUD_NET_MTU),
+#endif
+
+#if CFG_TUD_VENDOR
+    // Interface number, string index, EP Out & IN address, EP size
+    TUD_VENDOR_DESCRIPTOR(ITF_VENDOR, STRID_VENDOR_INTERFACE, EPNUM_0_VENDOR, 0x80 | EPNUM_0_VENDOR, 512),
+#endif
+
+#if CFG_TUD_VENDOR > 1
+    // Interface number, string index, EP Out & IN address, EP size
+    TUD_VENDOR_DESCRIPTOR(ITF_VENDOR1, STRID_VENDOR_INTERFACE, EPNUM_1_VENDOR, 0x80 | EPNUM_1_VENDOR, 512),
 #endif
 };
 #endif // TUD_OPT_HIGH_SPEED
