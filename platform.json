@@ -52,13 +52,13 @@
       "optional": true,
       "owner": "espressif",
       "version": "8.4.0+2021r2-patch5",
-      "optionalVersions": ["14.2.0+20241119"]
+      "optionalVersions": ["14.2.0+20251107"]
     },
     "toolchain-xtensa-esp-elf": {
       "type": "toolchain",
       "optional": true,
       "owner": "platformio",
-      "version": "14.2.0+20241119"
+      "version": "14.2.0+20251107"
     },
     "toolchain-esp32ulp": {
       "type": "toolchain",
