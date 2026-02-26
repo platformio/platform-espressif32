@@ -142,7 +142,7 @@ class Espressif32Platform(PlatformBase):
                 self.packages["toolchain-riscv32-esp"]["owner"] = "platformio"
                 self.packages["toolchain-riscv32-esp"][
                     "version"
-                ] = "14.2.0+20241119"
+                ] = "14.2.0+20251107"
 
         if "arduino" in frameworks:
             # Disable standalone GDB packages for Arduino and Arduino/IDF projects

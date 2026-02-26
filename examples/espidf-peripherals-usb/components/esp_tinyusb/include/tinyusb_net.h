@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,7 +7,6 @@
 #pragma once
 
 #include <stdint.h>
-#include "tinyusb_types.h"
 #include "esp_err.h"
 #include "sdkconfig.h"
 
@@ -52,11 +51,15 @@ typedef struct {
 /**
  * @brief Initialize TinyUSB NET driver
  *
- * @param[in] usb_dev USB device to use
  * @param[in] cfg     Configuration of the driver
  * @return esp_err_t
  */
-esp_err_t tinyusb_net_init(tinyusb_usbdev_t usb_dev, const tinyusb_net_config_t *cfg);
+esp_err_t tinyusb_net_init(const tinyusb_net_config_t *cfg);
+
+/**
+ * @brief Deinitialize TinyUSB NET driver
+ */
+void tinyusb_net_deinit(void);
 
 /**
  * @brief TinyUSB NET driver send data synchronously

@@ -35,7 +35,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "Deparment of Alchemy MiniMain ESP32-S2",
+  "name": "Department of Alchemy MiniMain ESP32-S2",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,

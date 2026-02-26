@@ -15,7 +15,6 @@ extern "C" {
 #include "freertos/semphr.h"
 #include "freertos/timers.h"
 #include "tusb.h"
-#include "tinyusb_types.h"
 
 /* CDC classification
    ********************************************************************* */
@@ -29,7 +28,6 @@ typedef enum {
 /* Structs
    ********************************************************************* */
 typedef struct {
-    tinyusb_usbdev_t usb_dev;                           /*!< USB device to set up */
     tusb_class_code_t cdc_class;                 /*!< CDC device class : Communications or Data device */
     union {
         cdc_comm_sublcass_type_t comm_subclass; /*!< Communications device subclasses: ACM, ECM, etc. */
@@ -38,7 +36,6 @@ typedef struct {
 } tinyusb_config_cdc_t;                                 /*!< Main configuration structure of a CDC device */
 
 typedef struct {
-    tinyusb_usbdev_t usb_dev;                           /*!< USB device used for the instance */
     tusb_class_code_t type;
     union {
         cdc_comm_sublcass_type_t comm_subclass; /*!< Communications device subclasses: ACM, ECM, etc. */

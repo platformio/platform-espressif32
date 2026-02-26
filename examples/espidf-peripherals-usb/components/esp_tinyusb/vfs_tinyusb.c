@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,8 +18,9 @@
 #include "esp_vfs.h"
 #include "esp_vfs_dev.h"
 #include "tinyusb.h"
-#include "tusb_cdc_acm.h"
+#include "tinyusb_cdc_acm.h"
 #include "vfs_tinyusb.h"
+#include "esp_idf_version.h"
 #include "sdkconfig.h"
 
 const static char *TAG = "tusb_vfs";
@@ -102,6 +103,8 @@ static esp_err_t vfstusb_init(int cdc_intf, char const *path)
  */
 static void vfstusb_deinit(void)
 {
+    _lock_close(&(s_vfstusb.write_lock));
+    _lock_close(&(s_vfstusb.read_lock));
     memset(&s_vfstusb, 0, sizeof(s_vfstusb));
 }
 
@@ -257,7 +260,7 @@ esp_err_t esp_vfs_tusb_cdc_register(int cdc_intf, char const *path)
 {
     ESP_LOGD(TAG, "Registering CDC-VFS driver");
     int res;
-    if (!tusb_cdc_acm_initialized(cdc_intf)) {
+    if (!tinyusb_cdcacm_initialized(cdc_intf)) {
         ESP_LOGE(TAG, "TinyUSB CDC#%d is not initialized", cdc_intf);
         return ESP_ERR_INVALID_STATE;
     }
@@ -267,6 +270,19 @@ esp_err_t esp_vfs_tusb_cdc_register(int cdc_intf, char const *path)
         return res;
     }
 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
+    static const esp_vfs_fs_ops_t fs_ops = {
+        .close = &tusb_close,
+        .fcntl = &tusb_fcntl,
+        .fstat = &tusb_fstat,
+        .open = &tusb_open,
+        .read = &tusb_read,
+        .write = &tusb_write,
+    };
+
+    res = esp_vfs_register_fs(s_vfstusb.vfs_path, &fs_ops, ESP_VFS_FLAG_STATIC, NULL);
+
+#else
     esp_vfs_t vfs = {
         .flags = ESP_VFS_FLAG_DEFAULT,
         .close = &tusb_close,
@@ -278,6 +294,9 @@ esp_err_t esp_vfs_tusb_cdc_register(int cdc_intf, char const *path)
     };
 
     res = esp_vfs_register(s_vfstusb.vfs_path, &vfs, NULL);
+
+#endif
+
     if (res != ESP_OK) {
         ESP_LOGE(TAG, "Can't register CDC-VFS driver (err: %x)", res);
     } else {
