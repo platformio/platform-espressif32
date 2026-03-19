@@ -30,9 +30,9 @@
   ],
   "name": "Seeed Studio Edgebox-ESP-100",
   "upload": {
-    "flash_size": "4MB",
+    "flash_size": "16MB",
     "maximum_ram_size": 327680,
-    "maximum_size": 4194304,
+    "maximum_size": 16777216,
     "require_upload_port": true,
     "speed": 460800
   },
