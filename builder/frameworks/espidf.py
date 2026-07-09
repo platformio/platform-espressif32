@@ -797,33 +797,41 @@ def prepare_build_envs(config, default_env, debug_allowed=True):
         build_env.SetOption("implicit_cache", 1)
         build_env["_LANG"] = cg.get("language", "")
 
-        skip_next = False
-        for i, cc in enumerate(compile_commands):
-            if skip_next:
-                skip_next = False
-                continue
-            build_flags = click.parser.split_arg_string(cc.get("fragment", ""))
-            for build_flag in build_flags:
-                if build_flag.startswith("@"):
-                    process_response_file(build_env, build_flag)
-                elif build_flag.startswith('"'):
+        build_flags = []
+        pending_arg_flag = None
+        for cc in compile_commands:
+            for build_flag in click.parser.split_arg_string(
+                cc.get("fragment", "")
+            ):
+                if build_flag.startswith('"'):
                     build_flag = build_flag.strip('"')
-                elif not build_flag.startswith("-D"):
-                    if build_flag in FLAGS_WITH_ARGS and i + 1 < len(
-                        compile_commands
-                    ):
-                        build_flag = (
-                            build_flag
-                            + " "
-                            + compile_commands[i + 1].get("fragment", "")
-                        )
-                        skip_next = True
-                    parsed_flag = build_env.ParseFlags(build_flag)
-                    build_env.AppendUnique(**parsed_flag)
-                    if cg.get("language", "") == "ASM":
-                        build_env.AppendUnique(
-                            ASPPFLAGS=parsed_flag.get("CCFLAGS", [])
-                        )
+                if pending_arg_flag:
+                    # ParseFlags() re-splits a string argument with
+                    # shlex.split(), so an unquoted argument containing a
+                    # space (eg an include path under "Program Files")
+                    # would come back apart as two separate tokens. Quote
+                    # it here so it survives that re-split as one piece.
+                    if " " in build_flag:
+                        build_flag = '"%s"' % build_flag
+                    build_flags.append("%s %s" % (pending_arg_flag, build_flag))
+                    pending_arg_flag = None
+                elif build_flag in FLAGS_WITH_ARGS:
+                    pending_arg_flag = build_flag
+                else:
+                    build_flags.append(build_flag)
+        if pending_arg_flag:
+            build_flags.append(pending_arg_flag)
+
+        for build_flag in build_flags:
+            if build_flag.startswith("@"):
+                process_response_file(build_env, build_flag)
+            elif not build_flag.startswith("-D"):
+                parsed_flag = build_env.ParseFlags(build_flag)
+                build_env.AppendUnique(**parsed_flag)
+                if cg.get("language", "") == "ASM":
+                    build_env.AppendUnique(
+                        ASPPFLAGS=parsed_flag.get("CCFLAGS", [])
+                    )
 
         build_env.AppendUnique(CPPDEFINES=defines, CPPPATH=includes)
         if sys_includes:
