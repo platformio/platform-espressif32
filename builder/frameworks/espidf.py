@@ -320,9 +320,13 @@ def build_library(
     project_src_dir,
     prepend_dir=None,
     debug_allowed=True,
+    extra_obj_files=None
 ):
+    extra_obj_files = extra_obj_files or []
+
     lib_name = lib_config["nameOnDisk"]
     lib_path = lib_config["paths"]["build"]
+
     if prepend_dir:
         lib_path = os.path.join(prepend_dir, lib_path)
     lib_objects = compile_source_files(
@@ -330,7 +334,7 @@ def build_library(
     )
     return default_env.Library(
         target=os.path.join("$BUILD_DIR", lib_path, lib_name),
-        source=lib_objects,
+        source=lib_objects + extra_obj_files,
     )
 
 
@@ -797,6 +801,35 @@ def prepare_build_envs(config, default_env, debug_allowed=True):
         build_env.SetOption("implicit_cache", 1)
         build_env["_LANG"] = cg.get("language", "")
 
+        if (
+            config.get("paths", {})
+            .get("source", "")
+            .startswith("managed_components")
+        ):
+            # SCons normalizes source file nodes to relative paths when
+            # expanding $SOURCES, even when the original source paths are
+            # absolute. This causes issues when IDF's managed components that
+            # are located in the root of PlatformIO project and expect the
+            # path to be absolute.
+
+            # This workaround overrides the source paths used by CCCOM and
+            # CXXCOM with a custom SCons construction variable that resolves
+            # source nodes through their 'abspath' property while preserving
+            # the existing TEMPFILE handling.
+
+            # This keeps SCons dependency tracking unchanged while ensuring
+            # compiler commands receive absolute source paths.
+            build_env["_IDF_MANAGED_COMPONENT_ABS_SOURCES_HOOK"] = (
+                lambda target, source, env, for_signature: [
+                    s.abspath for s in source
+                ]
+            )
+            build_env["CCCOM"] = build_env["CCCOM"].replace(
+                "$SOURCES", "$_IDF_MANAGED_COMPONENT_ABS_SOURCES_HOOK"
+            )
+            build_env["CXXCOM"] = build_env["CXXCOM"].replace(
+                "$SOURCES", "$_IDF_MANAGED_COMPONENT_ABS_SOURCES_HOOK")
+
         skip_next = False
         for i, cc in enumerate(compile_commands):
             if skip_next:
@@ -960,9 +993,10 @@ def run_cmake(src_dir, build_dir, extra_args=None):
 
 
 def find_lib_deps(
-    components_map, elf_config, link_args, ignore_components=None
+    components_map, elf_config, link_args=None, ignore_components=None
 ):
     ignore_components = ignore_components or []
+    link_args = link_args or {}
     result = [
         components_map[d["id"]]["lib"]
         for d in elf_config.get("dependencies", [])
@@ -1039,26 +1073,37 @@ def build_bootloader(sdk_config, bootloader_offset):
 
     framework_version = [int(v) for v in get_framework_version().split(".")]
     if framework_version[:2] >= [6, 0]:
-        bootloader_linker_script = preprocess_linker_script(
-            os.path.join(
-                bootloader_src_dir,
-                "main",
-                "ld",
-                idf_variant,
-                "bootloader.ld.in",
-            ),
-            os.path.join(BUILD_DIR, "bootloader", "ld", "bootloader.ld"),
-            [
-                os.path.join(BUILD_DIR, "bootloader", "config"),
-                os.path.join(FRAMEWORK_DIR, "components", "esp_system", "ld"),
-            ],
-        )
+        for ld_script in ("bootloader.memory.ld", "bootloader.sections.ld"):
+            processed_ld_script = preprocess_linker_script(
+                os.path.join(
+                    bootloader_src_dir,
+                    "main",
+                    "ld",
+                    idf_variant,
+                    ld_script + ".in",
+                ),
+                os.path.join(BUILD_DIR, "bootloader", "ld", ld_script),
+                extra_include_dirs=[
+                    os.path.join(BUILD_DIR, "bootloader", "config"),
+                    os.path.join(
+                        FRAMEWORK_DIR, "components", "esp_system", "ld"
+                    ),
+                    os.path.join(
+                        FRAMEWORK_DIR,
+                        "components",
+                        "bootloader",
+                        "subproject",
+                        "main",
+                        "ld"
+                    ),
+                ],
+            )
 
-        # The linker script is generated before the final bootloader ELF
-        env.Depends(
-            os.path.join("$BUILD_DIR", "bootloader.elf"),
-            bootloader_linker_script,
-        )
+            # The linker script is generated before the final bootloader ELF
+            env.Depends(
+                os.path.join("$BUILD_DIR", "bootloader.elf"),
+                processed_ld_script,
+            )
 
     if env.get("PIO_ESP32_SECURE_BOOT_ENABLED"):
         if not env.get(
@@ -1467,7 +1512,7 @@ def install_python_deps():
         # https://github.com/platformio/platform-espressif32/issues/635
         "cryptography": "~=44.0.0" if IDF5_OR_NEWER else ">=2.1.4,<35.0.0",
         "pyparsing": ">=3.1.0,<4" if IDF5_OR_NEWER else ">=2.0.3,<2.4.0",
-        "idf-component-manager": "~=2.2" if IDF5_OR_NEWER else "~=1.0",
+        "idf-component-manager": "~=3.1" if IDF5_OR_NEWER else "~=1.0",
         "esp-idf-kconfig": "~=3.6.0",
         "pydantic": "~=2.12.0",
     }
@@ -1729,6 +1774,21 @@ def generate_partition_table(partition_table_offset):
 
     return partition_table
 
+
+def build_tfpsacrypto(default_env, framework_components_map, project_src_dir):
+    tfpsacrypto_config = target_configs.get("tfpsacrypto", {})
+    lib_deps = find_lib_deps(framework_components_map, tfpsacrypto_config)
+
+    extra_obj_files = []
+    for lib_dep in lib_deps:
+        extra_obj_files.extend(lib_dep[0].sources)
+
+    return build_library(
+        default_env,
+        tfpsacrypto_config,
+        project_src_dir,
+        extra_obj_files=extra_obj_files,
+    )
 
 #
 # Add extra builders and variables for signing and encrypting binaries
@@ -2033,10 +2093,16 @@ default_config_name = find_default_component(target_configs)
 framework_components_map = get_components_map(
     target_configs,
     ["STATIC_LIBRARY", "OBJECT_LIBRARY"],
-    [project_target_name],
+    # The `tfpsacrypto` component is built later manually
+    [project_target_name, "tfpsacrypto"],
 )
 
 build_components(env, framework_components_map, PROJECT_DIR)
+
+tfpsacrypto_lib = build_tfpsacrypto(
+    env, framework_components_map, PROJECT_SRC_DIR
+)
+env.Depends(project_ld_scipt, tfpsacrypto_lib)
 
 if not elf_config:
     sys.stderr.write(
@@ -2148,7 +2214,7 @@ env.Prepend(
     CPPPATH=app_includes["plain_includes"],
     CPPDEFINES=project_defines,
     LINKFLAGS=extra_flags,
-    LIBS=libs,
+    LIBS=libs + [tfpsacrypto_lib],
 )
 
 # In Secure Boot the bootloader image is only uploaded if
