@@ -759,6 +759,72 @@ def process_response_file(build_env, response_flag):
         build_env.AppendUnique(LINKFLAGS=[response_flag])
 
 
+# C++ Flag Leak Workaround
+# see https://github.com/platformio/platform-espressif32/issues/1759
+
+_CPP_ONLY_FLAGS = {'-fpermissive', '-fvisibility-inlines-hidden', '-Weffc++'}
+
+_f_flags = [
+    'elide-constructors', 'rtti', 'exceptions', 'strict-enums',
+    'use-cxa-atexit', 'threadsafe-statics', 'implicit-templates',
+    'sized-deallocation'
+]
+
+_w_flags = [
+    'non-virtual-dtor', 'delete-non-virtual-dtor', 'overloaded-virtual',
+    'old-style-cast', 'useless-cast', 'sign-promo', 'reorder',
+    'ctor-dtor-privacy', 'noexcept', 'strict-null-sentinel',
+    'zero-as-null-pointer-constant', 'catch-value', 'conditionally-supported',
+    'multiple-inheritance', 'virtual-inheritance', 'templates'
+]
+
+# Generate all permutations (-f vs -fno-, and -W vs -Wno- vs -Werror=)
+for f in _f_flags:
+    _CPP_ONLY_FLAGS.add(f'-f{f}')
+    _CPP_ONLY_FLAGS.add(f'-fno-{f}')
+
+for w in _w_flags:
+    _CPP_ONLY_FLAGS.add(f'-W{w}')
+    _CPP_ONLY_FLAGS.add(f'-Wno-{w}')
+    _CPP_ONLY_FLAGS.add(f'-Werror={w}')
+
+
+def _is_cpp_only(flag):
+    if flag in _CPP_ONLY_FLAGS:
+        return True
+
+    # Fast prefix checks for dynamic flags (like -Wc++11-compat)
+    if (
+        flag.startswith("-Wc++")
+        or flag.startswith("-Wno-c++")
+        or flag.startswith("-Werror=c++")
+    ):
+        return True
+
+    return False
+
+
+def parse_flag_extended(env, build_flag):
+    parsed = env.ParseFlags(build_flag)
+
+    old_ccflags = parsed.get("CCFLAGS", [])
+    new_cxxflags = parsed.get("CXXFLAGS", [])
+    new_ccflags = []
+    # Rebuilding the list is significantly faster
+    for flag in old_ccflags:
+        if _is_cpp_only(flag):
+            # It's a C++ flag, route it to CXXFLAGS if not already there
+            if flag not in new_cxxflags:
+                new_cxxflags.append(flag)
+        else:
+            # It's safe for C, keep it in CCFLAGS
+            new_ccflags.append(flag)
+
+    parsed["CCFLAGS"] = new_ccflags
+    parsed["CXXFLAGS"] = new_cxxflags
+    return parsed
+
+
 def prepare_build_envs(config, default_env, debug_allowed=True):
     FLAGS_WITH_ARGS = {
         "-include",
@@ -851,7 +917,7 @@ def prepare_build_envs(config, default_env, debug_allowed=True):
                             + compile_commands[i + 1].get("fragment", "")
                         )
                         skip_next = True
-                    parsed_flag = build_env.ParseFlags(build_flag)
+                    parsed_flag = parse_flag_extended(build_env, build_flag)
                     build_env.AppendUnique(**parsed_flag)
                     if cg.get("language", "") == "ASM":
                         build_env.AppendUnique(
