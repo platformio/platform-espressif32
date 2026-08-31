@@ -1775,8 +1775,12 @@ def generate_partition_table(partition_table_offset):
     return partition_table
 
 
-def build_tfpsacrypto(default_env, framework_components_map, project_src_dir):
-    tfpsacrypto_config = target_configs.get("tfpsacrypto", {})
+def build_tfpsacrypto(
+    default_env,
+    framework_components_map,
+    tfpsacrypto_config,
+    project_src_dir
+):
     lib_deps = find_lib_deps(framework_components_map, tfpsacrypto_config)
 
     extra_obj_files = []
@@ -2099,10 +2103,15 @@ framework_components_map = get_components_map(
 
 build_components(env, framework_components_map, PROJECT_DIR)
 
-tfpsacrypto_lib = build_tfpsacrypto(
-    env, framework_components_map, PROJECT_SRC_DIR
-)
-env.Depends(project_ld_scipt, tfpsacrypto_lib)
+# A special case for the `tfpsacrypto` lib that has implicit dependencies
+# that merged at interim step
+
+tfpsacrypto_config = target_configs.get("tfpsacrypto", {})
+if tfpsacrypto_config:
+    tfpsacrypto_lib = build_tfpsacrypto(
+        env, framework_components_map, tfpsacrypto_config, PROJECT_SRC_DIR
+    )
+    env.Depends(project_ld_scipt, tfpsacrypto_lib)
 
 if not elf_config:
     sys.stderr.write(
@@ -2214,7 +2223,7 @@ env.Prepend(
     CPPPATH=app_includes["plain_includes"],
     CPPDEFINES=project_defines,
     LINKFLAGS=extra_flags,
-    LIBS=libs + [tfpsacrypto_lib],
+    LIBS=libs + ([tfpsacrypto_lib] if tfpsacrypto_config else []),
 )
 
 # In Secure Boot the bootloader image is only uploaded if
