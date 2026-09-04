@@ -1,0 +1,53 @@
+{
+  "build": {
+    "arduino": {
+      "ldscript": "esp32s3_out.ld",
+      "memory_type": "qio_qspi",
+      "partitions": "default.csv"
+    },
+    "core": "esp32",
+    "extra_flags": [
+      "-DARDUINO_WAVESHARE_ESP32S3_TOUCH_LCD_128",
+      "-DARDUINO_USB_MODE=1",
+      "-DARDUINO_RUNNING_CORE=1",
+      "-DARDUINO_EVENT_RUNNING_CORE=1",
+      "-DBOARD_HAS_PSRAM"
+    ],
+    "f_cpu": "240000000L",
+    "f_flash": "80000000L",
+    "flash_mode": "qio",
+    "hwids": [
+      [
+        "0x1a86",
+        "0x55d3"
+      ]
+    ],
+    "mcu": "esp32s3",
+    "variant": "waveshare_esp32s3_touch_lcd_128"
+  },
+  "connectivity": [
+    "bluetooth",
+    "wifi"
+  ],
+  "debug": {
+    "default_tool": "esp-builtin",
+    "onboard_tools": [
+      "esp-builtin"
+    ],
+    "openocd_target": "esp32s3.cfg"
+  },
+  "frameworks": [
+    "arduino",
+    "espidf"
+  ],
+  "name": "Waveshare ESP32-S3-Touch-LCD-1.28 (16 MB QD, 2MB PSRAM)",
+  "upload": {
+    "flash_size": "16MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 16777216,
+    "require_upload_port": true,
+    "speed": 921600
+  },
+  "url": "https://www.waveshare.com/wiki/ESP32-S3-Touch-LCD-1.28",
+  "vendor": "Waveshare"
+}
