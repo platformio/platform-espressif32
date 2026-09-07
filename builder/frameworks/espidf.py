@@ -790,6 +790,9 @@ for w in _w_flags:
 
 
 def _is_cpp_only(flag):
+    if isinstance(flag, (list, tuple)):
+        flag = flag[0]
+    
     if flag in _CPP_ONLY_FLAGS:
         return True
 
