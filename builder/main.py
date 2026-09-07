@@ -276,6 +276,14 @@ env.Replace(
     SIZECHECKCMD="$SIZETOOL -A -d $SOURCES",
     SIZEPRINTCMD="$SIZETOOL -B -d $SOURCES",
 
+    ELF2BINFLAGS=[
+        "--chip", mcu, "elf2image",
+        "--flash_mode", "${__get_board_flash_mode(__env__)}",
+        "--flash_freq", "${__get_board_f_image(__env__)}",
+        "--flash_size", env.BoardConfig().get("upload.flash_size", "4MB")
+    ],
+    ELF2BINCMD='"$PYTHONEXE" "$OBJCOPY" $ELF2BINFLAGS -o $TARGET $SOURCES',
+
     ERASEFLAGS=[
         "--chip", mcu,
         "--port", '"$UPLOAD_PORT"'
@@ -314,14 +322,7 @@ if env.get("PROGNAME", "program") == "program":
 env.Append(
     BUILDERS=dict(
         ElfToBin=Builder(
-            action=env.VerboseAction(" ".join([
-                        '"$PYTHONEXE" "$OBJCOPY"',
-                "--chip", mcu, "elf2image",
-                "--flash_mode", "${__get_board_flash_mode(__env__)}",
-                "--flash_freq", "${__get_board_f_image(__env__)}",
-                "--flash_size", board.get("upload.flash_size", "4MB"),
-                "-o", "$TARGET", "$SOURCES"
-            ]), "Building $TARGET"),
+            action=env.VerboseAction("$ELF2BINCMD", "Building $TARGET"),
             suffix=".bin"
         ),
         DataToBin=Builder(

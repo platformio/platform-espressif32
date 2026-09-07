@@ -790,6 +790,9 @@ for w in _w_flags:
 
 
 def _is_cpp_only(flag):
+    if isinstance(flag, (list, tuple)):
+        flag = flag[0]
+    
     if flag in _CPP_ONLY_FLAGS:
         return True
 
@@ -1179,11 +1182,9 @@ def build_bootloader(sdk_config, bootloader_offset):
             # the bootloader will use the --pad-to-size option in elf2image
             # command of esptool for sector padding, with a size of
             # 4 KB per sector.
-            action = copy.deepcopy(env["BUILDERS"]["ElfToBin"].action)
-            action.cmd_list = env["BUILDERS"][
-                "ElfToBin"
-            ].action.cmd_list.replace("-o", "--pad-to-size 4KB" + " -o")
-            env["BUILDERS"]["ElfToBin"].action = action
+            bootloader_env.Append(
+                ELF2BINFLAGS=["--pad-to-size", "4KB"]
+            )
 
     # Note: By default the size of bootloader is limited to 0x2000 bytes,
     # in debug mode the footprint size can be easily grow beyond this limit
@@ -1579,7 +1580,7 @@ def install_python_deps():
         "cryptography": "~=46.0.0" if IDF5_OR_NEWER else ">=2.1.4,<35.0.0",
         "pyparsing": ">=3.1.0,<4" if IDF5_OR_NEWER else ">=2.0.3,<2.4.0",
         "idf-component-manager": "~=3.1" if IDF5_OR_NEWER else "~=1.0",
-        "esp-idf-kconfig": "~=3.6.0",
+        "esp-idf-kconfig": "~=3.9.0",
         "pydantic": "~=2.12.0",
     }
 
@@ -2411,7 +2412,7 @@ if board_flash_size != idf_flash_size:
 # To embed firmware checksum a special argument for esptool.py is required
 #
 
-extra_elf2bin_flags = "--elf-sha256-offset 0xb0"
+extra_elf2bin_flags = ["--elf-sha256-offset", "0xb0"]
 # https://github.com/espressif/esp-idf/blob/master/components/esptool_py/project_include.cmake#L58
 # For chips that support configurable MMU page size feature
 # If page size is configured to values other than the default "64KB"
@@ -2424,19 +2425,15 @@ if sdk_config.get("SOC_MMU_PAGE_SIZE_CONFIGURABLE", False):
         mmu_page_size = "16KB"
 
 if mmu_page_size != "64KB":
-    extra_elf2bin_flags += " --flash-mmu-page-size %s" % mmu_page_size
+    extra_elf2bin_flags.extend([" --flash-mmu-page-size", mmu_page_size])
 
 if env.get("PIO_ESP32_SECURE_BOOT_ENABLED", False) and sdk_config.get(
     "SECURE_SIGNED_APPS_RSA_SCHEME",
     sdk_config.get("SECURE_SIGNED_APPS_ECDSA_V2_SCHEME", False),
 ):
-    extra_elf2bin_flags += " --secure-pad-v2"
+    extra_elf2bin_flags.append("--secure-pad-v2")
 
-action = copy.deepcopy(env["BUILDERS"]["ElfToBin"].action)
-action.cmd_list = env["BUILDERS"]["ElfToBin"].action.cmd_list.replace(
-    "-o", extra_elf2bin_flags + " -o"
-)
-env["BUILDERS"]["ElfToBin"].action = action
+env.Append(ELF2BINFLAGS=extra_elf2bin_flags)
 
 #
 # Compile ULP sources in 'ulp' folder
