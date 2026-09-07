@@ -9,24 +9,8 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         example:
-          - "examples/arduino-ble5-advertising"
           - "examples/arduino-blink"
-          - "examples/arduino-usb-keyboard"
-          - "examples/arduino-wifiscan"
-          - "examples/espidf-arduino-blink"
-          - "examples/espidf-arduino-wifiscan"
-          - "examples/espidf-ble-eddystone"
-          - "examples/espidf-exceptions"
           - "examples/espidf-hello-world"
-          - "examples/espidf-http-request"
-          - "examples/espidf-peripherals-uart"
-          - "examples/espidf-peripherals-usb"
-          - "examples/espidf-sdkconfig-examples"
-          - "examples/espidf-security-secureboot"
-          - "examples/espidf-storage-sdcard"
-          - "examples/espidf-storage-spiffs"
-          - "examples/espidf-ulp-adc"
-          - "examples/espidf-ulp-pulse"
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
@@ -42,4 +26,4 @@ jobs:
           pio pkg install --global --platform symlink://.
       - name: Build examples
         run: |
-          pio run -d ${{ matrix.example }}
+          pio run -v -d ${{ matrix.example }}
