@@ -763,14 +763,15 @@ def process_response_file(build_env, response_flag):
 # see https://github.com/platformio/platform-espressif32/issues/1759
 
 _CPP_ONLY_FLAGS = {'-fpermissive', '-fvisibility-inlines-hidden', '-Weffc++'}
+_C_ONLY_FLAGS = set()
 
-_f_flags = [
+_f_cpp_flags = [
     'elide-constructors', 'rtti', 'exceptions', 'strict-enums',
     'use-cxa-atexit', 'threadsafe-statics', 'implicit-templates',
     'sized-deallocation'
 ]
 
-_w_flags = [
+_w_cpp_flags = [
     'non-virtual-dtor', 'delete-non-virtual-dtor', 'overloaded-virtual',
     'old-style-cast', 'useless-cast', 'sign-promo', 'reorder',
     'ctor-dtor-privacy', 'noexcept', 'strict-null-sentinel',
@@ -778,15 +779,29 @@ _w_flags = [
     'multiple-inheritance', 'virtual-inheritance', 'templates'
 ]
 
+# Standard C-only warning flags that throw errors if passed to g++
+_w_c_flags = [
+    'strict-prototypes', 'missing-prototypes', 'implicit-function-declaration',
+    'error-implicit-function-declaration', 'implicit-int', 'declaration-after-statement',
+    'pointer-sign', 'old-style-definition', 'nested-externs', 'traditional', 
+    'traditional-conversion', 'jump-misses-init', 'override-init',
+    'c90-c99-compat', 'c99-c11-compat'
+]
+
 # Generate all permutations (-f vs -fno-, and -W vs -Wno- vs -Werror=)
-for f in _f_flags:
+for f in _f_cpp_flags:
     _CPP_ONLY_FLAGS.add(f'-f{f}')
     _CPP_ONLY_FLAGS.add(f'-fno-{f}')
 
-for w in _w_flags:
+for w in _w_cpp_flags:
     _CPP_ONLY_FLAGS.add(f'-W{w}')
     _CPP_ONLY_FLAGS.add(f'-Wno-{w}')
     _CPP_ONLY_FLAGS.add(f'-Werror={w}')
+
+for w in _w_c_flags:
+    _C_ONLY_FLAGS.add(f'-W{w}')
+    _C_ONLY_FLAGS.add(f'-Wno-{w}')
+    _C_ONLY_FLAGS.add(f'-Werror={w}')
 
 
 def _is_cpp_only(flag):
@@ -796,12 +811,26 @@ def _is_cpp_only(flag):
     if flag in _CPP_ONLY_FLAGS:
         return True
 
-    # Fast prefix checks for dynamic flags (like -Wc++11-compat)
+    # Fast prefix checks for dynamic flags (like -Wc++11-compat or -std=c++11)
     if (
         flag.startswith("-Wc++")
         or flag.startswith("-Wno-c++")
         or flag.startswith("-Werror=c++")
     ):
+        return True
+        
+    return False
+
+
+def _is_c_only(flag):
+    if isinstance(flag, (list, tuple)):
+        flag = flag[0]
+        
+    if flag in _C_ONLY_FLAGS:
+        return True
+        
+    # Catch C standards (e.g., -std=c99, -std=gnu11) but avoid C++ standards (-std=c++11)
+    if flag.startswith("-std=") and "++" not in flag:
         return True
 
     return False
@@ -812,17 +841,23 @@ def parse_flag_extended(env, build_flag):
 
     new_cflags = parsed.get("CFLAGS", [])
     new_cxxflags = parsed.get("CXXFLAGS", [])
-    # Rebuilding the list is significantly faster
+    new_ccflags = []
+
+    # Rebuilding the lists is significantly faster
     for flag in parsed.get("CCFLAGS", []):
         if _is_cpp_only(flag):
             # It's a C++ flag, route it to CXXFLAGS if not already there
             if flag not in new_cxxflags:
                 new_cxxflags.append(flag)
+        elif _is_c_only(flag):
+            # It's a C-only flag, route it to CFLAGS
+            if flag not in new_cflags:
+                new_cflags.append(flag)
         else:
-            # It's safe for C, keep it in CFLAGS
-            new_cflags.append(flag)
+            # It's safe for BOTH C and C++ (e.g., -O2, -g, -Wall), keep it in CCFLAGS
+            new_ccflags.append(flag)
 
-    parsed["CCFLAGS"] = []
+    parsed["CCFLAGS"] = new_ccflags
     parsed["CXXFLAGS"] = new_cxxflags
     parsed["CFLAGS"] = new_cflags
     return parsed
