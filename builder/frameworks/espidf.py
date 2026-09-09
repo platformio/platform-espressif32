@@ -810,21 +810,21 @@ def _is_cpp_only(flag):
 def parse_flag_extended(env, build_flag):
     parsed = env.ParseFlags(build_flag)
 
-    old_ccflags = parsed.get("CCFLAGS", [])
+    new_cflags = parsed.get("CFLAGS", [])
     new_cxxflags = parsed.get("CXXFLAGS", [])
-    new_ccflags = []
     # Rebuilding the list is significantly faster
-    for flag in old_ccflags:
+    for flag in parsed.get("CCFLAGS", []):
         if _is_cpp_only(flag):
             # It's a C++ flag, route it to CXXFLAGS if not already there
             if flag not in new_cxxflags:
                 new_cxxflags.append(flag)
         else:
-            # It's safe for C, keep it in CCFLAGS
-            new_ccflags.append(flag)
+            # It's safe for C, keep it in CFLAGS
+            new_cflags.append(flag)
 
-    parsed["CCFLAGS"] = new_ccflags
+    parsed["CCFLAGS"] = []
     parsed["CXXFLAGS"] = new_cxxflags
+    parsed["CFLAGS"] = new_cflags
     return parsed
 
 
