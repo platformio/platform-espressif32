@@ -1,0 +1,35 @@
+{
+  "build": {
+    "arduino": {
+      "ldscript": "esp32_out.ld",
+      "partitions": "default_16MB.csv"
+    },
+    "core": "esp32",
+    "extra_flags": "-DARDUINO_M5STACK_Paper -DBOARD_HAS_PSRAM",
+    "f_cpu": "240000000L",
+    "f_flash": "40000000L",
+    "flash_mode": "qio",
+    "mcu": "esp32",
+    "variant": "m5stack_paper"
+  },
+  "connectivity": [
+    "wifi",
+    "bluetooth",
+    "ethernet",
+    "can"
+  ],
+  "frameworks": [
+    "arduino",
+    "espidf"
+  ],
+  "name": "M5Paper",
+  "upload": {
+    "flash_size": "16MB",
+    "maximum_ram_size": 4521984,
+    "maximum_size": 16777216,
+    "require_upload_port": true,
+    "speed": 1500000
+  },
+  "url": "https://docs.m5stack.com/en/core/m5paper_v1.1",
+  "vendor": "M5Stack"
+}
