@@ -762,46 +762,46 @@ def process_response_file(build_env, response_flag):
 # C++ Flag Leak Workaround
 # see https://github.com/platformio/platform-espressif32/issues/1759
 
-_CPP_ONLY_FLAGS = {'-fpermissive', '-fvisibility-inlines-hidden', '-Weffc++'}
+_CPP_ONLY_FLAGS = {"-fpermissive", "-fvisibility-inlines-hidden", "-Weffc++"}
 _C_ONLY_FLAGS = set()
 
 _f_cpp_flags = [
-    'elide-constructors', 'rtti', 'exceptions', 'strict-enums',
-    'use-cxa-atexit', 'threadsafe-statics', 'implicit-templates',
-    'sized-deallocation'
+    "elide-constructors", "rtti", "exceptions", "strict-enums",
+    "use-cxa-atexit", "threadsafe-statics", "implicit-templates",
+    "sized-deallocation"
 ]
 
 _w_cpp_flags = [
-    'non-virtual-dtor', 'delete-non-virtual-dtor', 'overloaded-virtual',
-    'old-style-cast', 'useless-cast', 'sign-promo', 'reorder',
-    'ctor-dtor-privacy', 'noexcept', 'strict-null-sentinel',
-    'zero-as-null-pointer-constant', 'catch-value', 'conditionally-supported',
-    'multiple-inheritance', 'virtual-inheritance', 'templates'
+    "non-virtual-dtor", "delete-non-virtual-dtor", "overloaded-virtual",
+    "old-style-cast", "useless-cast", "sign-promo", "reorder",
+    "ctor-dtor-privacy", "noexcept", "strict-null-sentinel",
+    "zero-as-null-pointer-constant", "catch-value", "conditionally-supported",
+    "multiple-inheritance", "virtual-inheritance", "templates"
 ]
 
 # Standard C-only warning flags that throw errors if passed to g++
 _w_c_flags = [
-    'strict-prototypes', 'missing-prototypes', 'implicit-function-declaration',
-    'error-implicit-function-declaration', 'implicit-int', 'declaration-after-statement',
-    'pointer-sign', 'old-style-definition', 'nested-externs', 'traditional', 
-    'traditional-conversion', 'jump-misses-init', 'override-init',
-    'c90-c99-compat', 'c99-c11-compat'
+    "strict-prototypes", "missing-prototypes", "implicit-function-declaration",
+    "error-implicit-function-declaration", "implicit-int", "declaration-after-statement",
+    "pointer-sign", "old-style-definition", "nested-externs", "traditional", 
+    "traditional-conversion", "jump-misses-init", "override-init",
+    "c90-c99-compat", "c99-c11-compat", "old-style-declaration"
 ]
 
 # Generate all permutations (-f vs -fno-, and -W vs -Wno- vs -Werror=)
 for f in _f_cpp_flags:
-    _CPP_ONLY_FLAGS.add(f'-f{f}')
-    _CPP_ONLY_FLAGS.add(f'-fno-{f}')
+    _CPP_ONLY_FLAGS.add(f"-f{f}")
+    _CPP_ONLY_FLAGS.add(f"-fno-{f}")
 
 for w in _w_cpp_flags:
-    _CPP_ONLY_FLAGS.add(f'-W{w}')
-    _CPP_ONLY_FLAGS.add(f'-Wno-{w}')
-    _CPP_ONLY_FLAGS.add(f'-Werror={w}')
+    _CPP_ONLY_FLAGS.add(f"-W{w}")
+    _CPP_ONLY_FLAGS.add(f"-Wno-{w}")
+    _CPP_ONLY_FLAGS.add(f"-Werror={w}")
 
 for w in _w_c_flags:
-    _C_ONLY_FLAGS.add(f'-W{w}')
-    _C_ONLY_FLAGS.add(f'-Wno-{w}')
-    _C_ONLY_FLAGS.add(f'-Werror={w}')
+    _C_ONLY_FLAGS.add(f"-W{w}")
+    _C_ONLY_FLAGS.add(f"-Wno-{w}")
+    _C_ONLY_FLAGS.add(f"-Werror={w}")
 
 
 def _is_cpp_only(flag):
