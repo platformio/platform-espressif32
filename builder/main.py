@@ -131,13 +131,17 @@ def _parse_partitions(env):
     # The first offset is 0x9000 because partition table is flashed to 0x8000 and
     # occupies an entire flash sector, which size is 0x1000
     next_offset = 0x9000
+    linenum = 0
     with open(partitions_csv) as fp:
         for line in fp.readlines():
+            linenum += 1
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
             tokens = [t.strip() for t in line.split(",")]
             if len(tokens) < 5:
+                sys.stderr.write("Warning: %s:%d: line ignored, too "
+                        "few tokens." % (partitions_csv, linenum))
                 continue
 
             bound = 0x10000 if tokens[1] in ("0", "app") else 4
@@ -151,9 +155,14 @@ def _parse_partitions(env):
                 "flags": tokens[5] if len(tokens) > 5 else None
             }
             result.append(partition)
-            next_offset = _parse_size(partition["offset"]) + _parse_size(
-                partition["size"]
-            )
+            next_offset = _parse_size(partition["offset"]) + \
+                          _parse_size(partition["size"])
+
+    print("Read %d partitions from %s" % (len(result), partitions_csv) )
+    fmt = "%-16s | %-16s | %-12s | %-12s | %-12s | %s "
+    print(fmt % ("Name", "Type", "Subtype", "Offset", "Size", "Flags"))
+    for p in result:
+        print(fmt % (p["name"],p["type"],p["subtype"],p["offset"],p["size"],p["flags"]))
 
     return result
 
@@ -202,22 +211,49 @@ def _to_unix_slashes(path):
 
 
 def fetch_fs_size(env):
+    fstypes = ("spiffs", "fat", "littlefs")
+    partitions = _parse_partitions(env)
+    label = board.get("build.fs_label", "factory_fs")
+
     fs = None
-    for p in _parse_partitions(env):
-        if p["type"] == "data" and p["subtype"] in ("spiffs", "fat", "littlefs"):
-            fs = p
+    if len(label) > 0:
+        # Search for the partition with the named label. It must still
+        # have compatible types.
+        for p in partitions:
+            if p["type"] == "data" and p["name"] == label and p["subtype"] in fstypes:
+                fs = p
+                break
+        if not fs:
+            sys.stderr.write(
+                "Could not find partition \"%s\" in the partition "
+                "table %s\n" % (label, env.subst("$PARTITIONS_TABLE_CSV"))
+            )
+    else:
+        # Search for any filesystem partition with compatible types.
+        # Last match wins! Non-obvious!
+        for p in partitions:
+            if p["type"] == "data" and p["subtype"] in fstypes:
+                fs = p
+
+        if not fs:
+            sys.stderr.write(
+                "Could not find a suitable partition in the partition "
+                "table %s\n" % env.subst("$PARTITIONS_TABLE_CSV")
+            )
+
     if not fs:
-        sys.stderr.write(
-            "Could not find the any filesystem section in the partitions "
-            "table %s\n" % env.subst("$PARTITIONS_TABLE_CSV")
-        )
         env.Exit(1)
         return
+
+    env["FS_LABEL"] = fs["name"]
     env["FS_START"] = _parse_size(fs["offset"])
     env["FS_SIZE"] = _parse_size(fs["size"])
     env["FS_PAGE"] = int("0x100", 16)
     env["FS_BLOCK"] = int("0x1000", 16)
 
+    print("Selected filesystem \"%s\" at 0x%x length 0x%x" % (env["FS_LABEL"],env["FS_START"],env["FS_SIZE"]) )
+    print("Note: FS_PAGE and FS_BLOCK are hardcoded to 256 bytes, 4K bytes.\n")
+    
     # FFat specific offsets, see:
     # https://github.com/lorol/arduino-esp32fatfs-plugin#notes-for-fatfs
     if filesystem == "fatfs":
