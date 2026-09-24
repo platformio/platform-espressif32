@@ -32,6 +32,6 @@
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://www.upesy.fr/products/upesy-esp32-wroom-devkit-board",
+  "url": "https://www.upesy.com/products/upesy-esp32-wroom-devkit-board",
   "vendor": "uPesy"
 }
