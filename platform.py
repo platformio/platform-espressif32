@@ -13,13 +13,9 @@
 # limitations under the License.
 
 import os
-import urllib
 import sys
-import json
-import re
 
 from platformio.public import PlatformBase, to_unix_path
-
 
 IS_WINDOWS = sys.platform.startswith("win")
 
@@ -55,18 +51,17 @@ class Espressif32Platform(PlatformBase):
         build_core = variables.get(
             "board_build.core", board_config.get("build.core", "arduino")
         ).lower()
+        
+        if IS_WINDOWS:
+            # Note: On Windows GDB v12 is not able to
+            # launch a GDB server in pipe mode while v11 works fine
+            self.packages["tool-xtensa-esp-elf-gdb"]["version"] = "~11.2.0"
+            self.packages["tool-riscv32-esp-elf-gdb"]["version"] = "~11.2.0"
 
         if "espidf" in frameworks:
-            if frameworks == ["espidf"]:
-                # Starting from v12, Espressif's toolchains are shipped without
-                # bundled GDB. Instead, it's distributed as separate packages for Xtensa
-                # and RISC-V targets. Currently only IDF depends on the latest toolchain
-                for gdb_package in ("tool-xtensa-esp-elf-gdb", "tool-riscv32-esp-elf-gdb"):
-                    self.packages[gdb_package]["optional"] = False
-                    if IS_WINDOWS:
-                        # Note: On Windows GDB v12 is not able to
-                        # launch a GDB server in pipe mode while v11 works fine
-                        self.packages[gdb_package]["version"] = "~11.2.0"
+            if "arduino" not in frameworks:
+                self.packages["toolchain-riscv32-esp"]["version"] = "15.2.0+20251204"
+                self.packages["toolchain-xtensa-esp-elf"]["version"] = "15.2.0+20251204"
 
             # Common packages for IDF and mixed Arduino+IDF projects
             for p in self.packages:
@@ -82,42 +77,13 @@ class Espressif32Platform(PlatformBase):
 
             if "arduino" in frameworks:
                 # Downgrade the IDF version for mixed Arduino+IDF projects
-                self.packages["framework-espidf"]["version"] = "~3.40407.0"
-                # Delete the latest toolchain packages from config
-                self.packages.pop("toolchain-xtensa-esp-elf", None)
+                self.packages["framework-espidf"]["version"] = "~4.50505.0"
             else:
-                # Disable old toolchain packages and use the latest
-                # available for IDF v5.0
-                for target in (
-                    "xtensa-esp32",
-                    "xtensa-esp32s2",
-                    "xtensa-esp32s3",
-                ):
-                    self.packages.pop("toolchain-%s" % target, None)
-
                 if mcu in ("esp32c3", "esp32c6"):
                     self.packages.pop("toolchain-xtensa-esp-elf", None)
                 else:
-                    self.packages["toolchain-xtensa-esp-elf"][
-                        "optional"
-                    ] = False
-
-                # Pull the latest RISC-V toolchain from PlatformIO organization
-                self.packages["toolchain-riscv32-esp"]["owner"] = "platformio"
-                self.packages["toolchain-riscv32-esp"][
-                    "version"
-                ] = "15.2.0+20251204"
-
-        if "arduino" in frameworks:
-            # Disable standalone GDB packages for Arduino and Arduino/IDF projects
-            for gdb_package in ("tool-xtensa-esp-elf-gdb", "tool-riscv32-esp-elf-gdb"):
-                self.packages.pop(gdb_package, None)
-
-            for available_mcu in ("esp32", "esp32s2", "esp32s3"):
-                if available_mcu == mcu:
-                    self.packages["toolchain-xtensa-%s" % mcu]["optional"] = False
-                else:
-                    self.packages.pop("toolchain-xtensa-%s" % available_mcu, None)
+                    self.packages["toolchain-xtensa-esp-elf"]["optional"] = False
+                    self.packages.pop("toolchain-riscv32-esp", None)
 
         if mcu in ("esp32s2", "esp32s3", "esp32c3", "esp32c6"):
             # RISC-V based toolchain for ESP32C3, ESP32C6 ESP32S2, ESP32S3 ULP

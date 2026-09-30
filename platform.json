@@ -30,35 +30,17 @@
     }
   },
   "packages": {
-    "toolchain-xtensa-esp32": {
-      "type": "toolchain",
-      "owner": "espressif",
-      "version": "8.4.0+2021r2-patch5"
-    },
-    "toolchain-xtensa-esp32s2": {
-      "type": "toolchain",
-      "optional": true,
-      "owner": "espressif",
-      "version": "8.4.0+2021r2-patch5"
-    },
-     "toolchain-xtensa-esp32s3": {
-      "type": "toolchain",
-      "optional": true,
-      "owner": "espressif",
-      "version": "8.4.0+2021r2-patch5"
-    },
     "toolchain-riscv32-esp": {
       "type": "toolchain",
-      "optional": true,
-      "owner": "espressif",
-      "version": "8.4.0+2021r2-patch5",
+      "owner": "platformio",
+      "version": "14.2.0+20260121",
       "optionalVersions": ["15.2.0+20251204"]
     },
     "toolchain-xtensa-esp-elf": {
       "type": "toolchain",
-      "optional": true,
       "owner": "platformio",
-      "version": "15.2.0+20251204"
+      "version": "14.2.0+20260121",
+      "optionalVersions": ["15.2.0+20251204"]
     },
     "toolchain-esp32ulp": {
       "type": "toolchain",
@@ -68,13 +50,11 @@
     },
     "tool-xtensa-esp-elf-gdb": {
       "type": "debugger",
-      "optional": true,
       "owner": "espressif",
       "version": "~12.1.0"
     },
     "tool-riscv32-esp-elf-gdb": {
       "type": "debugger",
-      "optional": true,
       "owner": "espressif",
       "version": "~12.1.0"
     },
