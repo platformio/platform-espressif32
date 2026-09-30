@@ -81,15 +81,13 @@ class Espressif32Platform(PlatformBase):
                 # Downgrade the IDF version for mixed Arduino+IDF projects
                 self.packages["framework-espidf"]["version"] = "~4.50505.0"
             else:
-                if mcu in ("esp32c3", "esp32c6"):
-                    self.packages.pop("toolchain-xtensa-esp-elf", None)
-                else:
-                    self.packages["toolchain-xtensa-esp-elf"]["optional"] = False
+                if mcu == "esp32":
                     self.packages.pop("toolchain-riscv32-esp", None)
-
-        if mcu in ("esp32s2", "esp32s3", "esp32c3", "esp32c6"):
-            # RISC-V based toolchain for ESP32C3, ESP32C6 ESP32S2, ESP32S3 ULP
-            self.packages["toolchain-riscv32-esp"]["optional"] = False
+                elif mcu in ("esp32s2", "esp32s3", "esp32c3", "esp32c6"):
+                    # RISC-V based toolchain for ESP32C3, ESP32C6 ESP32S2, ESP32S3 ULP
+                    self.packages["toolchain-riscv32-esp"]["optional"] = False
+                    if mcu in ("esp32c3", "esp32c6"):
+                        self.packages.pop("toolchain-xtensa-esp-elf", None)
 
         return super().configure_default_packages(variables, targets)
 
