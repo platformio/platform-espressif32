@@ -82,7 +82,37 @@
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~4.20017.0"
+      "version": "~4.30312.0"
+    },
+    "framework-arduinoespressif32-esp32-libs": {
+      "type": "framework",
+      "optional": true,
+      "owner": "platformio",
+      "version": "~3.3.12"
+    },
+    "framework-arduinoespressif32-esp32c3-libs": {
+      "type": "framework",
+      "optional": true,
+      "owner": "platformio",
+      "version": "~3.3.12"
+    },
+    "framework-arduinoespressif32-esp32c6-libs": {
+      "type": "framework",
+      "optional": true,
+      "owner": "platformio",
+      "version": "~3.3.12"
+    },
+    "framework-arduinoespressif32-esp32s2-libs": {
+      "type": "framework",
+      "optional": true,
+      "owner": "platformio",
+      "version": "~3.3.12"
+    },
+    "framework-arduinoespressif32-esp32s3-libs": {
+      "type": "framework",
+      "optional": true,
+      "owner": "platformio",
+      "version": "~3.3.12"
     },
     "framework-espidf": {
       "type": "framework",
