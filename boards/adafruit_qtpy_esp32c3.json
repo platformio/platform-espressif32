@@ -1,6 +1,6 @@
 {
   "build": {
-    "arduino":{
+    "arduino": {
       "ldscript": "esp32c3_out.ld"
     },
     "core": "esp32",
