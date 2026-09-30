@@ -265,7 +265,7 @@ env.Replace(
         "%s-elf-gdb" % toolchain_arch,
     ) if env.get("PIOFRAMEWORK") == ["espidf"] else "%s-elf-gdb" % toolchain_arch,
     OBJCOPY=join(
-        platform.get_package_dir("tool-esptoolpy") or "", "esptool.py"),
+        platform.get_package_dir("tool-esptool") or "", "esptool"),
     RANLIB="%s-elf-gcc-ranlib" % toolchain_arch,
     SIZETOOL="%s-elf-size" % toolchain_arch,
 
@@ -278,17 +278,17 @@ env.Replace(
 
     ELF2BINFLAGS=[
         "--chip", mcu, "elf2image",
-        "--flash_mode", "${__get_board_flash_mode(__env__)}",
-        "--flash_freq", "${__get_board_f_image(__env__)}",
-        "--flash_size", env.BoardConfig().get("upload.flash_size", "4MB")
+        "--flash-mode", "${__get_board_flash_mode(__env__)}",
+        "--flash-freq", "${__get_board_f_image(__env__)}",
+        "--flash-size", env.BoardConfig().get("upload.flash_size", "4MB")
     ],
-    ELF2BINCMD='"$PYTHONEXE" "$OBJCOPY" $ELF2BINFLAGS -o $TARGET $SOURCES',
+    ELF2BINCMD='"$OBJCOPY" $ELF2BINFLAGS -o $TARGET $SOURCES',
 
     ERASEFLAGS=[
         "--chip", mcu,
         "--port", '"$UPLOAD_PORT"'
     ],
-    ERASECMD='"$PYTHONEXE" "$OBJCOPY" $ERASEFLAGS erase_flash',
+    ERASECMD='"$OBJCOPY" $ERASEFLAGS erase_flash',
 
     # mkspiffs package contains two different binaries for IDF and Arduino
     MKFSTOOL="mk%s" % filesystem
@@ -464,19 +464,19 @@ if upload_protocol == "espota":
 elif upload_protocol == "esptool":
     env.Replace(
         UPLOADER=join(
-            platform.get_package_dir("tool-esptoolpy") or "", "esptool.py"),
+            platform.get_package_dir("tool-esptool") or "", "esptool"),
         UPLOADERFLAGS=[
             "--chip", mcu,
             "--port", '"$UPLOAD_PORT"',
             "--baud", "$UPLOAD_SPEED",
-            "--before", board.get("upload.before_reset", "default_reset"),
-            "--after", board.get("upload.after_reset", "hard_reset"),
-            "write_flash", "-z",
-            "--flash_mode", "${__get_board_flash_mode(__env__)}",
-            "--flash_freq", "${__get_board_f_image(__env__)}",
-            "--flash_size", board.get("upload.flash_size", "detect")
+            "--before", board.get("upload.before_reset", "default-reset"),
+            "--after", board.get("upload.after_reset", "hard-reset"),
+            "write-flash", "-z",
+            "--flash-mode", "${__get_board_flash_mode(__env__)}",
+            "--flash-freq", "${__get_board_f_image(__env__)}",
+            "--flash-size", board.get("upload.flash_size", "detect")
         ],
-        UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS $ESP32_APP_OFFSET $SOURCE'
+        UPLOADCMD='"$UPLOADER" $UPLOADERFLAGS $ESP32_APP_OFFSET $SOURCE'
     )
     for image in env.get("FLASH_EXTRA_IMAGES", []):
         env.Append(UPLOADERFLAGS=[image[0], env.subst(image[1])])
@@ -487,15 +487,15 @@ elif upload_protocol == "esptool":
                 "--chip", mcu,
                 "--port", '"$UPLOAD_PORT"',
                 "--baud", "$UPLOAD_SPEED",
-                "--before", board.get("upload.before_reset", "default_reset"),
-                "--after", board.get("upload.after_reset", "hard_reset"),
-                "write_flash", "-z",
-                "--flash_mode", "${__get_board_flash_mode(__env__)}",
-                "--flash_freq", "${__get_board_f_image(__env__)}",
-                "--flash_size", board.get("upload.flash_size", "detect"),
+                "--before", board.get("upload.before_reset", "default-reset"),
+                "--after", board.get("upload.after_reset", "hard-reset"),
+                "write-flash", "-z",
+                "--flash-mode", "${__get_board_flash_mode(__env__)}",
+                "--flash-freq", "${__get_board_f_image(__env__)}",
+                "--flash-size", board.get("upload.flash_size", "detect"),
                 "$FS_START"
             ],
-            UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS $SOURCE',
+            UPLOADCMD='"$UPLOADER" $UPLOADERFLAGS $SOURCE',
         )
 
     upload_actions = [

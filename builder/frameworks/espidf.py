@@ -1907,12 +1907,11 @@ env.Append(
             action=env.VerboseAction(
                 " ".join(
                     [
-                        "$PYTHONEXE",
                         os.path.join(
-                            platform.get_package_dir("tool-esptoolpy") or "",
-                            "espsecure.py",
+                            platform.get_package_dir("tool-esptool") or "",
+                            "espsecure",
                         ),
-                        "sign_data",
+                        "sign-data",
                         "--version",
                         "$PIO_ESP32_SECURE_BOOT_VERSION",
                         "--keyfile",
@@ -1930,10 +1929,9 @@ env.Append(
             action=env.VerboseAction(
                 " ".join(
                     [
-                        "$PYTHONEXE",
                         os.path.join(
-                            platform.get_package_dir("tool-esptoolpy") or "",
-                            "espsecure.py",
+                            platform.get_package_dir("tool-esptool") or "",
+                            "espsecure",
                         ),
                         "encrypt_flash_data",
                         "--aes_xts" if idf_variant != "esp32" else "",
