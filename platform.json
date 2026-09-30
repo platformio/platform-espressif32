@@ -99,7 +99,7 @@
       "optional": true,
       "owner": "platformio",
       "version": "~4.60100.0",
-      "optionalVersions": ["~3.40407.0"]
+      "optionalVersions": ["~3.50505.0"]
     },
     "tool-esptool": {
       "type": "uploader",

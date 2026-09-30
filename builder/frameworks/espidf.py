@@ -20,7 +20,6 @@ Espressif IoT Development Framework for ESP32 MCU
 https://github.com/espressif/esp-idf
 """
 
-import copy
 import json
 import subprocess
 import sys
@@ -61,8 +60,8 @@ mcu = board.get("build.mcu", "esp32")
 idf_variant = mcu.lower()
 
 # Required until Arduino switches to v5
-IDF5_OR_NEWER = (
-    int(platform.get_package_version("framework-espidf").split(".")[1][0]) > 4
+IDF6_OR_NEWER = (
+    int(platform.get_package_version("framework-espidf").split(".")[1][0]) > 5
 )
 
 IDF_ENV_VERSION = "1.0.0"
@@ -70,13 +69,7 @@ FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
 TOOLCHAIN_DIR = platform.get_package_dir(
     "toolchain-riscv32-esp"
     if mcu in ("esp32c3", "esp32c6")
-    else (
-        (
-            "toolchain-xtensa-esp-elf"
-            if "arduino" not in env.subst("$PIOFRAMEWORK")
-            else "toolchain-xtensa-%s" % mcu
-        )
-    )
+    else "toolchain-xtensa-esp-elf"
 )
 
 
@@ -206,17 +199,17 @@ idf_component_register(SRCS ${app_sources})
 
     if not os.listdir(PROJECT_SRC_DIR):
         # create a default main file to make CMake happy during first init
-        with open(os.path.join(PROJECT_SRC_DIR, "main.c"), "w") as fp:
+        with open(os.path.join(PROJECT_SRC_DIR, "main.c"), "w", encoding="utf8") as fp:
             fp.write("void app_main() {}")
 
     project_dir = PROJECT_DIR
     if not os.path.isfile(os.path.join(project_dir, "CMakeLists.txt")):
-        with open(os.path.join(project_dir, "CMakeLists.txt"), "w") as fp:
+        with open(os.path.join(project_dir, "CMakeLists.txt"), "w", encoding="utf8") as fp:
             fp.write(root_cmake_tpl % os.path.basename(project_dir))
 
     project_src_dir = PROJECT_SRC_DIR
     if not os.path.isfile(os.path.join(project_src_dir, "CMakeLists.txt")):
-        with open(os.path.join(project_src_dir, "CMakeLists.txt"), "w") as fp:
+        with open(os.path.join(project_src_dir, "CMakeLists.txt"), "w", encoding="utf8") as fp:
             fp.write(prj_cmake_tpl % normalize_path(PROJECT_SRC_DIR))
 
 
@@ -245,7 +238,7 @@ def get_cmake_code_model(src_dir, build_dir, extra_args=None):
     codemodel = {}
     for target in os.listdir(cmake_api_reply_dir):
         if target.startswith("codemodel-v2"):
-            with open(os.path.join(cmake_api_reply_dir, target), "r") as fp:
+            with open(os.path.join(cmake_api_reply_dir, target), "r", encoding="utf8") as fp:
                 codemodel = json.load(fp)
 
     assert codemodel["version"]["major"] == 2
@@ -297,7 +290,7 @@ def get_target_config(project_configs, target_index, cmake_api_reply_dir):
         )
         env.Exit(1)
 
-    with open(target_config_file) as fp:
+    with open(target_config_file, encoding="utf8") as fp:
         return json.load(fp)
 
 
@@ -489,7 +482,7 @@ def get_sdk_configuration():
         print('Warning: Could not find "sdkconfig.json" file\n')
 
     try:
-        with open(config_path, "r") as fp:
+        with open(config_path, "r", encoding="utf8") as fp:
             return json.load(fp)
     except:
         return {}
@@ -518,7 +511,7 @@ def load_component_paths(
         BUILD_DIR, "project_description.json"
     )
     if os.path.isfile(project_description_file):
-        with open(project_description_file) as fp:
+        with open(project_description_file, encoding="utf8") as fp:
             try:
                 data = json.load(fp)
                 for path in data.get("build_component_paths", []):
@@ -652,10 +645,10 @@ def create_custom_libraries_list(ldgen_libraries_file, ignore_targets):
         return pio_libraries_file
 
     lib_paths = []
-    with open(ldgen_libraries_file, "r") as fp:
+    with open(ldgen_libraries_file, "r", encoding="utf8") as fp:
         lib_paths = fp.readlines()
 
-    with open(pio_libraries_file, "w") as fp:
+    with open(pio_libraries_file, "w", encoding="utf8") as fp:
         for lib_path in lib_paths:
             if all(
                 "lib%s.a" % t.replace("__idf_", "") not in lib_path
@@ -713,22 +706,20 @@ def generate_project_ld_script(sdk_config, ignore_targets=None):
         "sections.ld.in",
     )
 
-    framework_version = [int(v) for v in get_framework_version().split(".")]
-    if framework_version[:2] > [5, 2]:
-        initial_ld_script = preprocess_linker_script(
-            initial_ld_script,
-            os.path.join(
-                BUILD_DIR,
-                "esp-idf",
-                "esp_system",
-                "ld",
-                "sections.ld.in",
-            ),
-            [
-                os.path.join(BUILD_DIR, "config"),
-                os.path.join(FRAMEWORK_DIR, "components", "esp_system", "ld"),
-            ],
-        )
+    initial_ld_script = preprocess_linker_script(
+        initial_ld_script,
+        os.path.join(
+            BUILD_DIR,
+            "esp-idf",
+            "esp_system",
+            "ld",
+            "sections.ld.in",
+        ),
+        [
+            os.path.join(BUILD_DIR, "config"),
+            os.path.join(FRAMEWORK_DIR, "components", "esp_system", "ld"),
+        ],
+    )
 
     return env.Command(
         os.path.join("$BUILD_DIR", "sections.ld"),
@@ -807,7 +798,7 @@ for w in _w_c_flags:
 def _is_cpp_only(flag):
     if isinstance(flag, (list, tuple)):
         flag = flag[0]
-    
+
     if flag in _CPP_ONLY_FLAGS:
         return True
 
@@ -818,17 +809,17 @@ def _is_cpp_only(flag):
         or flag.startswith("-Werror=c++")
     ):
         return True
-        
+
     return False
 
 
 def _is_c_only(flag):
     if isinstance(flag, (list, tuple)):
         flag = flag[0]
-        
+
     if flag in _C_ONLY_FLAGS:
         return True
-        
+
     # Catch C standards (e.g., -std=c99, -std=gnu11) but avoid C++ standards (-std=c++11)
     if flag.startswith("-std=") and "++" not in flag:
         return True
@@ -1175,8 +1166,7 @@ def build_bootloader(sdk_config, bootloader_offset):
         target_configs, ["STATIC_LIBRARY", "OBJECT_LIBRARY"]
     )
 
-    framework_version = [int(v) for v in get_framework_version().split(".")]
-    if framework_version[:2] >= [6, 0]:
+    if IDF6_OR_NEWER:
         for ld_script in ("bootloader.memory.ld", "bootloader.sections.ld"):
             processed_ld_script = preprocess_linker_script(
                 os.path.join(
@@ -1344,7 +1334,7 @@ idf_component_register(SRCS ${component_sources})
 
     component_cmake = os.path.join(dummy_component_path, "CMakeLists.txt")
     if not os.path.isfile(component_cmake):
-        with open(component_cmake, "w") as fp:
+        with open(component_cmake, "w", encoding="utf8") as fp:
             fp.write(prj_cmake_tpl)
 
 
@@ -1392,7 +1382,7 @@ def get_framework_version():
 def create_version_file():
     version_file = os.path.join(FRAMEWORK_DIR, "version.txt")
     if not os.path.isfile(version_file):
-        with open(version_file, "w") as fp:
+        with open(version_file, "w", encoding="utf8") as fp:
             fp.write(get_framework_version())
 
 
@@ -1491,18 +1481,40 @@ def preprocess_linker_script(
         ),
         "-DSOURCE=$SOURCE",
         "-DTARGET=$TARGET",
-        '"-DCFLAGS=%s"'
-        % " ".join(
-            ('-I\\"%s\\"' % fs.to_unix_path(inc) for inc in extra_include_dirs)
-        ),
-        "-P",
-        os.path.join(
-            FRAMEWORK_DIR,
-            "tools",
-            "cmake",
-            "linker_script_preprocessor.cmake",
-        ),
     ]
+
+    if IDF6_OR_NEWER:
+        cmd.extend(
+            [
+                '"-DCFLAGS=%s"'
+                % " ".join(
+                    ('-I\\"%s\\"' % fs.to_unix_path(inc) for inc in extra_include_dirs)
+                ),
+                "-P",
+                os.path.join(
+                    FRAMEWORK_DIR,
+                    "tools",
+                    "cmake",
+                    "linker_script_preprocessor.cmake",
+                ),
+            ]
+        )
+    else:
+        cmd.extend(
+            [
+                "-DCONFIG_DIR=%s" % os.path.join(BUILD_DIR, "config"),
+                "-DLD_DIR=%s"
+                % os.path.join(FRAMEWORK_DIR, "components", "esp_system", "ld"),
+                "-P",
+                os.path.join(
+                    "$BUILD_DIR",
+                    "esp-idf",
+                    "esp_system",
+                    "ld",
+                    "linker_script_generator.cmake",
+                ),
+            ]
+        )
 
     return env.Command(
         target_script,
@@ -1612,22 +1624,14 @@ def install_python_deps():
         # https://github.com/platformio/platformio-core/issues/4614
         "urllib3": "<2",
         # https://github.com/platformio/platform-espressif32/issues/635
-        "cryptography": "~=46.0.0" if IDF5_OR_NEWER else ">=2.1.4,<35.0.0",
-        "pyparsing": ">=3.1.0,<4" if IDF5_OR_NEWER else ">=2.0.3,<2.4.0",
-        "idf-component-manager": "~=3.1" if IDF5_OR_NEWER else "~=1.0",
-        "esp-idf-kconfig": "~=3.9.0",
+        "cryptography": "~=46.0.0",
+        "pyparsing": ">=3.1.0,<4",
+        "idf-component-manager": "~=3.1",
+        "esp-idf-kconfig": "~=3.13.0",
         "pydantic": "~=2.12.0",
     }
 
-    if not IDF5_OR_NEWER:
-        deps["kconfiglib"] = "~=13.7.1"
-        deps["future"] = ">=0.18.3"
-        deps["esp-idf-kconfig"] = ">=1.4.2,<2.0.0"
-
-    if (
-        sys_platform.system() == "Darwin"
-        and "arm" in sys_platform.machine().lower()
-    ):
+    if sys_platform.system() == "Darwin" and "arm" in sys_platform.machine().lower():
         deps["chardet"] = ">=3.0.2,<4"
 
     python_exe_path = get_python_exe()
@@ -1661,17 +1665,6 @@ def install_python_deps():
                 "Installing windows-curses package",
             )
         )
-
-        # A special "esp-windows-curses" python package is required on Windows
-        # for Menuconfig on IDF <5
-        if not IDF5_OR_NEWER and "esp-windows-curses" not in installed_packages:
-            env.Execute(
-                env.VerboseAction(
-                    '"%s" -m pip install "file://%s/tools/kconfig_new/esp-windows-curses"'
-                    % (python_exe_path, FRAMEWORK_DIR),
-                    "Installing windows-curses package",
-                )
-            )
 
 
 def get_idf_venv_dir():
@@ -1896,6 +1889,85 @@ def build_tfpsacrypto(
         extra_obj_files=extra_obj_files,
     )
 
+def parse_embedded_files_metadata(
+    framework_components_map,
+    ninja_buildfile,
+    ignore_components=None
+):
+    ignore_components = set(ignore_components or [])
+    asm_source_paths = []
+
+    for component in framework_components_map.values():
+        config = component.get("config", {})
+        commands = config.get("backtraceGraph", {}).get("commands", [])
+
+        if "target_add_binary_data" not in commands or config.get("name") in ignore_components:
+            continue
+
+        for src_file in config.get("sources", []):
+            if src_file.get("isGenerated") and src_file.get("path", "").endswith(".S"):
+                asm_source_paths.append(src_file["path"])
+
+    if not asm_source_paths:
+        return []
+
+    file_metadata = []
+    pattern = re.compile(r'-D\s+([A-Z_]+)=(.*?)(?=\s+-[a-zA-Z]|$)')
+
+    try:
+        with open(ninja_buildfile, "r", encoding="utf-8", errors="replace") as fp:
+            for line in fp:
+                if "data_file_embed_asm.cmake" not in line or "FILE_TYPE" not in line:
+                    continue
+                if not any(f in line for f in asm_source_paths):
+                    continue
+
+                matches = pattern.findall(line)
+                flags = {k: v.strip('"\'') for k, v in matches}
+
+                if "DATA_FILE" not in flags or "FILE_TYPE" not in flags:
+                    continue
+
+                raw_path = flags["DATA_FILE"].replace("$ ", " ").replace("$:", ":")
+                file_metadata.append({
+                    "path": os.path.normpath(raw_path),
+                    "type": flags["FILE_TYPE"]
+                })
+
+    except OSError as e:
+        print(f"Warning: Failed to parse Ninja build file: {e}")
+
+    return file_metadata
+
+def register_embedded_file_targets(framework_components_map, ninja_buildfile):
+    cache_file = os.path.join(BUILD_DIR, "embedded_files.json")
+
+    embedded_file_specs = None
+    cache_valid = os.path.isfile(cache_file) and os.path.isfile(ninja_buildfile)
+
+    if cache_valid and os.path.getmtime(cache_file) > os.path.getmtime(ninja_buildfile):
+        try:
+            with open(cache_file, "r", encoding="utf-8", errors="replace") as fp:
+                embedded_file_specs = json.load(fp)
+        except (OSError, json.JSONDecodeError):
+            pass
+
+    if embedded_file_specs is None:
+        embedded_file_specs = parse_embedded_files_metadata(
+            framework_components_map, ninja_buildfile, ignore_components=["__idf_mbedtls"]
+        )
+        try:
+            with open(cache_file, "w", encoding="utf-8") as fp:
+                json.dump(embedded_file_specs, fp, indent=2, ensure_ascii=False)
+        except OSError as e:
+            print(f"Warning: Could not save embedded files cache: {e}")
+
+    for spec in (embedded_file_specs or []):
+        env.Requires(
+            os.path.join(BUILD_DIR, "${PROGNAME}.elf"),
+            env.FileToAsm(spec["path"], FILE_TYPE=spec["type"])
+        )
+
 #
 # Add extra builders and variables for signing and encrypting binaries
 #
@@ -2009,26 +2081,14 @@ if not board.get("build.ldscript", ""):
     )
 
     final_ld_script = os.path.join("$BUILD_DIR", "memory.ld")
-    framework_version = [int(v) for v in get_framework_version().split(".")]
-    if framework_version[:2] > [5, 2]:
-        final_ld_script = preprocess_linker_script(
-            initial_ld_script,
-            os.path.join("$BUILD_DIR", "memory.ld"),
-            [
-                os.path.join(BUILD_DIR, "config"),
-                os.path.join(FRAMEWORK_DIR, "components", "esp_system", "ld"),
-            ],
-        )
-    else:
-        final_ld_script = env.Command(
-            final_ld_script,
-            initial_ld_script,
-            env.VerboseAction(
-                '$CC -I"$BUILD_DIR/config" -I"%s" -C -P -x c -E $SOURCE -o $TARGET'
-                % os.path.join(FRAMEWORK_DIR, "components", "esp_system", "ld"),
-                "Generating LD script $TARGET",
-            ),
-        )
+    final_ld_script = preprocess_linker_script(
+        initial_ld_script,
+        os.path.join("$BUILD_DIR", "memory.ld"),
+        [
+            os.path.join(BUILD_DIR, "config"),
+            os.path.join(FRAMEWORK_DIR, "components", "esp_system", "ld"),
+        ],
+    )
 
     env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", final_ld_script)
     env.Replace(LDSCRIPT_PATH="memory.ld")
@@ -2070,10 +2130,6 @@ extra_components = []
 if PROJECT_SRC_DIR != os.path.join(PROJECT_DIR, "main"):
     extra_components.append(PROJECT_SRC_DIR)
 if "arduino" in env.subst("$PIOFRAMEWORK"):
-    print(
-        "Warning! Arduino framework as an ESP-IDF component doesn't handle "
-        "the `variant` field! The default `esp32` variant will be used."
-    )
     extra_components.append(ARDUINO_FRAMEWORK_DIR)
     # Add path to internal Arduino libraries so that the LDF
     # will be able to find them
@@ -2243,6 +2299,18 @@ bootloader_offset = board.get(
 
 bootloader = build_bootloader(sdk_config, bootloader_offset)
 env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", bootloader)
+
+#
+# Process embedded files from components
+#
+
+if not env.GetProjectOption(
+    "board_build.embed_txtfiles", env.GetProjectOption("board_build.embed_files", "")
+) or env.GetProjectOption("board_build.force_embedded_files", "no") == "yes":
+    register_embedded_file_targets(
+        framework_components_map, os.path.join(BUILD_DIR, "build.ninja")
+    )
+
 
 #
 # Target: ESP-IDF specific targets
