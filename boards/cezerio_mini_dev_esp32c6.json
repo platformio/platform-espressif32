@@ -1,6 +1,11 @@
 {
   "build": {
     "core": "esp32",
+    "extra_flags": [
+      "-DARDUINO_CEZERIO_MINI_DEV_ESP32C6",
+      "-DARDUINO_USB_MODE=1",
+      "-DARDUINO_USB_CDC_ON_BOOT=1"
+    ],
     "f_cpu": "160000000L",
     "f_flash": "80000000L",
     "flash_mode": "qio",
@@ -10,7 +15,8 @@
         "0x1001"
       ]
     ],
-    "mcu": "esp32c6"
+    "mcu": "esp32c6",
+    "variant": "cezerio_mini_dev_esp32c6"
   },
   "connectivity": [
     "wifi",
@@ -22,6 +28,7 @@
     "openocd_target": "esp32c6.cfg"
   },
   "frameworks": [
+    "arduino",
     "espidf"
   ],
   "name": "cezerio mini dev ESP32C6",
