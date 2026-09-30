@@ -57,7 +57,9 @@ class Espressif32Platform(PlatformBase):
             # launch a GDB server in pipe mode while v11 works fine
             self.packages["tool-xtensa-esp-elf-gdb"]["version"] = "~11.2.0"
             self.packages["tool-riscv32-esp-elf-gdb"]["version"] = "~11.2.0"
-
+        
+        if frameworks == ["arduino"]:
+            self.packages["framework-arduinoespressif32-%s-libs" % mcu]["optional"] = False
         if "espidf" in frameworks:
             if "arduino" not in frameworks:
                 self.packages["toolchain-riscv32-esp"]["version"] = "15.2.0+20251204"
