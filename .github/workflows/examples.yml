@@ -9,7 +9,8 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         example:
-          - "examples/arduino-ble5-advertising"
+          # Disable BLE example until Arduino core is switched to NimBLE
+          # - "examples/arduino-ble5-advertising"
           - "examples/arduino-blink"
           - "examples/arduino-usb-keyboard"
           - "examples/arduino-wifiscan"
