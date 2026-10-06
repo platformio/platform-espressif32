@@ -286,10 +286,12 @@ class Espressif32Platform(PlatformBase):
                 ["-c", "adapter speed %s" % (debug_config.speed or "5000")]
             )
 
+        # The images may not exist yet: `pio debug` configures the session
+        # before building them, and falling back to GDB `load` would write
+        # the new sections over the application already in flash
         ignore_conds = [
             debug_config.load_cmds != ["load"],
             not flash_images,
-            not all([os.path.isfile(item["path"]) for item in flash_images]),
         ]
 
         if any(ignore_conds):
