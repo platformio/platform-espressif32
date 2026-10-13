@@ -14,7 +14,7 @@
     "flash_mode": "dio",
     "hwids": [
       [
-        "0X303A",
+        "0x303A",
         "0x80C5"
       ]
     ],
