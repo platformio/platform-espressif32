@@ -1885,7 +1885,7 @@ def build_tfpsacrypto(
     return build_library(
         default_env,
         tfpsacrypto_config,
-        project_src_dir,
+        PROJECT_DIR,
         extra_obj_files=extra_obj_files,
     )
 
