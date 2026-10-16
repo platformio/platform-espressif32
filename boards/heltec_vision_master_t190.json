@@ -7,9 +7,18 @@
     "core": "esp32",
     "extra_flags": [
       "-DARDUINO_HELTEC_VISION_MASTER_T190",
-      "-DARDUINO_USB_MODE=1",
       "-DARDUINO_RUNNING_CORE=1",
-      "-DARDUINO_EVENT_RUNNING_CORE=1"
+      "-DARDUINO_EVENT_RUNNING_CORE=1",
+      "-DREGION_EU868",
+      "-DMCU_ESP32_S3",
+      "-DHELTEC_BOARD=38",
+      "-DHELTEC_VISION_MASTER_T190",
+      "-DRADIO_CHIP_SX1262",
+      "-DACTIVE_REGION=LORAMAC_REGION_EU868",
+      "-DLORAWAN_PREAMBLE_LENGTH=8",
+      "-DHELTEC_VISION_MASTER_T190",
+      "-DARDUINO_USB_MODE=1",
+      "-DARDUINO_USB_CDC_ON_BOOT=1"
     ],
     "f_cpu": "240000000L",
     "f_flash": "80000000L",
@@ -24,9 +33,9 @@
     "variant": "heltec_vision_master_t190"
   },
   "connectivity": [
-    "wifi",
     "bluetooth",
-    "lora"
+    "lora",
+    "wifi"
   ],
   "debug": {
     "openocd_target": "esp32s3.cfg"
