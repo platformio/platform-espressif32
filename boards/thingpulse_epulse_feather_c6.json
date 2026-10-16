@@ -1,22 +1,26 @@
 {
   "build": {
+    "arduino": {
+      "ldscript": "esp32c6_out.ld"
+    },
     "core": "esp32",
+    "extra_flags": [
+      "-DARDUINO_THINGPULSE_EPULSE_FEATHER_C6",
+      "-DARDUINO_USB_CDC_ON_BOOT=1",
+      "-DARDUINO_USB_MODE=1"
+    ],
     "f_cpu": "160000000L",
     "f_flash": "80000000L",
     "flash_mode": "qio",
     "mcu": "esp32c6",
-    "variant": "thingpulse_epulse_feather_c6",
-    "extra_flags": [
-        "-DARDUINO_THINGPULSE_EPULSE_FEATHER_C6",
-        "-DARDUINO_USB_CDC_ON_BOOT=1",
-        "-DARDUINO_USB_MODE=1"
-    ]
+    "variant": "thingpulse_epulse_feather_c6"
   },
   "connectivity": [
-    "wifi",
     "bluetooth",
-    "zigbee",
-    "thread"
+    "thread",
+    "wifi",
+    "zigbee"
+    
   ],
   "debug": {
     "openocd_target": "esp32c6.cfg"

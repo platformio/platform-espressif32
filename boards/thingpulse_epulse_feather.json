@@ -1,7 +1,8 @@
 {
   "build": {
-    "arduino":{
-      "ldscript": "esp32_out.ld"
+    "arduino": {
+      "ldscript": "esp32_out.ld",
+      "partitions": "default_8MB.csv"
     },
     "core": "esp32",
     "extra_flags": [
@@ -19,10 +20,10 @@
     "variant": "thingpulse_epulse_feather"
   },
   "connectivity": [
-    "wifi",
     "bluetooth",
+    "can",
     "ethernet",
-    "can"
+    "wifi"
   ],
   "debug": {
     "openocd_board": "esp32-wrover.cfg"
