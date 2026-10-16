@@ -1,6 +1,6 @@
 {
   "build": {
-    "arduino":{
+    "arduino": {
       "ldscript": "esp32c6_out.ld"
     },
     "core": "esp32",
@@ -22,10 +22,10 @@
     "variant": "adafruit_feather_esp32c6"
   },
   "connectivity": [
-    "wifi",
     "bluetooth",
-    "zigbee",
-    "thread"
+    "thread",
+    "wifi",
+    "zigbee"
   ],
   "debug": {
     "openocd_target": "esp32c6.cfg"
