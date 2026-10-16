@@ -1,0 +1,45 @@
+{
+  "build": {
+    "arduino": {
+      "ldscript": "esp32_out.ld",
+      "partitions": "default_8MB.csv"
+    },
+    "core": "esp32",
+    "extra_flags": [
+      "-DARDUINO_M5STACK_STICKC_PLUS2",
+      "-DARDUINO_RUNNING_CORE=1",
+      "-DARDUINO_EVENT_RUNNING_CORE=1",
+      "-DBOARD_HAS_PSRAM",
+      "-mfix-esp32-psram-cache-issue",
+      "-mfix-esp32-psram-cache-strategy=memw"
+    ],
+    "f_cpu": "240000000L",
+    "f_flash": "80000000L",
+    "flash_mode": "qio",
+    "mcu": "esp32",
+    "variant": "m5stack_stickc_plus2"
+  },
+  "connectivity": [
+    "bluetooth",
+    "can",
+    "ethernet",
+    "wifi"
+  ],
+  "debug": {
+    "openocd_board": "esp-wroom-32.cfg"
+  },
+  "frameworks": [
+    "arduino",
+    "espidf"
+  ],
+  "name": "M5Stack StickC-Plus2",
+  "upload": {
+    "flash_size": "8MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 8388608,
+    "require_upload_port": true,
+    "speed": 460800
+  },
+  "url": "https://docs.m5stack.com/en/core/StickC-Plus2",
+  "vendor": "M5Stack"
+}
