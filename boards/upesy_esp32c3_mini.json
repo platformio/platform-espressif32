@@ -14,7 +14,7 @@
     "flash_mode": "qio",
     "hwids": [
       [
-        "0X303A",
+        "0x303A",
         "0x819B"
       ]
     ],
@@ -22,6 +22,7 @@
     "variant": "uPesy_esp32c3_mini"
   },
   "connectivity": [
+    "bluetooth",
     "wifi"
   ],
   "debug": {

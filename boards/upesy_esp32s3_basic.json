@@ -7,8 +7,10 @@
     },
     "core": "esp32",
     "extra_flags": [
-      "-DBOARD_HAS_PSRAM",
       "-DARDUINO_UPESY_ESP32S3_BASIC",
+      "-DARDUINO_RUNNING_CORE=1",
+      "-DARDUINO_EVENT_RUNNING_CORE=1",
+      "-DBOARD_HAS_PSRAM",
       "-DARDUINO_USB_MODE=1",
       "-DARDUINO_USB_CDC_ON_BOOT=1"
     ],
@@ -25,8 +27,8 @@
     "variant": "uPesy_esp32s3_basic"
   },
   "connectivity": [
-    "wifi",
-    "bluetooth"
+    "bluetooth",
+    "wifi"
   ],
   "debug": {
     "openocd_target": "esp32s3.cfg"
@@ -39,7 +41,7 @@
   "upload": {
     "flash_size": "16MB",
     "maximum_ram_size": 327680,
-    "maximum_size": 16777216,    
+    "maximum_size": 16777216,
     "use_1200bps_touch": true,
     "wait_for_upload_port": true,
     "require_upload_port": true,
