@@ -4,6 +4,11 @@
       "ldscript": "esp32c3_out.ld"
     },
     "core": "esp32",
+    "extra_flags": [
+      "-DARDUINO_M5STACK_STAMP_C3",
+      "-DARDUINO_USB_MODE=1",
+      "-DARDUINO_USB_CDC_ON_BOOT=1"
+    ],
     "f_cpu": "160000000L",
     "f_flash": "80000000L",
     "flash_mode": "qio",
@@ -11,8 +16,8 @@
     "variant": "m5stack_stamp_c3"
   },
   "connectivity": [
-    "wifi",
-    "bluetooth"
+    "bluetooth",
+    "wifi"
   ],
   "debug": {
     "openocd_target": "esp32c3.cfg"
@@ -21,7 +26,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "M5Stamp C3",
+  "name": "M5Stack Stamp-C3",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
@@ -29,6 +34,6 @@
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://docs.m5stack.com/en/core/stamp_c3",
+  "url": "https://docs.m5stack.com/en/core/Stamp-C3",
   "vendor": "M5Stack"
 }
