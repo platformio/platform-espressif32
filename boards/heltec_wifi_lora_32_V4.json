@@ -1,0 +1,50 @@
+{
+  "build": {
+    "arduino": {
+      "ldscript": "esp32s3_out.ld"
+    },
+    "core": "esp32",
+    "extra_flags": [
+      "-DARDUINO_HELTEC_WIFI_LORA_32_V4",
+      "-DARDUINO_RUNNING_CORE=1",
+      "-DARDUINO_EVENT_RUNNING_CORE=1",
+      "-DREGION_EU868",
+      "-DMCU_ESP32_S3",
+      "-DHELTEC_BOARD=30",
+      "-DWIFI_LORA_32_V4",
+      "-DRADIO_CHIP_SX1262",
+      "-DACTIVE_REGION=LORAMAC_REGION_EU868",
+      "-DLORAWAN_PREAMBLE_LENGTH=8",
+      "-DLORA_RX_LNA=1",
+      "-DUSE_NONE_PA",
+      "-DHELTEC_WIFI_LORA_32_V4",
+      "-DARDUINO_USB_MODE=1"
+    ],
+    "f_cpu": "240000000L",
+    "f_flash": "80000000L",
+    "flash_mode": "qio",
+    "mcu": "esp32s3",
+    "variant": "heltec_wifi_lora_32_V4"
+  },
+  "connectivity": [
+    "bluetooth",
+    "wifi"
+  ],
+  "debug": {
+    "openocd_target": "esp32s3.cfg"
+  },
+  "frameworks": [
+    "arduino",
+    "espidf"
+  ],
+  "name": "Heltec WiFi LoRa 32 v4",
+  "upload": {
+    "flash_size": "16MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 16777216,
+    "require_upload_port": true,
+    "speed": 460800
+  },
+  "url": "https://heltec.org/project/wifi-lora-32-v4/",
+  "vendor": "Heltec"
+}
