@@ -1,9 +1,9 @@
 {
   "build": {
-    "arduino":{
+    "arduino": {
       "ldscript": "esp32s3_out.ld",
       "memory_type": "qio_opi",
-      "partitions": "partitions-16MB-tinyuf2.csv"
+      "partitions": "tinyuf2-partitions-16MB.csv"
     },
     "core": "esp32",
     "extra_flags": [

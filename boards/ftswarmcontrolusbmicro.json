@@ -1,0 +1,50 @@
+{
+  "build": {
+    "arduino": {
+      "ldscript": "esp32_out.ld",
+      "partitions": "huge_app.csv"
+    },
+    "core": "esp32",
+    "extra_flags": [
+      "-DARDUINO_FTSWARMCONTROLUSBMICRO",
+      "-DARDUINO_RUNNING_CORE=1",
+      "-DLANGUAGEEN",
+      "-DBOARD_HAS_PSRAM",
+      "-mfix-esp32-psram-cache-issue"
+    ],
+    "f_cpu": "240000000L",
+    "f_flash": "80000000L",
+    "flash_mode": "dio",
+    "hwids": [
+      [
+        "0x10C4",
+        "0xEA60"
+      ]
+    ],
+    "mcu": "esp32",
+    "variant": "ftswarmcontrolusbmicro"
+  },
+  "connectivity": [
+    "bluetooth",
+    "can",
+    "ethernet",
+    "wifi"
+  ],
+  "debug": {
+    "openocd_board": "esp-wroom-32.cfg"
+  },
+  "frameworks": [
+    "arduino",
+    "espidf"
+  ],
+  "name": "Elektrofuzzis ftSwarmControl USBMicro",
+  "upload": {
+    "flash_size": "4MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 4194304,
+    "require_upload_port": true,
+    "speed": 921600
+  },
+  "url": "https://elektrofuzzis.github.io",
+  "vendor": "Elektrofuzzis"
+}

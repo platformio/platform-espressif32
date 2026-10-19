@@ -1,0 +1,49 @@
+{
+  "build": {
+    "arduino": {
+      "ldscript": "esp32_out.ld",
+      "partitions": "default_8MB.csv",
+      "memory_type": "dio_qspi"
+    },
+    "core": "esp32",
+    "extra_flags": [
+      "-DARDUINO_HELTEC_WIRELESS_BRIDGE",
+      "-DREGION_EU868",
+      "-DMCU_ESP32_D0",
+      "-DWIRELESS_BRIDGE",
+      "-DHELTEC_BOARD=4",
+      "-DRADIO_CHIP_SX127X",
+      "-DACTIVE_REGION=LORAMAC_REGION_EU868",
+      "-DLORAWAN_PREAMBLE_LENGTH=8"
+    ],
+    "f_cpu": "240000000L",
+    "f_flash": "80000000L",
+    "flash_mode": "dio",
+    "mcu": "esp32",
+    "variant": "heltec_wireless_bridge"
+  },
+  "connectivity": [
+    "bluetooth",
+    "can",
+    "ethernet",
+    "wifi"
+  ],
+  "debug": {
+    "openocd_board": "esp-wroom-32.cfg"
+  },
+  "frameworks": [
+    "arduino",
+    "espidf"
+  ],
+  "name": "Heltec Wireless Bridge",
+  "upload": {
+    "flash_size": "8MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 8388608,
+    "require_upload_port": true,
+    "wait_for_upload_port": true,
+    "speed": 460800
+  },
+  "url": "https://heltec.org/project/wireless-bridge/",
+  "vendor": "Heltec"
+}

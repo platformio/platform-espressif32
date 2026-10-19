@@ -18,7 +18,7 @@
     "type": "git",
     "url": "https://github.com/platformio/platform-espressif32.git"
   },
-  "version": "7.1.3",
+  "version": "8.0.0",
   "frameworks": {
     "arduino": {
       "package": "framework-arduinoespressif32",
@@ -30,35 +30,17 @@
     }
   },
   "packages": {
-    "toolchain-xtensa-esp32": {
-      "type": "toolchain",
-      "owner": "espressif",
-      "version": "8.4.0+2021r2-patch5"
-    },
-    "toolchain-xtensa-esp32s2": {
-      "type": "toolchain",
-      "optional": true,
-      "owner": "espressif",
-      "version": "8.4.0+2021r2-patch5"
-    },
-     "toolchain-xtensa-esp32s3": {
-      "type": "toolchain",
-      "optional": true,
-      "owner": "espressif",
-      "version": "8.4.0+2021r2-patch5"
-    },
     "toolchain-riscv32-esp": {
       "type": "toolchain",
-      "optional": true,
-      "owner": "espressif",
-      "version": "8.4.0+2021r2-patch5",
+      "owner": "platformio",
+      "version": "14.2.0+20260121",
       "optionalVersions": ["15.2.0+20251204"]
     },
     "toolchain-xtensa-esp-elf": {
       "type": "toolchain",
-      "optional": true,
       "owner": "platformio",
-      "version": "15.2.0+20251204"
+      "version": "14.2.0+20260121",
+      "optionalVersions": ["15.2.0+20251204"]
     },
     "toolchain-esp32ulp": {
       "type": "toolchain",
@@ -68,13 +50,11 @@
     },
     "tool-xtensa-esp-elf-gdb": {
       "type": "debugger",
-      "optional": true,
       "owner": "espressif",
       "version": "~12.1.0"
     },
     "tool-riscv32-esp-elf-gdb": {
       "type": "debugger",
-      "optional": true,
       "owner": "espressif",
       "version": "~12.1.0"
     },
@@ -82,19 +62,49 @@
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~4.20017.0"
+      "version": "~4.30312.0"
+    },
+    "framework-arduinoespressif32-esp32-libs": {
+      "type": "framework",
+      "optional": true,
+      "owner": "platformio",
+      "version": "~3.3.12"
+    },
+    "framework-arduinoespressif32-esp32c3-libs": {
+      "type": "framework",
+      "optional": true,
+      "owner": "platformio",
+      "version": "~3.3.12"
+    },
+    "framework-arduinoespressif32-esp32c6-libs": {
+      "type": "framework",
+      "optional": true,
+      "owner": "platformio",
+      "version": "~3.3.12"
+    },
+    "framework-arduinoespressif32-esp32s2-libs": {
+      "type": "framework",
+      "optional": true,
+      "owner": "platformio",
+      "version": "~3.3.12"
+    },
+    "framework-arduinoespressif32-esp32s3-libs": {
+      "type": "framework",
+      "optional": true,
+      "owner": "platformio",
+      "version": "~3.3.12"
     },
     "framework-espidf": {
       "type": "framework",
       "optional": true,
       "owner": "platformio",
       "version": "~4.60100.0",
-      "optionalVersions": ["~3.40407.0"]
+      "optionalVersions": ["~3.50505.0"]
     },
-    "tool-esptoolpy": {
+    "tool-esptool": {
       "type": "uploader",
       "owner": "platformio",
-      "version": "~2.41100.0"
+      "version": "~2.50400.0"
     },
     "tool-dfuutil-arduino": {
       "type": "uploader",

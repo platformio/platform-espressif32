@@ -1,15 +1,22 @@
 {
   "build": {
+    "arduino": {
+      "ldscript": "esp32c3_out.ld"
+    },
     "core": "esp32",
+    "extra_flags": "-DARDUINO_ESP32C6_DEV",
     "f_cpu": "160000000L",
     "f_flash": "80000000L",
     "flash_mode": "qio",
-    "mcu": "esp32c6"
+    "mcu": "esp32c6",
+    "variant": "esp32c6"
   },
   "connectivity": [
+    "bluetooth",
     "wifi"
   ],
   "frameworks": [
+    "arduino",
     "espidf"
   ],
   "name": "Espressif ESP32-C6-DevKitC-1",
