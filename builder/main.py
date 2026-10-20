@@ -319,6 +319,26 @@ env.Replace(
 if env.get("PROGNAME", "program") == "program":
     env.Replace(PROGNAME="firmware")
 
+# The prebuilt Arduino libs are built for a 40 MHz crystal. Boards with a
+# different crystal (e.g. 26 MHz) can set `board_build.f_xtal = 26` to have the
+# Arduino core re-program the clocks at startup (see `F_XTAL_MHZ` in
+# cores/esp32/main.cpp).
+if "build.f_xtal" in board:
+    try:
+        f_xtal_mhz = int(str(board.get("build.f_xtal")).lower().replace("mhz", "").strip())
+        if f_xtal_mhz <= 0:
+            raise ValueError
+    except ValueError:
+        sys.stderr.write(
+            "Error: invalid `board_build.f_xtal = %s`, expected the crystal "
+            "frequency in MHz, e.g. 26 or 40\n" % board.get("build.f_xtal")
+        )
+        env.Exit(1)
+    if mcu == "esp32s2":
+        print("Warning: `board_build.f_xtal` is not supported on ESP32-S2, ignoring")
+    else:
+        env.Append(CPPDEFINES=[("F_XTAL_MHZ", f_xtal_mhz)])
+
 env.Append(
     BUILDERS=dict(
         ElfToBin=Builder(
