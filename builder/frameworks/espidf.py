@@ -1628,7 +1628,7 @@ def install_python_deps():
         "pyparsing": ">=3.1.0,<4",
         "idf-component-manager": "~=3.1" if IDF6_OR_NEWER else "~=2.5",
         "esp-idf-kconfig": "~=3.13.0",
-        "pydantic": "~=2.12.0",
+        "pydantic": "~=2.14.0",
     }
 
     if sys_platform.system() == "Darwin" and "arm" in sys_platform.machine().lower():
