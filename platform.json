@@ -98,7 +98,7 @@
       "type": "framework",
       "optional": true,
       "owner": "platformio",
-      "version": "~4.60100.0",
+      "version": "~4.60101.0",
       "optionalVersions": ["~3.50505.0"]
     },
     "tool-esptool": {
