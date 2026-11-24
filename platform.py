@@ -61,10 +61,6 @@ class Espressif32Platform(PlatformBase):
         if frameworks == ["arduino"]:
             self.packages["framework-arduinoespressif32-%s-libs" % mcu]["optional"] = False
         if "espidf" in frameworks:
-            if "arduino" not in frameworks:
-                self.packages["toolchain-riscv32-esp"]["version"] = "15.2.0+20251204"
-                self.packages["toolchain-xtensa-esp-elf"]["version"] = "15.2.0+20251204"
-
             # Common packages for IDF and mixed Arduino+IDF projects
             for p in self.packages:
                 if p in (
@@ -79,7 +75,7 @@ class Espressif32Platform(PlatformBase):
 
             if "arduino" in frameworks:
                 # Downgrade the IDF version for mixed Arduino+IDF projects
-                self.packages["framework-espidf"]["version"] = "~4.50505.0"
+                self.packages["framework-espidf"]["version"] = "~4.60101.0"
             else:
                 if mcu == "esp32":
                     self.packages.pop("toolchain-riscv32-esp", None)
