@@ -1,0 +1,42 @@
+{
+  "build": {
+    "arduino": {
+      "ldscript": "esp32c5_out.ld"
+    },
+    "core": "esp32",
+    "extra_flags": [
+      "-DARDUINO_WAVESHARE_ESP32_C5_LCD_1_47",
+      "-DESP32=ESP32",
+      "-DARDUINO_USB_MODE=1",
+      "-DARDUINO_USB_CDC_ON_BOOT=1"
+    ],
+    "f_cpu": "240000000L",
+    "f_flash": "80000000L",
+    "flash_mode": "qio",
+    "mcu": "esp32c5",
+    "variant": "waveshare_esp32_c5_lcd_1_47"
+  },
+  "connectivity": [
+    "bluetooth",
+    "thread",
+    "wifi",
+    "zigbee"
+  ],
+  "debug": {
+    "openocd_target": "esp32c5.cfg"
+  },
+  "frameworks": [
+    "arduino",
+    "espidf"
+  ],
+  "name": "Waveshare ESP32-C5-LCD-1.47",
+  "upload": {
+    "flash_size": "4MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 4194304,
+    "require_upload_port": true,
+    "speed": 460800
+  },
+  "url": "https://www.waveshare.com/esp32-c5-lcd-1.47.htm",
+  "vendor": "Waveshare"
+}
