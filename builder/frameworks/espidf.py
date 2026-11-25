@@ -68,9 +68,19 @@ IDF_ENV_VERSION = "1.0.0"
 FRAMEWORK_DIR = platform.get_package_dir("framework-espidf")
 TOOLCHAIN_DIR = platform.get_package_dir(
     "toolchain-riscv32-esp"
-    if mcu in ("esp32c3", "esp32c6")
+    if mcu in ("esp32c3", "esp32c5", "esp32c6", "esp32h2")
     else "toolchain-xtensa-esp-elf"
 )
+
+BOOTLOADER_OFFSETS = {
+    "esp32": "0x1000",
+    "esp32s2": "0x1000",
+    "esp32s3": "0x0",
+    "esp32c3": "0x0",
+    "esp32c5": "0x2000",
+    "esp32c6": "0x0",
+    "esp32h2": "0x0",
+}
 
 
 assert os.path.isdir(FRAMEWORK_DIR)
@@ -254,7 +264,7 @@ def populate_idf_env_vars(idf_env):
         os.path.dirname(get_python_exe()),
     ]
 
-    if mcu not in ("esp32c3", "esp32c6"):
+    if mcu not in ("esp32c3", "esp32c5", "esp32c6", "esp32h2"):
         additional_packages.append(
             os.path.join(platform.get_package_dir("toolchain-esp32ulp"), "bin"),
         )
@@ -548,7 +558,7 @@ def extract_linker_script_fragments_backup(
         )
         env.Exit(1)
 
-    if mcu in ("esp32c3", "esp32c6"):
+    if mcu in ("esp32c3", "esp32c5", "esp32c6", "esp32h2"):
         result.append(
             os.path.join(framework_components_dir, "riscv", "linker.lf")
         )
@@ -2293,7 +2303,7 @@ bootloader_offset = board.get(
     "upload.bootloader_offset",
     sdk_config.get(
         "BOOTLOADER_OFFSET_IN_FLASH",
-        ("0x0" if mcu in ("esp32c3", "esp32c6", "esp32s3") else "0x1000"),
+        BOOTLOADER_OFFSETS.get("mcu", "0x1000"),
     ),
 )
 

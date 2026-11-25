@@ -51,13 +51,13 @@ class Espressif32Platform(PlatformBase):
         build_core = variables.get(
             "board_build.core", board_config.get("build.core", "arduino")
         ).lower()
-        
+
         if IS_WINDOWS:
             # Note: On Windows GDB v12 is not able to
             # launch a GDB server in pipe mode while v11 works fine
             self.packages["tool-xtensa-esp-elf-gdb"]["version"] = "~11.2.0"
             self.packages["tool-riscv32-esp-elf-gdb"]["version"] = "~11.2.0"
-        
+
         if frameworks == ["arduino"]:
             self.packages["framework-arduinoespressif32-%s-libs" % mcu]["optional"] = False
         if "espidf" in frameworks:
@@ -79,10 +79,10 @@ class Espressif32Platform(PlatformBase):
             else:
                 if mcu == "esp32":
                     self.packages.pop("toolchain-riscv32-esp", None)
-                elif mcu in ("esp32s2", "esp32s3", "esp32c3", "esp32c6"):
-                    # RISC-V based toolchain for ESP32C3, ESP32C6 ESP32S2, ESP32S3 ULP
+                elif mcu in ("esp32s2", "esp32s3", "esp32c3", "esp32c5","esp32c6", "esp32h2"):
+                    # RISC-V based toolchain for C3, C5, C6, H2 and S2, S3 ULP
                     self.packages["toolchain-riscv32-esp"]["optional"] = False
-                    if mcu in ("esp32c3", "esp32c6"):
+                    if mcu in ("esp32c3", "esp32c5", "esp32c6", "esp32h2"):
                         self.packages.pop("toolchain-xtensa-esp-elf", None)
 
         return super().configure_default_packages(variables, targets)
@@ -126,7 +126,7 @@ class Espressif32Platform(PlatformBase):
         if board.id == "esp32-s2-kaluga-1":
             supported_debug_tools.append("ftdi")
 
-        if board.get("build.mcu", "") in ("esp32c3", "esp32c6", "esp32s3"):
+        if board.get("build.mcu", "") in ("esp32c3", "esp32c5","esp32c6", "esp32s3", "esp32h2"):
             supported_debug_tools.append("esp-builtin")
 
         upload_protocol = board.manifest.get("upload", {}).get("protocol")

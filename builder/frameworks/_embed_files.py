@@ -103,6 +103,13 @@ def transform_to_asm(target, source, env):
 
 
 mcu = board.get("build.mcu", "esp32")
+is_riscv_target = mcu in (
+    "esp32c3",
+    "esp32c5",
+    "esp32c6",
+    "esp32h2",
+)
+
 env.Append(
     BUILDERS=dict(
         TxtToBin=Builder(
@@ -110,14 +117,14 @@ env.Append(
                 " ".join(
                     [
                         "riscv32-esp-elf-objcopy"
-                        if mcu in ("esp32c3", "esp32c6")
+                        if is_riscv_target
                         else "xtensa-%s-elf-objcopy" % mcu,
                         "--input-target",
                         "binary",
                         "--output-target",
-                        "elf32-littleriscv" if mcu in ("esp32c3","esp32c6") else "elf32-xtensa-le",
+                        "elf32-littleriscv" if is_riscv_target else "elf32-xtensa-le",
                         "--binary-architecture",
-                        "riscv" if mcu in ("esp32c3","esp32c6") else "xtensa",
+                        "riscv" if is_riscv_target else "xtensa",
                         "--rename-section",
                         ".data=.rodata.embedded",
                         "$SOURCE",

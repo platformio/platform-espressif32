@@ -74,7 +74,19 @@
       "owner": "platformio",
       "version": "4.0.0"
     },
+    "framework-arduinoespressif32-esp32c5-libs": {
+      "type": "framework",
+      "optional": true,
+      "owner": "platformio",
+      "version": "4.0.0"
+    },
     "framework-arduinoespressif32-esp32c6-libs": {
+      "type": "framework",
+      "optional": true,
+      "owner": "platformio",
+      "version": "4.0.0"
+    },
+    "framework-arduinoespressif32-esp32h2-libs": {
       "type": "framework",
       "optional": true,
       "owner": "platformio",
