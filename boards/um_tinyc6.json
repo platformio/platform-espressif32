@@ -1,0 +1,43 @@
+{
+  "build": {
+    "arduino": {
+      "ldscript": "esp32c6_out.ld",
+      "partitions": "default_8MB.csv"
+    },
+    "core": "esp32",
+    "extra_flags": [
+      "-DARDUINO_TINYC6",
+      "-DESP32=ESP32",
+      "-DARDUINO_USB_MODE=1",
+      "-DARDUINO_USB_CDC_ON_BOOT=1"
+    ],
+    "f_cpu": "160000000L",
+    "f_flash": "80000000L",
+    "flash_mode": "qio",
+    "mcu": "esp32c6",
+    "variant": "um_tinyc6"
+  },
+  "connectivity": [
+    "bluetooth",
+    "thread",
+    "wifi",
+    "zigbee"
+  ],
+  "debug": {
+    "openocd_target": "esp32c6.cfg"
+  },
+  "frameworks": [
+    "arduino",
+    "espidf"
+  ],
+  "name": "Unexpected Maker TinyC6",
+  "upload": {
+    "flash_size": "8MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 8388608,
+    "require_upload_port": true,
+    "speed": 460800
+  },
+  "url": "https://unexpectedmaker.com/shop.html#!/TinyC6-D/p/865880851",
+  "vendor": "Unexpected Maker"
+}
