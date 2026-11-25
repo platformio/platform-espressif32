@@ -1,0 +1,43 @@
+{
+  "build": {
+    "arduino": {
+      "ldscript": "esp32c5_out.ld"
+    },
+    "core": "esp32",
+    "extra_flags": [
+      "-DARDUINO_ESP32C5_THING_PLUS",
+      "-DESP32=ESP32",
+      "-DBOARD_HAS_PSRAM",
+      "-DARDUINO_USB_MODE=1",
+      "-DARDUINO_USB_CDC_ON_BOOT=1"
+    ],
+    "f_cpu": "240000000L",
+    "f_flash": "80000000L",
+    "flash_mode": "qio",
+    "mcu": "esp32c5",
+    "variant": "sparkfun_esp32c5_thing_plus"
+  },
+  "connectivity": [
+    "bluetooth",
+    "thread",
+    "wifi",
+    "zigbee"
+  ],
+  "debug": {
+    "openocd_target": "esp32c5.cfg"
+  },
+  "frameworks": [
+    "arduino",
+    "espidf"
+  ],
+  "name": "SparkFun ESP32-C5 Thing Plus",
+  "upload": {
+    "flash_size": "8MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 8388608,
+    "require_upload_port": true,
+    "speed": 460800
+  },
+  "url": "https://www.sparkfun.com/sparkfun-thing-plus-esp32-c5.html",
+  "vendor": "SparkFun"
+}
